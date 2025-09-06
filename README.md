@@ -1,1 +1,1 @@
-# Capstone-Project
+# Velora -- "The Value of the Journey"
