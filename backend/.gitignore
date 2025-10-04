@@ -1,0 +1,19 @@
+# --- Python ---
+__pycache__/
+
+# --- Virtual Environment ---
+.venv/
+venv/
+ENV/
+env/
+
+# --- IDE / Editor ---
+.vscode/
+
+# --- ENV ---
+.env
+
+
+# --- Alembic Cache ---
+app/infra/migrations/__pycache__/
+app/infra/migrations/versions/__pycache__/
