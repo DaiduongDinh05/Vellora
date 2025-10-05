@@ -8,11 +8,18 @@
 git clone https://github.com/Stack-Underflow-Capstone/Velora.git](https://github.com/Stack-Underflow-Capstone/Vellora.git
 ```
 
-#### 2. Create and activate a virtual environment (Windows idk how on mac)
+#### 2. Create and activate a virtual environment 
+##### Windows:
 ```
 python -m venv .venv
 .venv\Scripts\activate
 ```
+
+##### Mac:
+  ```
+  python -m venv .venv
+  source .venv/bin/activate
+  ```
 You should see (.venv) at the beginning of your terminal line if this worked
 
 #### 3. Install dependencies
