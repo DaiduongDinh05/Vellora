@@ -5,7 +5,7 @@
 
 #### 1. Clone repo
 ```
-git clone https://github.com/Stack-Underflow-Capstone/Velora.git
+git clone https://github.com/Stack-Underflow-Capstone/Velora.git](https://github.com/Stack-Underflow-Capstone/Vellora.git
 ```
 
 #### 2. Create and activate a virtual environment (Windows idk how on mac)
