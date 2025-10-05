@@ -1,1 +1,1 @@
-# Velora -- "The Value of the Journey"
+# Vellora -- "The Value of the Journey"
