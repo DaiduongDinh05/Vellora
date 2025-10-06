@@ -39,3 +39,20 @@ To learn more about developing your project with Expo, look at the following res
 
 - [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
 - [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+
+## File Structure
+
+```
+.
+├── .vscode/         # Holds setting configs for VS Code
+├── app/
+│   ├── _layout.tsx     # Used for specific level of navigation (tab or stack), handles global font loading, splash screen mgmt, and context providers
+│   └── tabs/
+│       └── index.tsx   # Shows inital screen or home screen
+├── assets/             # Stores files, images, static things.
+├── components/         # Stores reusable global components
+├── constants/          # App Wide Constants (colors, spacing, etc)
+├── hooks/              # Custom React Hooks
+└── scripts/            # Util Scripts
+
+```
