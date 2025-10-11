@@ -1,9 +1,10 @@
-import {  View, Text  } from "react-native";
+import React from 'react'
+import {  View, Text, Button  } from "react-native";
 import { useState, useEffect } from "react";
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 
-const LOCATION_TASK = 'background-location-tracking';
+const LOCATION_TASK_NAME = 'background_location_tracking';
 
 
 function startBackgroundTracking() { 
@@ -13,7 +14,7 @@ function startBackgroundTracking() {
 
     async function startTracking() {
         // Get Perms for Location Tracking
-            const foregroundPermissions = await Location.requestForegroundPermissionsAsync(); // Request Location Permissions from Phone, have to request Foreground before BG
+            const foregroundPermissions = await Location.requestForegroundPermissionsAsync(); // have to request Foreground before BG
             if (!foregroundPermissions) { // Check if Granted
                 setErrorMsg('Permission to access location was denied. Please enable location.');
                 return;
@@ -24,30 +25,37 @@ function startBackgroundTracking() {
                 setErrorMsg('Permission to access background location was denied, Please enable background location for best performance.')
                 return;
             }
-
-            const locationSubscription = await Location.watchPositionAsync({            // Subscription for Position Watching
-            accuracy: Location.LocationAccuracy.BestForNavigation,                      // Most accurate for Nav
-            timeInterval: 5000,                                                         // 5000 ms,
-            distanceInterval: 10                                                        // 10 meters
-        }, 
-            (newLocation) => {
-                setLocation(newLocation);                                               // Update Location
-                console.log(newLocation)
-            },
-        );
-        setSubscription(locationSubscription);
+            
+            if (backgroundPermssions === "granted") {
+                await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
+                accuracy: Location.Accuracy.Balanced,
+                });
+            }
     };
+
+    TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
+                if (error) {
+                    console.log(error.message)
+                    return;
+                }
+                
+                // let { locations } = data;
+                console.log(data) // TODO: FIX COORDS IN OBJ
+            })
 
 
 
     useEffect(() => {
-        startTracking();
+       startTracking();
     }, []);
 
 
 
     return (
-    <Text>This is the Tracking Component</Text>
+        <View>
+            <Text>tracking</Text>
+        </View>
+      
     )
 }
 
