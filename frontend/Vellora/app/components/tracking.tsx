@@ -8,9 +8,15 @@ function Tracking() {
 
     useEffect(() => {
         async function getCurrentLocation() {
-            let { status } = await Location.requestForegroundPermissionsAsync(); // Request Location Permissions from Phone
-            if (status !== 'granted') { // Check if Granted
+             const foregroundPermissions = await Location.requestForegroundPermissionsAsync(); // Request Location Permissions from Phone
+            if (!foregroundPermissions) { // Check if Granted
                 setErrorMsg('Permission to access location was denied. Please enable location.');
+                return;
+            }
+
+            let { status } = await Location.requestBackgroundPermissionsAsync(); // Request Background Location for Tracking
+            if (status !== "granted" ) {
+                setErrorMsg('Permission to access background location was denied, Please enable background location for best performance.')
                 return;
             }
 
