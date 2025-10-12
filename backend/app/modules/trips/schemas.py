@@ -1,7 +1,7 @@
 import datetime
 from app.modules.trips.models import Trip, TripCategory, TripStatus
 from app.modules.trips.crypto import decrypt_address
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel
 
 class CreateTripDTO(BaseModel):
     start_address: str
@@ -11,7 +11,6 @@ class CreateTripDTO(BaseModel):
 
 class EndTripDTO(BaseModel):
     end_address: str
-    #might add end time here
 
 class EditTripDTO(BaseModel):
     pass
@@ -28,9 +27,10 @@ class TripResponseDTO(BaseModel):
     ended_at: datetime.datetime | None = None
 
     @classmethod
-    def model_validate(cls, trip: Trip, **kwargs):
+    def model_validate(cls, trip: Trip):
 
         data = {
+            #convert uuid to str
             "id": str(trip.id),
             "status": trip.status,
             "start_address": decrypt_address(trip.start_address_encrypted),
@@ -41,6 +41,8 @@ class TripResponseDTO(BaseModel):
             "started_at": trip.started_at,
             "ended_at": trip.ended_at
         }
+
+        # Create and return a new instance of TripResponseDTO
         return cls(**data)
 
     class Config:

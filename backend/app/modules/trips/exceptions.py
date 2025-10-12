@@ -9,3 +9,6 @@ class TripAlreadyActiveError(TripError):
 
 class TripPersistenceError(TripError):
     """database or commit error"""
+
+class TripNotFoundError(TripError):
+    """when a trip doesnt exist"""
