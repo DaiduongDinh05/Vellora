@@ -10,7 +10,6 @@ const LOCATION_TASK_NAME = 'background_location_tracking';
 function startBackgroundTracking() { 
     const [location, setLocation] = useState<Location.LocationObject | null>(null);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
-    const [subscription, setSubscription] = useState<Location.LocationSubscription | null>(null);
 
     async function startTracking() {
         // Get Perms for Location Tracking
@@ -29,6 +28,8 @@ function startBackgroundTracking() {
             if (backgroundPermssions === "granted") {
                 await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
                 accuracy: Location.Accuracy.Balanced,
+                deferredUpdatesInterval: 30000,
+                deferredUpdatesDistance: 8100,
                 });
             }
     };
@@ -39,9 +40,9 @@ function startBackgroundTracking() {
                     return;
                 }
                 
-                // let { locations } = data;
-                console.log(data) // TODO: FIX COORDS IN OBJ
-            })
+            //     let { locations } = data;
+             //   console.log(locations) // TODO: FIX COORDS IN OBJ
+            });
 
 
 
