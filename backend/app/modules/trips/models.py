@@ -29,5 +29,10 @@ class Trip(Base):
     started_at: Mapped[sa.DateTime] = mapped_column(sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False)
     ended_at: Mapped[sa.DateTime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
     #expenses will be added once expenses table is implemented
+    #customization will be added once implemented
+    #category will be added once implemented
+
+
+    
 
      

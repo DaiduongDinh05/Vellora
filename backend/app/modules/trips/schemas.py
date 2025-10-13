@@ -13,7 +13,8 @@ class EndTripDTO(BaseModel):
     end_address: str
 
 class EditTripDTO(BaseModel):
-    pass
+    # category, customization, and reimbursment will be added once implemented
+    purpose: str | None = None
 
 class TripResponseDTO(BaseModel):
     id: str
