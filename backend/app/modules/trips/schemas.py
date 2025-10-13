@@ -1,6 +1,6 @@
 import datetime
 from app.modules.trips.models import Trip, TripCategory, TripStatus
-from app.modules.trips.crypto import decrypt_address
+from app.modules.trips.utils.crypto import decrypt_address
 from pydantic import BaseModel
 
 class CreateTripDTO(BaseModel):

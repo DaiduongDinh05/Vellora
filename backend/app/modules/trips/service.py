@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from uuid import UUID
 from app.modules.trips.repository import TripRepo
 from app.modules.trips.schemas import CreateTripDTO, EditTripDTO, EndTripDTO
-from app.modules.trips.crypto import encrypt_address
+from app.modules.trips.utils.crypto import encrypt_address
 from app.modules.trips.models import Trip, TripStatus
 from app.modules.trips.exceptions import InvalidTripDataError, TripNotFoundError, TripPersistenceError
 
@@ -65,16 +65,21 @@ class TripsService:
     async def edit_trip(self, data: EditTripDTO):
         pass
 
-    async def cancel_trip(self, trip_id: int):
+    async def cancel_trip(self, trip_id: UUID):
         pass
 
-    async def get_trip_by_id(self, trip_id: int):
-        pass
+    async def get_trip_by_id(self, trip_id: UUID):
+        trip = await self.repo.get_trip(trip_id)
 
-    async def get_active_trip(self, user_id: int):
+        if trip:
+            return trip
+        
+        raise TripNotFoundError("Trip doesn't exist")
+
+    async def get_active_trip(self, user_id: UUID):
         raise NotImplementedError("Users Not implemented yet")
 
-    async def get_trips_by_userId(self, user_id: int):
+    async def get_trips_by_userId(self, user_id: UUID):
         raise NotImplementedError("Users Not implemented yet")
     
 
