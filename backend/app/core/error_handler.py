@@ -1,13 +1,19 @@
 
+import logging
 from functools import wraps
 from app.modules.trips.exceptions import InvalidTripDataError, TripAlreadyActiveError, TripNotFoundError, TripPersistenceError
+from app.modules.expenses.exceptions import InvalidExpenseDataError
 from fastapi import HTTPException
+
+logger = logging.getLogger(__name__)
 
 def error_handler(func):
     @wraps(func)
     async def wrapper(*args, **kwargs):
         try:
             return await func(*args, **kwargs)
+        
+        #trips
         except InvalidTripDataError as e:
             raise HTTPException(status_code=400, detail=str(e))
         except TripAlreadyActiveError as e:
@@ -16,7 +22,14 @@ def error_handler(func):
             raise HTTPException(status_code=500, detail=str(e))
         except TripNotFoundError as e:
             raise HTTPException(status_code=404, detail=str(e))
-        except Exception:
+        
+        #expenses
+        except InvalidExpenseDataError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        
+        #all
+        except Exception as e:
+            logger.exception("Unhandled error: %s", e)
             raise HTTPException(status_code=500, detail="Unexpected server error")
         
     return wrapper

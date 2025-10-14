@@ -3,7 +3,7 @@ from app.container import get_db
 from app.modules.trips.repository import TripRepo
 from app.modules.trips.schemas import CreateTripDTO, EditTripDTO, EndTripDTO, TripResponseDTO
 from app.modules.trips.service import TripsService
-from app.modules.trips.utils.error_handler  import error_handler
+from app.core.error_handler  import error_handler
 from fastapi import APIRouter, Depends
 from app.infra.db import AsyncSession
 

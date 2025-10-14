@@ -11,6 +11,7 @@ from app.config import settings
 from app.core.base import Base
 
 from app.modules.trips import models
+from app.modules.expenses import models
 
 
 # this is the Alembic Config object, which provides

@@ -1,4 +1,3 @@
-from app.modules.trips.schemas import CreateTripDTO
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.modules.trips.models import Trip
