@@ -6,3 +6,6 @@ class InvalidExpenseDataError(ExpenseError):
 
 class ExpensePersistenceError(ExpenseError):
     """persistence error for expenses"""
+
+class ExpenseNotFoundError(ExpenseError):
+    """for expenses that dont exist"""

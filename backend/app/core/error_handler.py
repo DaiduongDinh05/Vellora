@@ -2,7 +2,7 @@
 import logging
 from functools import wraps
 from app.modules.trips.exceptions import InvalidTripDataError, TripAlreadyActiveError, TripNotFoundError, TripPersistenceError
-from app.modules.expenses.exceptions import InvalidExpenseDataError
+from app.modules.expenses.exceptions import ExpenseNotFoundError, ExpensePersistenceError, InvalidExpenseDataError
 from fastapi import HTTPException
 
 logger = logging.getLogger(__name__)
@@ -26,6 +26,10 @@ def error_handler(func):
         #expenses
         except InvalidExpenseDataError as e:
             raise HTTPException(status_code=400, detail=str(e))
+        except ExpensePersistenceError as e:
+            raise HTTPException(status_code=500, detail=str(e))
+        except ExpenseNotFoundError as e:
+            raise HTTPException(status_code=404, detail=str(e))
         
         #all
         except Exception as e:
