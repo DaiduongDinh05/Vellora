@@ -3,20 +3,24 @@ import {  View, Text, Button  } from "react-native";
 import { useState, useEffect } from "react";
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
-import { get } from 'react-native/Libraries/TurboModule/TurboModuleRegistry';
 
 const LOCATION_TASK_NAME = 'background_location_tracking';
 
 TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
         if (error) {
-            console.log(error.message)
+            console.log('Background Location taks Error: ', error.message)
             return;
         }
-                
-               const { locations } = data;
-                console.log(locations[0]) // TODO: FIX COORDS IN OBJ
-            });
 
+        try {
+              const { locations } = data as { locations: Location.LocationObject[] }; 
+              console.log(locations);
+
+        } catch (err) {
+            console.error('Error with location update:', err);
+        }
+                
+            });
 
 function LocationTracker()  { 
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -50,28 +54,31 @@ function LocationTracker()  {
             if (!hasPermissions) return;
 
             await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
-                accuracy: Location.Accuracy.Balanced,
-                deferredUpdatesInterval: 30000,
-                deferredUpdatesDistance: 8100,
+                accuracy: Location.Accuracy.BestForNavigation,
+                timeInterval: 10,
+                distanceInterval: 400, // was: 1610 ~1 mile TODO: MODIFY THIS VALUE TO MAKE ACCURATE LOCATION UPDATES
                 // For android to allow background location services
                 foregroundService: {
                     notificationTitle: 'Location Tracking is Active',
                     notificationBody: 'Your Location is being tracked in the background.',
                 },
             });
+
+            setIsTracking(true);
+
             
         } catch (error) {
             console.error('Error to start tracking: ', error);
+            setIsTracking(false);
             return;
         }
-            
     };
 
 
 
 
     useEffect(() => {
-       startTracking();
+       startTracking(); // TODO: Implement useEffect Cleanup Function to stop tracking location
     }, []);
 
 
