@@ -33,6 +33,14 @@ class ExpensesService:
             raise ExpensePersistenceError("Unexpected error occurred while saving expense") from e
 
         return await self.expense_repo.save(expense)
+    
+    async def get_expenses_for_trip(self, trip_id: UUID):
+        
+        trip = await self.trip_repo.get_trip(trip_id)
+        if not trip:
+            raise TripNotFoundError("Trip not found")
+
+        return await self.expense_repo.get_expenses_by_trip_id(trip_id)
 
     async def get_expense(self, expense_id: UUID):
         expense = await self.expense_repo.get_expense(expense_id)

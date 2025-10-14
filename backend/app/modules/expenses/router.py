@@ -20,8 +20,14 @@ async def create_expense(trip_id: UUID, body: CreateExpenseDTO, svc = Depends(ge
     expense = await svc.create_expense(trip_id, body)
     return expense
 
+@router.get("/", response_model=list[ExpenseResponseDTO])
+@error_handler
+async def get_expenses(trip_id: UUID, svc = Depends(get_expenses_service)):
+    expenses = await svc.get_expenses_for_trip(trip_id)
+    return expenses
+
 @router.get("/{expense_id}", response_model= ExpenseResponseDTO)
 @error_handler
-async def get_expense(expenses_id: UUID, svc = Depends(get_expenses_service)):
-    expense = await svc.get_expense(expenses_id)
+async def get_expense(expense_id: UUID, svc = Depends(get_expenses_service)):
+    expense = await svc.get_expense(expense_id)
     return expense
