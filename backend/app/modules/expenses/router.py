@@ -4,7 +4,7 @@ from app.infra.db import AsyncSession
 from app.modules.expenses.repository import ExpenseRepo
 from app.modules.expenses.service import ExpensesService
 from app.container import get_db
-from app.modules.expenses.schemas import CreateExpenseDTO, ExpenseResponseDTO
+from app.modules.expenses.schemas import CreateExpenseDTO, EditExpenseDTO, ExpenseResponseDTO
 from app.core.error_handler import error_handler
 from app.modules.trips.repository import TripRepo
 
@@ -30,4 +30,10 @@ async def get_expenses(trip_id: UUID, svc = Depends(get_expenses_service)):
 @error_handler
 async def get_expense(expense_id: UUID, svc = Depends(get_expenses_service)):
     expense = await svc.get_expense(expense_id)
+    return expense
+
+@router.patch("/", response_model=ExpenseResponseDTO)
+@error_handler
+async def edit_expense(expense_id: UUID, body: EditExpenseDTO, svc = Depends(get_expenses_service)):
+    expense = await svc.edit_expense(expense_id, body)
     return expense

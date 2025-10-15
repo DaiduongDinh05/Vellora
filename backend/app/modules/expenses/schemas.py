@@ -7,6 +7,10 @@ class CreateExpenseDTO(BaseModel):
     type: str
     amount_cents: float
 
+class EditExpenseDTO(BaseModel):
+    type: str | None = None 
+    amount_cents: float | None = None 
+
 class ExpenseResponseDTO(BaseModel):
     id: UUID
     trip_id: UUID

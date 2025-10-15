@@ -1,6 +1,6 @@
 from uuid import UUID
 from app.modules.expenses.repository import ExpenseRepo
-from app.modules.expenses.schemas import CreateExpenseDTO
+from app.modules.expenses.schemas import CreateExpenseDTO, EditExpenseDTO
 from app.modules.expenses.exceptions import ExpenseNotFoundError, ExpensePersistenceError, InvalidExpenseDataError
 from app.modules.trips.repository import TripRepo
 from app.modules.expenses.models import Expense
@@ -26,7 +26,7 @@ class ExpensesService:
         try:
             expense = Expense(
                 trip_id = trip_id,
-                type = data.type,
+                type = data.type.strip().capitalize(),
                 amount_cents = data.amount_cents
             )
         except Exception as e:
@@ -49,3 +49,20 @@ class ExpensesService:
             raise ExpenseNotFoundError("Expense not found")
         
         return expense
+    
+    async def edit_expense(self, expense_id: UUID, data: EditExpenseDTO):
+        expense = await self.get_expense(expense_id)
+
+        if data.type is not None:
+            if not data.type.strip():
+                raise InvalidExpenseDataError("Type cannot be empty")
+            expense.type = data.type.strip().capitalize()
+
+        if data.amount_cents is not None:
+            if data.amount_cents <= 0:
+                raise InvalidExpenseDataError("Amount must be positive")
+            expense.amount_cents = data.amount_cents
+        try:
+            return await self.expense_repo.save(expense)
+        except Exception as e:
+            raise ExpensePersistenceError("Unexpected error occurred while saving expense") from e
