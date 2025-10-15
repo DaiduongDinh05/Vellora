@@ -21,3 +21,7 @@ class ExpenseRepo:
         query = select(Expense).where(Expense.trip_id == trip_id)
         result = await self.db.execute(query)
         return result.scalars().all()
+    
+    async def delete_expense(self, expense: Expense) -> None:       
+        await self.db.delete(expense)
+        await self.db.commit()

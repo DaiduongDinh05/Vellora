@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response, status
 from app.infra.db import AsyncSession
 from app.modules.expenses.repository import ExpenseRepo
 from app.modules.expenses.service import ExpensesService
@@ -32,8 +32,14 @@ async def get_expense(expense_id: UUID, svc = Depends(get_expenses_service)):
     expense = await svc.get_expense(expense_id)
     return expense
 
-@router.patch("/", response_model=ExpenseResponseDTO)
+@router.patch("/{expense_id}", response_model=ExpenseResponseDTO)
 @error_handler
 async def edit_expense(expense_id: UUID, body: EditExpenseDTO, svc = Depends(get_expenses_service)):
     expense = await svc.edit_expense(expense_id, body)
     return expense
+
+@router.delete("/{expense_id}")
+@error_handler
+async def delete_expense(expense_id: UUID, svc = Depends(get_expenses_service)):
+    await svc.delete_expense(expense_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

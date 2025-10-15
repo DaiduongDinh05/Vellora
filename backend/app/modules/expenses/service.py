@@ -62,7 +62,9 @@ class ExpensesService:
             if data.amount_cents <= 0:
                 raise InvalidExpenseDataError("Amount must be positive")
             expense.amount_cents = data.amount_cents
-        try:
-            return await self.expense_repo.save(expense)
-        except Exception as e:
-            raise ExpensePersistenceError("Unexpected error occurred while saving expense") from e
+        
+        return await self.expense_repo.save(expense)
+        
+    async def delete_expense(self, expense_id: UUID):
+        expense = await self.get_expense(expense_id)
+        await self.expense_repo.delete_expense(expense)
