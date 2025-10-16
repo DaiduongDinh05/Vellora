@@ -5,7 +5,8 @@ import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 
 const LOCATION_TASK_NAME = 'background_location_tracking';
-let coordinates = ''; // initalize the empty string
+let coordinates = '';                                       // initalize the empty string
+const PROFILE = 'mapbox/driving';                           // profile for mapbox api
 
 TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
         if (error) {
