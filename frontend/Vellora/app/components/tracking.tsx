@@ -5,6 +5,7 @@ import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 
 const LOCATION_TASK_NAME = 'background_location_tracking';
+let coordinates = ''; // initalize the empty string
 
 TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
         if (error) {
@@ -16,6 +17,21 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
               const { locations } = data as { locations: Location.LocationObject[] }; 
               console.log(locations);
 
+            
+
+              let lat = locations[0].coords.latitude.toString();
+              let long = locations[0].coords.longitude.toString();
+
+              if (coordinates.length > 500) { // API Limitation
+                // API Limitation Logic here
+              }
+              else {
+                coordinates += lat + ',' + long + ';'; // Making the semi colon separated list for the API Call
+              }
+              
+              console.log('Coordinate String: ', coordinates);
+
+              
         } catch (err) {
             console.error('Error with location update:', err);
         }
@@ -92,9 +108,9 @@ function LocationTracker()  {
 
 
     useEffect(() => {
-       startTracking(); // TODO: Implement useEffect Cleanup Function to stop tracking location
+       startTracking(); 
 
-       return () => {
+       return () => { // useEffect Cleanup Function to stop tracking location when Component dismounts
             if (isTracking) {
                 stopTracking();
                 return;
