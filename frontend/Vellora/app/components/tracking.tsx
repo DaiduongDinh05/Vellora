@@ -8,7 +8,7 @@ const LOCATION_TASK_NAME = 'background_location_tracking';
 
 TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
         if (error) {
-            console.log('Background Location taks Error: ', error.message)
+            console.log('Background Location tasks Error: ', error.message)
             return;
         }
 
@@ -56,7 +56,7 @@ function LocationTracker()  {
             await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
                 accuracy: Location.Accuracy.BestForNavigation,
                 timeInterval: 10,
-                distanceInterval: 400, // was: 1610 ~1 mile TODO: MODIFY THIS VALUE TO MAKE ACCURATE LOCATION UPDATES
+                distanceInterval: 200, // was: 1610 ~1 mile TODO: MODIFY THIS VALUE TO MAKE ACCURATE LOCATION UPDATES
                 // For android to allow background location services
                 foregroundService: {
                     notificationTitle: 'Location Tracking is Active',
@@ -74,18 +74,45 @@ function LocationTracker()  {
         }
     };
 
+    async function stopTracking() {
+        try {
+            if (isTracking) {
+                const isStopped = await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME);
+                console.log("Tracking stopped.");
+                setIsTracking(false);
+            }
+        } catch (error) {
+            console.error('Error to stop tracking: ', error);
+            setIsTracking(false);
+            return;
+        }
+    };
+
 
 
 
     useEffect(() => {
        startTracking(); // TODO: Implement useEffect Cleanup Function to stop tracking location
+
+       return () => {
+            if (isTracking) {
+                stopTracking();
+                return;
+            }
+       };
     }, []);
 
 
 
     return (
         <View>
-            <Text>tracking</Text>
+            <Button title="Start Tracking" onPress={startTracking} />
+            <Button title="Stop Tracking" onPress={stopTracking} />
+            {isTracking ? (
+                <Text>Tracking is active</Text>
+            ) : (
+                <Text>Tracking is inactive</Text>
+            )}
         </View>
       
     )
