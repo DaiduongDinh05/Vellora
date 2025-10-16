@@ -10,4 +10,9 @@ class RateCustomization(Base):
     name: Mapped[str] = mapped_column(sa.String(60), nullable=False)
     description: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     year: Mapped[int] = mapped_column(sa.Integer, nullable=False)
+    created_at: Mapped[sa.DateTime] = mapped_column(sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False)
     trips: Mapped[list["Trip"]] = relationship("Trip", back_populates="rate_customization")
+    #once userid is implemnted i will add a unique constraint so users cant have the same name for multiple customziations.
+    # __table_args__ = (
+    #     sa.UniqueConstraint("user_id", "name", name="uq_rate_customizations_user_name"),
+    # )

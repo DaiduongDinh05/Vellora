@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends
 from app.infra.db import AsyncSession
 
 
-router = APIRouter(prefix="/trips")
+router = APIRouter(prefix="/trips") #will insert userid once implemented as this should live under users
 
 def get_trips_service(db: AsyncSession = Depends(get_db)):
     return TripsService(TripRepo(db))
