@@ -3,7 +3,9 @@ import logging
 from functools import wraps
 from app.modules.trips.exceptions import InvalidTripDataError, TripAlreadyActiveError, TripNotFoundError, TripPersistenceError
 from app.modules.expenses.exceptions import ExpenseNotFoundError, ExpensePersistenceError, InvalidExpenseDataError
+from app.modules.rate_customizations.exceptions import InvalidRateCustomizationDataError, RateCustomizationNotFoundError, RateCustomizationPersistenceError
 from fastapi import HTTPException
+
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +33,13 @@ def error_handler(func):
         except ExpenseNotFoundError as e:
             raise HTTPException(status_code=404, detail=str(e))
         
+        #rateCustomizations
+        except InvalidRateCustomizationDataError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        except RateCustomizationPersistenceError as e:
+            raise HTTPException(status_code=500, detail=str(e))
+        except RateCustomizationNotFoundError as e:
+            raise HTTPException(status_code=404, detail=str(e))
         #all
         except Exception as e:
             logger.exception("Unhandled error: %s", e)
