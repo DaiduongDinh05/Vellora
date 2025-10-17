@@ -6,7 +6,8 @@ import * as TaskManager from 'expo-task-manager';
 
 const LOCATION_TASK_NAME = 'background_location_tracking';
 let coordinates = '';                                       // initalize the empty string
-const PROFILE = 'mapbox/driving';                           // profile for mapbox api
+const PROFILE = 'driving';                                  // profile for mapbox api
+const MIN_DATA = 5;
 
 TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
         if (error) {
@@ -24,7 +25,7 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
               let long = locations[0].coords.longitude.toString();
 
               if (coordinates.length > 500) { // API Limitation
-                // API Limitation Logic here
+                // api limitation logic
               }
               else {
                 coordinates += lat + ',' + long + ';'; // Making the semi colon separated list for the API Call
@@ -32,14 +33,31 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
               
               console.log('Coordinate String: ', coordinates);
 
-              
+              // TODO: check if the user is stationary and needing to end the background task
         } catch (err) {
             console.error('Error with location update:', err);
         }
                 
-            });
+    });
 
-function LocationTracker()  { 
+function isStationary(locations: Location.LocationObject[]) {
+    if (locations.length < MIN_DATA) { // Not enough data
+        return false; 
+    } 
+
+    let recentPoints = locations.slice(-MIN_DATA);          // Get the 5 latest point
+    let totalSpeed = 0;
+ 
+    for (let i = 0; i < recentPoints.length; i++) {
+        totalSpeed += (recentPoints[i]?.coords?.speed ?? 0);    // Add speed, if null add 0
+    }
+     
+    const avgSpeed = totalSpeed / recentPoints.length;          
+    // Consider stationary if average speed is below walking pace
+    return avgSpeed < 1.4;
+}
+
+function LocationTracker() { 
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [isTracking, setIsTracking] = useState(false);
 
@@ -105,9 +123,6 @@ function LocationTracker()  {
         }
     };
 
-
-
-
     useEffect(() => {
        startTracking(); 
 
@@ -118,8 +133,6 @@ function LocationTracker()  {
             }
        };
     }, []);
-
-
 
     return (
         <View>
@@ -134,7 +147,6 @@ function LocationTracker()  {
       
     )
 }
-
 
 
 export default LocationTracker;
