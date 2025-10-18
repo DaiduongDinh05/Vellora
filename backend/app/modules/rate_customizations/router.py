@@ -21,19 +21,19 @@ async def create_rate_customization(body: CreateRateCustomizationDTO, svc = Depe
     rate_customization = await svc.create_rate_customization(body)
     return rate_customization
 
-@router.get("/{customizations_id}", response_model=RateCustomizationResponseDTO)
+@router.get("/{customization_id}", response_model=RateCustomizationResponseDTO)
 @error_handler
 async def get_customization(customization_id: UUID, svc = Depends(get_rate_customizations_service)):
     rate_customization = await svc.get_customization(customization_id)
     return rate_customization
 
-@router.patch("/{customizations_id}", response_model=RateCustomizationResponseDTO)
+@router.patch("/{customization_id}", response_model=RateCustomizationResponseDTO)
 @error_handler
 async def edit_customization(body: EditRateCustomizationDTO, customization_id: UUID, svc = Depends(get_rate_customizations_service)):
     rate_customization = await svc.edit_customization(customization_id, body)
     return rate_customization
 
-@router.delete("/{customizations_id}")
+@router.delete("/{customization_id}")
 @error_handler
 async def delete_customization(customization_id: UUID, svc = Depends(get_rate_customizations_service)):
     await svc.delete_customization(customization_id)

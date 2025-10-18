@@ -31,7 +31,8 @@ class Trip(Base):
     expenses: Mapped[list["Expense"]] = relationship("Expense", back_populates="trip", cascade="all, delete-orphan")
     rate_customization_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), sa.ForeignKey("rate_customizations.id", ondelete="RESTRICT"), nullable=False)
     rate_customization: Mapped["RateCustomization"] = relationship("RateCustomization", back_populates="trips")
-    #category will be added once implemented
+    rate_category_id : Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), sa.ForeignKey("rate_categories.id", ondelete="RESTRICT"), nullable=False)
+    rate_category: Mapped["RateCategory"] = relationship("RateCategory", back_populates="trips")
 
 
     

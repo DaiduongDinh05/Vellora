@@ -4,7 +4,9 @@ from functools import wraps
 from app.modules.trips.exceptions import InvalidTripDataError, TripAlreadyActiveError, TripNotFoundError, TripPersistenceError
 from app.modules.expenses.exceptions import ExpenseNotFoundError, ExpensePersistenceError, InvalidExpenseDataError
 from app.modules.rate_customizations.exceptions import InvalidRateCustomizationDataError, RateCustomizationNotFoundError, RateCustomizationPersistenceError
+from app.modules.rate_categories.exceptions import InvalidRateCategoryDataError, RateCategoryNotFoundError, RateCategoryPersistenceError
 from fastapi import HTTPException
+
 
 
 logger = logging.getLogger(__name__)
@@ -39,6 +41,14 @@ def error_handler(func):
         except RateCustomizationPersistenceError as e:
             raise HTTPException(status_code=500, detail=str(e))
         except RateCustomizationNotFoundError as e:
+            raise HTTPException(status_code=404, detail=str(e))
+        
+        #rateCategories
+        except InvalidRateCategoryDataError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        except RateCategoryPersistenceError as e:
+            raise HTTPException(status_code=500, detail=str(e))
+        except RateCategoryNotFoundError as e:
             raise HTTPException(status_code=404, detail=str(e))
         
         #all
