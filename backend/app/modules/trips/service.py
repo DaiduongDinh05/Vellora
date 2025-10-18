@@ -32,7 +32,7 @@ class TripsService:
                 reimbursement_rate = data.reimbursement_rate
             )
                     
-            return await self.repo.save_trip(trip)
+            return await self.repo.save(trip)
 
         except Exception as e:
             raise TripPersistenceError("Unexpected error occurred while saving trip") from e
@@ -57,7 +57,7 @@ class TripsService:
             trip.end_address_encrypted = encrypt_address(data.end_address)
             trip.ended_at = datetime.now(timezone.utc)
 
-            return await self.repo.save_trip(trip)
+            return await self.repo.save(trip)
                
         except Exception as e:
             await self.repo.db.rollback()
@@ -66,21 +66,21 @@ class TripsService:
         
     async def edit_trip(self, trip_id: UUID, data: EditTripDTO):
         #check if trip exists first
-        trip = await self.repo.get_trip(trip_id)
+        trip = await self.repo.get(trip_id)
 
         if not trip:
             raise TripNotFoundError("Trip doesn't exist")
         
         try:
             trip.purpose = data.purpose
-            return await self.repo.save_trip(trip)
+            return await self.repo.save(trip)
         except Exception as e:
             await self.repo.db.rollback()
             raise TripPersistenceError("Unexpected error occurred while editing trip") from e
 
     async def cancel_trip(self, trip_id: UUID):
 
-        trip = await self.repo.get_trip(trip_id)
+        trip = await self.repo.get(trip_id)
 
         if not trip:
             raise TripNotFoundError("Trip doesn't exist")
@@ -91,14 +91,14 @@ class TripsService:
         try:
             trip.status = TripStatus.cancelled
             trip.ended_at = datetime.now(timezone.utc)
-            return await self.repo.save_trip(trip)
+            return await self.repo.save(trip)
 
         except Exception as e:
             await self.repo.db.rollback()
             raise TripPersistenceError("Unexpected error occurred while cancelling trip") from e
 
     async def get_trip_by_id(self, trip_id: UUID):
-        trip = await self.repo.get_trip(trip_id)
+        trip = await self.repo.get(trip_id)
 
         if trip:
             return trip

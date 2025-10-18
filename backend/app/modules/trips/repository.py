@@ -6,7 +6,7 @@ class TripRepo:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def save_trip(self, trip: Trip) -> Trip:
+    async def save(self, trip: Trip) -> Trip:
 
         self.db.add(trip)
         await self.db.commit()
@@ -14,5 +14,5 @@ class TripRepo:
 
         return trip
     
-    async def get_trip(self, trip_id):
+    async def get(self, trip_id):
         return await self.db.scalar(select(Trip).where(Trip.id == trip_id))

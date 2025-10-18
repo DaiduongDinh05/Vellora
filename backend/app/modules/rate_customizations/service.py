@@ -34,7 +34,7 @@ class RateCustomizationsService:
             raise RateCustomizationPersistenceError("Unexpected error occured while saving customziation") from e
         
     async def get_customization(self, customization_id : UUID):
-        rate_customization = await self.repo.get_customization(customization_id)
+        rate_customization = await self.repo.get(customization_id)
 
         if not rate_customization:
             raise RateCustomizationNotFoundError("Customization not found.")
@@ -57,3 +57,7 @@ class RateCustomizationsService:
                 raise InvalidRateCustomizationDataError("Year is required")
         
         return await self.repo.save(rate_customization)
+    
+    async def delete_customization(self, customziation_id: UUID):
+        rate_customization = await self.get_customization(customziation_id)
+        return await self.repo.delete(rate_customization)

@@ -14,5 +14,9 @@ class RateCustomizationRepo:
 
         return rate_customization
     
-    async def get_customization(self, customization_id: UUID) -> RateCustomization:
+    async def get(self, customization_id: UUID) -> RateCustomization:
         return await self.db.scalar(select(RateCustomization).where(RateCustomization.id == customization_id))
+    
+    async def delete(self, customization : RateCustomization) -> None:
+        await self.db.delete(customization)
+        await self.db.commit()

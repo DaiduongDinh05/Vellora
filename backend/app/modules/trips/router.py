@@ -7,6 +7,7 @@ from app.core.error_handler  import error_handler
 from fastapi import APIRouter, Depends
 from app.infra.db import AsyncSession
 
+##DOES NOT WORK FOR NOW. WILL BE FIXED ONCE OTHER TABLES ARE ADDED##
 
 router = APIRouter(prefix="/trips") #will insert userid once implemented as this should live under users
 
