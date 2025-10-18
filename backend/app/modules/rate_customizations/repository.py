@@ -1,3 +1,5 @@
+from uuid import UUID
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.modules.rate_customizations.models import RateCustomization
 
@@ -11,3 +13,6 @@ class RateCustomizationRepo:
         await self.db.refresh(rate_customization)
 
         return rate_customization
+    
+    async def get_customization(self, customization_id: UUID) -> RateCustomization:
+        return await self.db.scalar(select(RateCustomization).where(RateCustomization.id == customization_id))

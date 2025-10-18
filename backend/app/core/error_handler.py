@@ -40,6 +40,7 @@ def error_handler(func):
             raise HTTPException(status_code=500, detail=str(e))
         except RateCustomizationNotFoundError as e:
             raise HTTPException(status_code=404, detail=str(e))
+        
         #all
         except Exception as e:
             logger.exception("Unhandled error: %s", e)

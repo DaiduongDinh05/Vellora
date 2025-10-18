@@ -1,6 +1,7 @@
+from uuid import UUID
 from app.modules.rate_customizations.repository import RateCustomizationRepo
 from app.modules.rate_customizations.schemas import CreateRateCustomizationDTO
-from app.modules.rate_customizations.exceptions import InvalidRateCustomizationDataError, RateCustomizationPersistenceError
+from app.modules.rate_customizations.exceptions import InvalidRateCustomizationDataError, RateCustomizationPersistenceError, RateCustomizationNotFoundError
 from app.modules.rate_customizations.models import RateCustomization
 
 
@@ -31,3 +32,11 @@ class RateCustomizationsService:
         
         except Exception as e:
             raise RateCustomizationPersistenceError("Unexpected error occured while saving customziation") from e
+        
+    async def get_customization(self, customization_id : UUID):
+        rate_customization = await self.repo.get_customization(customization_id)
+
+        if not rate_customization:
+            raise RateCustomizationNotFoundError("Customization not found.")
+        
+        return rate_customization
