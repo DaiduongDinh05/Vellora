@@ -7,7 +7,7 @@ class RateCustomizationRepo:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def save_customization(self, rate_customization: RateCustomization) -> RateCustomization:
+    async def save(self, rate_customization: RateCustomization) -> RateCustomization:
         self.db.add(rate_customization)
         await self.db.commit()
         await self.db.refresh(rate_customization)

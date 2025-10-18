@@ -8,6 +8,12 @@ class CreateRateCustomizationDTO(BaseModel):
     description: str | None = None
     year: int
 
+
+class EditRateCustomizationDTO(BaseModel):
+    name: str | None = None 
+    description: str | None = None 
+    year: int | None = None
+
 class RateCustomizationResponseDTO(BaseModel):
     id: UUID
     name: str

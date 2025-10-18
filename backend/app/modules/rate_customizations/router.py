@@ -4,7 +4,7 @@ from app.infra.db import AsyncSession
 from app.modules.rate_customizations.service import RateCustomizationsService
 from app.container import get_db
 from app.modules.rate_customizations.repository import RateCustomizationRepo
-from app.modules.rate_customizations.schemas import CreateRateCustomizationDTO, RateCustomizationResponseDTO
+from app.modules.rate_customizations.schemas import CreateRateCustomizationDTO, EditRateCustomizationDTO, RateCustomizationResponseDTO
 from app.core.error_handler import error_handler
 
 
@@ -25,4 +25,10 @@ async def create_rate_customization(body: CreateRateCustomizationDTO, svc = Depe
 @error_handler
 async def get_customization(customization_id: UUID, svc = Depends(get_rate_customizations_service)):
     rate_customization = await svc.get_customization(customization_id)
+    return rate_customization
+
+@router.patch("/{customizations_id}", response_model=RateCustomizationResponseDTO)
+@error_handler
+async def edit_customization(body: EditRateCustomizationDTO, customization_id: UUID, svc = Depends(get_rate_customizations_service)):
+    rate_customization = await svc.edit_customization(customization_id, body)
     return rate_customization
