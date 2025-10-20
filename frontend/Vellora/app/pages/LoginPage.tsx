@@ -48,7 +48,7 @@ export default function LoginPage() {
         </Pressable>
 
         <Text style={styles.footerText}>
-          Don’t have an account? <Text style={styles.link}>Sign up</Text>
+          Don't have an account? <Text style={styles.link}>Sign up</Text>
         </Text>
       </View>
     </KeyboardAvoidingView>
