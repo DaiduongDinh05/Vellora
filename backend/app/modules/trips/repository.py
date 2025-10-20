@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.orm import selectinload
 from app.modules.trips.models import Trip
 
 class TripRepo:
@@ -10,9 +11,25 @@ class TripRepo:
 
         self.db.add(trip)
         await self.db.commit()
-        await self.db.refresh(trip)
-
-        return trip
+        result = await self.db.execute(
+            select(Trip)
+            .options(
+                selectinload(Trip.expenses),
+                selectinload(Trip.rate_customization),
+                selectinload(Trip.rate_category),
+            )
+            .where(Trip.id == trip.id)
+        )
+        return result.scalar_one()
     
     async def get(self, trip_id):
-        return await self.db.scalar(select(Trip).where(Trip.id == trip_id))
+        result = await self.db.execute(
+            select(Trip)
+            .options(
+                selectinload(Trip.expenses),
+                selectinload(Trip.rate_customization),
+                selectinload(Trip.rate_category),
+            )
+            .where(Trip.id == trip_id)
+        )
+        return result.scalar_one_or_none()

@@ -14,7 +14,7 @@ class ExpensesService:
 
     async def create_expense(self, trip_id: UUID, data: CreateExpenseDTO):
 
-        trip = await self.trip_repo.get_trip(trip_id)
+        trip = await self.trip_repo.get(trip_id)
         if not trip:
             raise TripNotFoundError("Trip not found")
 
@@ -36,7 +36,7 @@ class ExpensesService:
     
     async def get_expenses_for_trip(self, trip_id: UUID):
         
-        trip = await self.trip_repo.get_trip(trip_id)
+        trip = await self.trip_repo.get(trip_id)
         if not trip:
             raise TripNotFoundError("Trip not found")
 

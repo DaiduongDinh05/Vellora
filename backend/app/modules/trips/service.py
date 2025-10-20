@@ -5,19 +5,35 @@ from app.modules.trips.schemas import CreateTripDTO, EditTripDTO, EndTripDTO
 from app.modules.trips.utils.crypto import encrypt_address
 from app.modules.trips.models import Trip, TripStatus
 from app.modules.trips.exceptions import InvalidTripDataError, TripNotFoundError, TripPersistenceError
+from app.modules.rate_categories.repository import RateCategoryRepo
+from app.modules.rate_customizations.repository import RateCustomizationRepo
+from app.modules.rate_customizations.exceptions import RateCustomizationNotFoundError
+from app.modules.rate_categories.exceptions import InvalidRateCategoryDataError, RateCategoryNotFoundError
 
 
 class TripsService:
-    def __init__(self, repo: TripRepo):
+    def __init__(self, repo: TripRepo, category_repo: RateCategoryRepo, customization_repo: RateCustomizationRepo):
         self.repo = repo
+        self.category_repo = category_repo
+        self.customization_repo = customization_repo
 
     async def start_trip(self, data: CreateTripDTO):
 
         if not data.start_address.strip():
             raise InvalidTripDataError("Start address is required")
         
-        if data.reimbursement_rate is not None and data.reimbursement_rate < 0:
-            raise InvalidTripDataError("Reimbursement rate cannot be negative")
+        customization = await self.customization_repo.get(data.rate_customization_id)
+        if not customization:
+            raise RateCustomizationNotFoundError("Rate customization not found")
+        
+        category = await self.category_repo.get(data.rate_category_id)
+        if not category:
+            raise RateCategoryNotFoundError("Rate category not found")
+
+        if category.rate_customization_id != customization.id:
+            raise InvalidRateCategoryDataError("Category does not belong to this customization")
+        
+        reimbursement_rate = category.cost_per_mile
         
         #for when users is implemented
         # if user has active trip
@@ -27,9 +43,10 @@ class TripsService:
 
             trip = Trip(
                 start_address_encrypted = encrypted_address,
-                category = data.category,
                 purpose = data.purpose,
-                reimbursement_rate = data.reimbursement_rate
+                reimbursement_rate=reimbursement_rate,
+                rate_customization_id=data.rate_customization_id,
+                rate_category_id=data.rate_category_id,
             )
                     
             return await self.repo.save(trip)
@@ -42,7 +59,7 @@ class TripsService:
             raise InvalidTripDataError("End address is required")
         
         #check if trip exists first
-        trip = await self.repo.get_trip(trip_id)
+        trip = await self.repo.get(trip_id)
 
         if not trip:
             raise TripNotFoundError("Trip doesn't exist")

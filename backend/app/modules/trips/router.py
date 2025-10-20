@@ -6,13 +6,14 @@ from app.modules.trips.service import TripsService
 from app.core.error_handler  import error_handler
 from fastapi import APIRouter, Depends
 from app.infra.db import AsyncSession
+from app.modules.rate_categories.repository import RateCategoryRepo
+from app.modules.rate_customizations.repository import RateCustomizationRepo
 
-##DOES NOT WORK FOR NOW. WILL BE FIXED ONCE OTHER TABLES ARE ADDED##
 
 router = APIRouter(prefix="/trips") #will insert userid once implemented as this should live under users
 
 def get_trips_service(db: AsyncSession = Depends(get_db)):
-    return TripsService(TripRepo(db))
+    return TripsService(TripRepo(db), RateCategoryRepo(db), RateCustomizationRepo(db))
 
 @router.post("/", response_model = TripResponseDTO)
 @error_handler
