@@ -95,8 +95,8 @@ const TabIcon = ({ icon, color, focused }: { icon: any; color: string; focused: 
         justifyContent: 'center',
         backgroundColor: focused ? Colors.textWhite : 'transparent',
         marginTop: 30,
-        height: 60,
-        width: 60,
+        height: 50,
+        width: 50,
         borderRadius: 12,
       }}
     >

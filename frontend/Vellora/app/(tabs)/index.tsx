@@ -5,7 +5,7 @@ export default function Index() {
   return (
     <View className="flex-1 justify-center items-center"
     >
-      <Text className="text-5xl text-primaryPurple font-bold">Edit app/index.tsx to edit this screen...</Text>
+      <Text className="text-5xl text-primaryPurple font-bold">Welcome!</Text>
       <Link href="../tracking">Tracking Screen</Link>
     </View>
   );
