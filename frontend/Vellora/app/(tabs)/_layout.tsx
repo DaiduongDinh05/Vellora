@@ -13,7 +13,7 @@ const _layout = () => {
         // For the tabs background color
         tabBarStyle: {
           backgroundColor: '#404CCF',
-          height: 100,
+          height: 80,
           borderTopWidth: 0, // remove top line
         },
       }}
@@ -94,7 +94,7 @@ const TabIcon = ({ icon, color, focused }: { icon: any; color: string; focused: 
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: focused ? Colors.textWhite : 'transparent',
-        marginTop: 40,
+        marginTop: 30,
         height: 60,
         width: 60,
         borderRadius: 12,
