@@ -7,7 +7,13 @@ import * as TaskManager from 'expo-task-manager';
 const LOCATION_TASK_NAME = 'background_location_tracking';
 let coordinates = '';                                       // initalize the empty string
 const PROFILE = 'driving';                                  // profile for mapbox api
-const MIN_DATA = 5;
+const MIN_DATA = 5;                                         // Minimum data for stationary check
+const STATIONARY_CHECK_INTERVAL = 10000;                    // Check for stationary every 3 seconds
+const STATIONARY_THRESHOLD = 3                              // Check for not moving / not driving 3 times minimum
+const SPEED_THRESHOLD = 1;
+let stationaryCount = 0;
+let lastCheckTime = 0;
+let recentLocations: Location.LocationObject[] = [];
 
 TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
         if (error) {
@@ -16,22 +22,47 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
         }
 
         try {
-              const { locations } = data as { locations: Location.LocationObject[] }; 
-              console.log(locations);
+            if (data) {
+                const { locations } = data as { locations: Location.LocationObject[] }; 
+                recentLocations = [...recentLocations, ...locations];           // add locations to recent locations
+                console.log(locations);
 
+                if (coordinates.length <= 500) { // API Limitation
+                    // parse location to add to coordinates
+                    let lat = locations[0].coords.latitude.toString();
+                    let long = locations[0].coords.longitude.toString();
+                    coordinates += lat + ',' + long + ';'; // Making the semi colon separated list for the API Call
+                    console.log('Coordinate String: ', coordinates);
+
+                }
+
+              // Periodic Checking for Stationary Activity
+
+              const now = Date.now();
             
+              if (now - lastCheckTime >= STATIONARY_CHECK_INTERVAL) {
+                lastCheckTime = now;        
 
-              let lat = locations[0].coords.latitude.toString();
-              let long = locations[0].coords.longitude.toString();
+                if (isStationary(recentLocations)) {
+                    stationaryCount++; 
+                    console.log(`Stationary count: ${stationaryCount}`);
 
-              if (coordinates.length > 500) { // API Limitation
-                // api limitation logic
+                    if (stationaryCount >= STATIONARY_THRESHOLD) {
+                        await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME);
+                        console.log("Location tracking stopped. User appears to be stationary.");
+
+                        // Reset Variables
+                        coordinates = '';
+                        stationaryCount = 0;
+                        recentLocations = [];
+                        return;
+                    }
+                }
+              } else {
+                stationaryCount = 0;            // reset count if movement detected
+                // console.log("User seems to still be moving.");
               }
-              else {
-                coordinates += lat + ',' + long + ';'; // Making the semi colon separated list for the API Call
-              }
-              
-              console.log('Coordinate String: ', coordinates);
+            }
 
               // TODO: check if the user is stationary and needing to end the background task
         } catch (err) {
@@ -54,7 +85,7 @@ function isStationary(locations: Location.LocationObject[]) {
      
     const avgSpeed = totalSpeed / recentPoints.length;          
     // Consider stationary if average speed is below walking pace
-    return avgSpeed < 1.4;
+    return avgSpeed < SPEED_THRESHOLD;
 }
 
 function LocationTracker() { 
@@ -89,7 +120,7 @@ function LocationTracker() {
             if (!hasPermissions) return;
 
             await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
-                accuracy: Location.Accuracy.BestForNavigation,
+                accuracy: Location.Accuracy.Balanced,
                 timeInterval: 10,
                 distanceInterval: 200, // was: 1610 ~1 mile TODO: MODIFY THIS VALUE TO MAKE ACCURATE LOCATION UPDATES
                 // For android to allow background location services
