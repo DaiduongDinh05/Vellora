@@ -2,10 +2,11 @@ import { StyleSheet, Text, View } from 'react-native'
 import React from 'react'
 import RNPickerSelect from 'react-native-picker-select'
 
-const Dropdown = ({ items, onValueChange, placeholder, value }) => {
+const Dropdown = ({ items, onValueChange, placeholder, value, icon }) => {
   return (
     <View className="bg-gray-100 rounded-lg-mb-4">
-      <RNPickerSelect 
+        {icon}
+        <RNPickerSelect 
             onValueChange={onValueChange}
             items = {items}
             value={value}
@@ -42,6 +43,7 @@ const pickerSelectStyles = StyleSheet.create({
     color: 'black',
     backgroundColor: 'white',
     paddingRight: 30, // to ensure the text is never behind the icon
+    marginBottom: 14
   },
   inputAndroid: {
     fontSize: 16,
