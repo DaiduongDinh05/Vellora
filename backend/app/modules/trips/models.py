@@ -20,6 +20,9 @@ class Trip(Base):
     end_address_encrypted: Mapped[str | None] = mapped_column(sa.String(128), nullable=True)
     purpose: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     reimbursement_rate: Mapped[float | None] = mapped_column(DOUBLE_PRECISION, nullable=True)
+    miles: Mapped[float | None] = mapped_column(DOUBLE_PRECISION, nullable=True)
+    mileage_reimbursement_total: Mapped[float | None] = mapped_column(DOUBLE_PRECISION, nullable=True)
+    expense_reimbursement_total: Mapped[float | None] = mapped_column(DOUBLE_PRECISION, nullable=True)
     started_at: Mapped[sa.DateTime] = mapped_column(sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False)
     ended_at: Mapped[sa.DateTime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
     expenses: Mapped[list["Expense"]] = relationship("Expense", back_populates="trip", cascade="all, delete-orphan")
@@ -27,6 +30,7 @@ class Trip(Base):
     rate_customization: Mapped["RateCustomization"] = relationship("RateCustomization", back_populates="trips")
     rate_category_id : Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), sa.ForeignKey("rate_categories.id", ondelete="RESTRICT"), nullable=False)
     rate_category: Mapped["RateCategory"] = relationship("RateCategory", back_populates="trips")
+    updated_at: Mapped[sa.DateTime] = mapped_column(sa.DateTime(timezone=True), server_default=sa.func.now(), onupdate=sa.func.now(), nullable=False)
 
 
     

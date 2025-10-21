@@ -12,6 +12,15 @@ class ExpensesService:
         self.expense_repo = expense_repo
         self.trip_repo = trip_repo
 
+    async def _update_trip_total(self, trip_id: UUID):
+        total = await self.expense_repo.sum_by_trip(trip_id)
+        trip = await self.trip_repo.get(trip_id)
+        if not trip:
+            raise TripNotFoundError("Trip not found")
+
+        trip.expense_reimbursement_total = total
+        await self.trip_repo.save(trip)
+
     async def create_expense(self, trip_id: UUID, data: CreateExpenseDTO):
 
         trip = await self.trip_repo.get(trip_id)
@@ -29,10 +38,14 @@ class ExpensesService:
                 type = data.type.strip().capitalize(),
                 amount_cents = data.amount_cents
             )
+
+            saved_expense = await self.expense_repo.save(expense)
+            await self._update_trip_total(trip_id)
+            return saved_expense
+        
         except Exception as e:
             raise ExpensePersistenceError("Unexpected error occurred while saving expense") from e
 
-        return await self.expense_repo.save(expense)
     
     async def get_expenses_for_trip(self, trip_id: UUID):
         
@@ -63,8 +76,12 @@ class ExpensesService:
                 raise InvalidExpenseDataError("Amount must be positive")
             expense.amount_cents = data.amount_cents
         
-        return await self.expense_repo.save(expense)
+        saved_expense = await self.expense_repo.save(expense)
+        await self._update_trip_total(expense.trip_id)
+        return saved_expense
         
     async def delete_expense(self, expense_id: UUID):
         expense = await self.get_expense(expense_id)
+        trip_id = expense.trip_id
         await self.expense_repo.delete_expense(expense)
+        await self._update_trip_total(trip_id)

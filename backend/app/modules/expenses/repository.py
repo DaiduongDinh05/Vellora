@@ -1,4 +1,5 @@
 from uuid import UUID
+from sqlalchemy import func
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.modules.expenses.models import Expense
@@ -25,3 +26,10 @@ class ExpenseRepo:
     async def delete_expense(self, expense: Expense) -> None:       
         await self.db.delete(expense)
         await self.db.commit()
+
+    async def sum_by_trip(self, trip_id: UUID) -> float:
+        result = await self.db.execute(
+            select(func.sum(Expense.amount_cents))
+            .where(Expense.trip_id == trip_id)
+        )
+        return result.scalar() or 0.0
