@@ -7,6 +7,9 @@ from sqlalchemy.dialects.postgresql import UUID, DOUBLE_PRECISION
 
 class Expense(Base):
     __tablename__ = "expenses"
+    __table_args__ = (
+        sa.UniqueConstraint("trip_id", "type", name="uq_expenses_trip_id_type"),
+    )
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid = True), primary_key=True, index=True, default=uuid.uuid4)
     #user_id will be added once implemented
     trip_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), sa.ForeignKey("trips.id", ondelete="CASCADE"), nullable=False)

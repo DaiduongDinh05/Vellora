@@ -25,3 +25,11 @@ class RateCategoryRepo:
         query = select(RateCategory).where(RateCategory.rate_customization_id == customization_id)
         result = await self.db.execute(query)
         return result.scalars().all()
+
+    async def get_by_customization_and_name(self, customization_id: UUID, name: str) -> RateCategory | None:
+        query = select(RateCategory).where(
+            RateCategory.rate_customization_id == customization_id,
+            RateCategory.name == name
+        )
+        result = await self.db.execute(query)
+        return result.scalar_one_or_none()

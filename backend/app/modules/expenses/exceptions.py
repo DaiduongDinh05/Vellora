@@ -9,3 +9,7 @@ class ExpensePersistenceError(ExpenseError):
 
 class ExpenseNotFoundError(ExpenseError):
     """for expenses that dont exist"""
+
+
+class DuplicateExpenseError(ExpenseError):
+    """for when an expense with the same type already exists for the trip"""

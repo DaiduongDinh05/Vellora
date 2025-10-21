@@ -2,9 +2,11 @@ from uuid import UUID
 from app.modules.rate_categories.repository import RateCategoryRepo
 from app.modules.rate_categories.schemas import CreateRateCategoryDTO, EditRateCategoryDTO
 from app.modules.rate_categories.exceptions import InvalidRateCategoryDataError, RateCategoryPersistenceError, RateCategoryNotFoundError
+from app.modules.rate_categories.exceptions import DuplicateRateCategoryError
 from app.modules.rate_categories.models import RateCategory
 from app.modules.rate_customizations.repository import RateCustomizationRepo
 from app.modules.rate_customizations.exceptions import RateCustomizationNotFoundError
+from sqlalchemy.exc import IntegrityError
 
 
 class RateCategoriesService:
@@ -25,15 +27,21 @@ class RateCategoriesService:
         if data.cost_per_mile is None or data.cost_per_mile <= 0:
             raise InvalidRateCategoryDataError("Cost per mile must be a non-negative number")
 
+        cleaned_name = data.name.strip()
+        existing = await self.category_repo.get_by_customization_and_name(customization_id, cleaned_name)
+        if existing:
+            raise DuplicateRateCategoryError("A rate category with this name already exists for this customization")
+
         try:
             rate_category = RateCategory(
-                name=data.name.strip(),
+                name=cleaned_name,
                 cost_per_mile=data.cost_per_mile,
                 rate_customization_id=customization_id
             )
 
             return await self.category_repo.save(rate_category)
-
+        except IntegrityError as e:
+            raise DuplicateRateCategoryError("A rate category with this name already exists for this customization") from e
         except Exception as e:
             raise RateCategoryPersistenceError("Unexpected error occurred while saving rate category") from e
         
@@ -63,7 +71,15 @@ class RateCategoriesService:
         if data.name is not None:
             if not data.name.strip():
                 raise InvalidRateCategoryDataError("Name cannot be empty")
-            rate_category.name = data.name.strip()
+            cleaned_name = data.name.strip()
+            if cleaned_name != rate_category.name:
+                existing = await self.category_repo.get_by_customization_and_name(
+                    rate_category.rate_customization_id, 
+                    cleaned_name
+                )
+                if existing:
+                    raise DuplicateRateCategoryError("A rate category with this name already exists for this customization")
+            rate_category.name = cleaned_name
 
         if data.cost_per_mile is not None:
             if data.cost_per_mile <= 0:

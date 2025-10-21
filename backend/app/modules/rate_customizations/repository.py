@@ -20,3 +20,11 @@ class RateCustomizationRepo:
     async def delete(self, customization : RateCustomization) -> None:
         await self.db.delete(customization)
         await self.db.commit()
+
+    async def get_by_user_and_name(self, user_id: UUID, name: str) -> RateCustomization | None:
+        query = select(RateCustomization).where(
+            RateCustomization.user_id == user_id,
+            RateCustomization.name == name
+        )
+        result = await self.db.execute(query)
+        return result.scalar_one_or_none()

@@ -2,9 +2,11 @@ from uuid import UUID
 from app.modules.expenses.repository import ExpenseRepo
 from app.modules.expenses.schemas import CreateExpenseDTO, EditExpenseDTO
 from app.modules.expenses.exceptions import ExpenseNotFoundError, ExpensePersistenceError, InvalidExpenseDataError
+from app.modules.expenses.exceptions import DuplicateExpenseError
 from app.modules.trips.repository import TripRepo
 from app.modules.expenses.models import Expense
 from app.modules.trips.exceptions import TripNotFoundError
+from sqlalchemy.exc import IntegrityError
 
 
 class ExpensesService:
@@ -32,17 +34,25 @@ class ExpensesService:
         
         if data.amount_cents <= 0:
             raise InvalidExpenseDataError("Amount must be positive")
+        
+        cleaned_type = data.type.strip().capitalize()
+
+        existing = await self.expense_repo.get_by_trip_and_type(trip_id, cleaned_type)
+        if existing:
+            raise DuplicateExpenseError("An expense with this type already exists for the trip")
+
         try:
             expense = Expense(
                 trip_id = trip_id,
-                type = data.type.strip().capitalize(),
+                type = cleaned_type,
                 amount_cents = data.amount_cents
             )
 
             saved_expense = await self.expense_repo.save(expense)
             await self._update_trip_total(trip_id)
             return saved_expense
-        
+        except IntegrityError as e:
+            raise DuplicateExpenseError("An expense with this type already exists for the trip") from e
         except Exception as e:
             raise ExpensePersistenceError("Unexpected error occurred while saving expense") from e
 
@@ -69,7 +79,13 @@ class ExpensesService:
         if data.type is not None:
             if not data.type.strip():
                 raise InvalidExpenseDataError("Type cannot be empty")
-            expense.type = data.type.strip().capitalize()
+            cleaned = data.type.strip().capitalize()
+
+            if cleaned != expense.type:
+                existing = await self.expense_repo.get_by_trip_and_type(expense.trip_id, cleaned)
+                if existing:
+                    raise DuplicateExpenseError("An expense with this type already exists for the trip")
+            expense.type = cleaned
 
         if data.amount_cents is not None:
             if data.amount_cents <= 0:

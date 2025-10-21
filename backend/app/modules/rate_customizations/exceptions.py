@@ -9,3 +9,7 @@ class RateCustomizationPersistenceError(RateCustomizationError):
 
 class RateCustomizationNotFoundError(RateCustomizationError):
     """for expenses that dont exist"""
+
+
+class DuplicateRateCustomizationError(RateCustomizationError):
+    """for when a rate customization with the same name already exists"""

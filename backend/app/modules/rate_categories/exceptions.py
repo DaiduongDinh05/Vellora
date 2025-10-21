@@ -9,3 +9,7 @@ class RateCategoryPersistenceError(RateCategoryError):
 
 class RateCategoryNotFoundError(RateCategoryError):
     """for expenses that dont exist"""
+
+
+class DuplicateRateCategoryError(RateCategoryError):
+    """for when a rate category with the same name already exists for the customization"""

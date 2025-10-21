@@ -22,6 +22,11 @@ class ExpenseRepo:
         query = select(Expense).where(Expense.trip_id == trip_id)
         result = await self.db.execute(query)
         return result.scalars().all()
+
+    async def get_by_trip_and_type(self, trip_id: UUID, type: str) -> Expense | None:
+        query = select(Expense).where(Expense.trip_id == trip_id, Expense.type == type)
+        result = await self.db.execute(query)
+        return result.scalar_one_or_none()
     
     async def delete_expense(self, expense: Expense) -> None:       
         await self.db.delete(expense)

@@ -6,6 +6,9 @@ from sqlalchemy.dialects.postgresql import UUID
 
 class RateCategory(Base):
     __tablename__ = "rate_categories"
+    __table_args__ = (
+        sa.UniqueConstraint("rate_customization_id", "name", name="uq_rate_categories_customization_name"),
+    )
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4) 
     name: Mapped[str] = mapped_column(sa.String(60), nullable=False)
     cost_per_mile: Mapped[float] = mapped_column(sa.DOUBLE_PRECISION, nullable=False)
