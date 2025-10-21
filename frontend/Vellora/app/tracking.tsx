@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from 'react-native'
 import React, { useState } from 'react'
 import RNPickerSelect from 'react-native-picker-select'
 import { SafeAreaView } from 'react-native-safe-area-context';
-
+import NoteInput from './components/NoteInput'
 // export const Dropdown = () => {
 //   return (
     
@@ -12,12 +12,18 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 const Tracking = () => {
 
     const [value, setValue] = useState(null);
-
+    const [notes, setNotes] = useState('');
   return (
     <SafeAreaView style={{flex: 1}}>
         <View style={{flex:1, padding: 20}}>
             <Text>tracking</Text>
             
+            <NoteInput 
+                placeholder="Add your crazy notes"
+                value={notes}
+                onChangeText={setNotes}
+                className=''
+            />
             <RNPickerSelect 
                 onValueChange={(value) => setValue(value)}
                 items = {[
