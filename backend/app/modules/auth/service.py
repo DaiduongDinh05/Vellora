@@ -44,14 +44,7 @@ class AuthService:
                 role=payload.role,
             )
         )
-        token_pair = await self._issue_tokens(user.id)
-        await self.session.commit()
-        await self.session.refresh(user)
-
-        return AuthResponse(
-            user=UserRead.model_validate(user, from_attributes=True),
-            tokens=token_pair,
-        )
+        return await self.finalize_authentication(user, revoke_existing=False)
 
     async def login(self, email: str, password: str) -> AuthResponse:
         user = await self.user_service.get_by_email(email)
@@ -67,15 +60,7 @@ class AuthService:
         if not user.is_active:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User account is disabled")
 
-        await self.refresh_repo.revoke_all_for_user(user.id)
-        token_pair = await self._issue_tokens(user.id)
-        await self.session.commit()
-        await self.session.refresh(user)
-
-        return AuthResponse(
-            user=UserRead.model_validate(user, from_attributes=True),
-            tokens=token_pair,
-        )
+        return await self.finalize_authentication(user, revoke_existing=True)
 
     async def refresh(self, refresh_token: str) -> RefreshResponse:
         stored_token = await self.refresh_repo.get_active(refresh_token)
@@ -117,6 +102,18 @@ class AuthService:
                 detail="User not found or inactive",
             )
         return user
+
+    async def finalize_authentication(self, user: User, *, revoke_existing: bool = True) -> AuthResponse:
+        if revoke_existing:
+            await self.refresh_repo.revoke_all_for_user(user.id)
+        token_pair = await self._issue_tokens(user.id)
+        await self.session.commit()
+        await self.session.refresh(user)
+
+        return AuthResponse(
+            user=UserRead.model_validate(user, from_attributes=True),
+            tokens=token_pair,
+        )
 
     async def _issue_tokens(self, user_id: UUID) -> TokenPair:
         access_token = create_access_token(

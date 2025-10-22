@@ -36,7 +36,6 @@ def upgrade() -> None:
             sa.DateTime(timezone=True),
             nullable=False,
             server_default=sa.func.now(),
-            server_onupdate=sa.func.now(),
         ),
     )
     op.create_index(op.f("ix_users_email"), "users", ["email"], unique=True)

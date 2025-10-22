@@ -1,7 +1,6 @@
-from datetime import timedelta
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import AnyUrl, BaseModel, ConfigDict, EmailStr, Field
 
 from app.modules.users.schemas import UserRead
 from app.modules.users.models import UserRole
@@ -39,3 +38,10 @@ class RefreshResponse(BaseModel):
 
 class LogoutRequest(BaseModel):
     refresh_token: str = Field(min_length=10)
+
+
+class OAuthAuthorizeResponse(BaseModel):
+    provider: str
+    authorization_url: AnyUrl
+    state: str
+    redirect_uri: AnyUrl

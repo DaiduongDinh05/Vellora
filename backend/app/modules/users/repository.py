@@ -4,7 +4,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .models import User
+from .models import User, UserRole
 from .schemas import UserCreate
 
 
@@ -31,6 +31,23 @@ class UserRepository:
             role=user_create.role,
             password_hash=password_hash,
         )
+        return await self._add(user)
+
+    async def create_oauth_user(
+        self,
+        email: str,
+        full_name: str | None,
+        role: UserRole = UserRole.EMPLOYEE,
+    ) -> User:
+        user = User(
+            email=email,
+            full_name=full_name,
+            role=role,
+            password_hash=None,
+        )
+        return await self._add(user)
+
+    async def _add(self, user: User) -> User:
         self.session.add(user)
         await self.session.flush()
         return user

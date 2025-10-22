@@ -1,17 +1,19 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from fastapi.security import OAuth2PasswordRequestForm
 
-from app.core.dependencies import get_auth_service, get_current_user
+from app.core.dependencies import get_auth_service, get_current_user, get_oauth_service
 from app.modules.users.models import User
 from app.modules.users.schemas import UserRead
 
 from .schemas import (
     AuthResponse,
     LogoutRequest,
+    OAuthAuthorizeResponse,
     RefreshRequest,
     RefreshResponse,
     RegisterRequest,
 )
+from .oauth_service import OAuthService
 from .service import AuthService
 
 
@@ -46,3 +48,28 @@ async def logout(payload: LogoutRequest, auth_service: AuthService = Depends(get
 @router.get("/me", response_model=UserRead)
 async def get_me(current_user: User = Depends(get_current_user)) -> UserRead:
     return UserRead.model_validate(current_user, from_attributes=True)
+
+
+@router.get("/providers/{provider}/authorize", response_model=OAuthAuthorizeResponse)
+async def authorize_provider(
+    provider: str,
+    redirect_uri: str | None = None,
+    oauth_service: OAuthService = Depends(get_oauth_service),
+) -> OAuthAuthorizeResponse:
+    return await oauth_service.get_authorization_url(provider, redirect_uri)
+
+
+@router.get("/providers/{provider}/callback", response_model=AuthResponse)
+async def oauth_callback(
+    provider: str,
+    code: str = Query(..., description="Authorization code returned by the provider."),
+    state: str = Query(..., description="Opaque state value generated during authorization."),
+    redirect_uri: str | None = None,
+    oauth_service: OAuthService = Depends(get_oauth_service),
+) -> AuthResponse:
+    return await oauth_service.handle_callback(
+        provider_name=provider,
+        code=code,
+        state=state,
+        redirect_uri=redirect_uri,
+    )

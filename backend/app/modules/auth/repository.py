@@ -5,8 +5,9 @@ from uuid import UUID
 
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
-from .models import RefreshToken
+from .models import OAuthAccount, OAuthState, RefreshToken
 
 
 def _hash_token(token: str) -> str:
@@ -52,3 +53,133 @@ class RefreshTokenRepository:
             .values(revoked_at=datetime.now(timezone.utc))
         )
         await self.session.execute(stmt)
+
+
+class OAuthStateRepository:
+    """Persistence layer for OAuth state tracking."""
+
+    def __init__(self, session: AsyncSession) -> None:
+        self.session = session
+
+    async def create(
+        self,
+        *,
+        provider: str,
+        state: str,
+        redirect_uri: str | None,
+        code_verifier: str | None,
+        expires_at: datetime,
+    ) -> OAuthState:
+        oauth_state = OAuthState(
+            provider=provider,
+            state=state,
+            redirect_uri=redirect_uri,
+            code_verifier=code_verifier,
+            expires_at=expires_at,
+        )
+        self.session.add(oauth_state)
+        await self.session.flush()
+        return oauth_state
+
+    async def consume(self, provider: str, state_value: str) -> Optional[OAuthState]:
+        stmt = select(OAuthState).where(
+            OAuthState.provider == provider,
+            OAuthState.state == state_value,
+        )
+        result = await self.session.execute(stmt)
+        oauth_state = result.scalar_one_or_none()
+        now = datetime.now(timezone.utc)
+        if (
+            oauth_state is None
+            or oauth_state.consumed_at is not None
+            or oauth_state.expires_at <= now
+        ):
+            return None
+
+        oauth_state.consumed_at = now
+        self.session.add(oauth_state)
+        await self.session.flush()
+        return oauth_state
+
+
+class OAuthAccountRepository:
+    """Persistence layer for linked OAuth accounts."""
+
+    def __init__(self, session: AsyncSession) -> None:
+        self.session = session
+
+    async def get_by_provider_account(
+        self, provider: str, provider_account_id: str
+    ) -> Optional[OAuthAccount]:
+        stmt = (
+            select(OAuthAccount)
+            .where(
+                OAuthAccount.provider == provider,
+                OAuthAccount.provider_account_id == provider_account_id,
+            )
+            .options(selectinload(OAuthAccount.user))
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def update_tokens(
+        self,
+        account: OAuthAccount,
+        *,
+        email: str | None,
+        access_token: str | None,
+        refresh_token: str | None,
+        token_type: str | None,
+        scope: str | None,
+        expires_at: datetime | None,
+    ) -> OAuthAccount:
+        account.email = email or account.email
+        account.access_token = access_token
+        account.refresh_token = refresh_token
+        account.token_type = token_type
+        account.scope = scope
+        account.expires_at = expires_at
+        self.session.add(account)
+        await self.session.flush()
+        return account
+
+    async def upsert(
+        self,
+        *,
+        user_id: UUID,
+        provider: str,
+        provider_account_id: str,
+        email: str | None,
+        access_token: str | None,
+        refresh_token: str | None,
+        token_type: str | None,
+        scope: str | None,
+        expires_at: datetime | None,
+    ) -> OAuthAccount:
+        existing = await self.get_by_provider_account(provider, provider_account_id)
+        if existing:
+            return await self.update_tokens(
+                existing,
+                email=email,
+                access_token=access_token,
+                refresh_token=refresh_token,
+                token_type=token_type,
+                scope=scope,
+                expires_at=expires_at,
+            )
+        else:
+            account = OAuthAccount(
+                user_id=user_id,
+                provider=provider,
+                provider_account_id=provider_account_id,
+                email=email,
+                access_token=access_token,
+                refresh_token=refresh_token,
+                token_type=token_type,
+                scope=scope,
+                expires_at=expires_at,
+            )
+            self.session.add(account)
+
+            await self.session.flush()
+            return account
