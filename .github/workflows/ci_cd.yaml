@@ -47,10 +47,6 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-      - name: Run Python tests
-        working-directory: backend
-
-
   # Job 3: Run frontend deployment if frontend files changed
   frontend_deploy:
     name: Deploy Frontend
