@@ -8,6 +8,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . /backend/
 
+
 EXPOSE 8000
 
 #Similar to fastapi dev app/main.py, watches for reloads
