@@ -1,0 +1,77 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [qa, main]
+  pull_request:
+    branches: [qa, main]
+
+jobs:
+  # Job 1: Filter changed files and set outputs for backend and frontend changes
+  paths:
+    name: Determine Changed Paths
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Filter changed paths
+        id: filter
+        uses: dorny/paths-filter@v2
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+            frontend:
+              - 'frontend/**'
+
+  # Job 2: Run backend tests/deployment if backend files changed
+  backend_deploy:
+    name: Deploy Backend 
+    needs: paths
+    if: ${{ needs.paths.outputs.backend == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      # Set up Python and install dependencies
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.13"
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+  # Job 3: Run frontend deployment if frontend files changed
+  frontend_deploy:
+    name: Deploy Frontend
+    needs: paths
+    if: ${{ needs.paths.outputs.frontend == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.11.1'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+  
+      # Add any frontend build/test steps if needed.
+      - name: Install Frontend Dependencies
+        working-directory: frontend
+        run: |
+          npm ci
+
+      - name: Run ESLint
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Check TypeScript types
+        working-directory: frontend
+        run: npx tsc --noEmit

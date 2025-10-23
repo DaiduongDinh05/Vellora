@@ -1,0 +1,48 @@
+services:
+  localstack:
+      networks:
+        - vellora_network
+      image: localstack/localstack-pro
+      container_name: localstack
+      environment:
+        - LOCALSTACK_AUTH_TOKEN=${LOCALSTACK_AUTH_TOKEN}
+        - SERVICES=s3,sqs,lambda,rds,cloudfront,ses        # we’ll add sqs/lambda later
+        - AWS_DEFAULT_REGION=us-east-1
+        - LOCALSTACK_HOST=localhost.localstack.cloud
+      ports:
+        - "4566:4566"         # LocalStack edge endpoint
+      volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
+        - "./init-resources.sh:/etc/localstack/init/ready.d/init-resources.sh"
+  backend:
+    networks:
+        - vellora_network
+    build:
+      context: ./backend      # Points to the backend folder
+      dockerfile: Dockerfile    
+    container_name: vellora_backend_service
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+  frontend:
+    networks:
+        - vellora_network
+    build:
+      context: ./frontend     # Points to the frontend folder
+      dockerfile: Dockerfile   
+    container_name: vellora_frontend_service
+    ports:
+      - "8081:8081"
+      - "19000:19000"
+      - "19001:19001"
+      - "19002:19002"
+    command: ["npx", "expo", "start", "--tunnel"]
+    stdin_open: true
+    tty: true 
+
+networks:
+  vellora_network:
+    name: vellora_network
