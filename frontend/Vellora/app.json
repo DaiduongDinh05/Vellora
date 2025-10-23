@@ -71,6 +71,12 @@
           "isIosBackgroundLocationEnabled": true,
           "isAndroidBackgroundLocationEnabled": true
         }
+      ],
+      [
+        "@rnmapbox/maps",
+        {
+          "RNMAPBOX_MAPS_DOWNLOAD_TOKEN": "process.env.MAPBOX_PRIVATE_ACCESS_TOKEN"
+        }
       ]
     ],
     "experiments": {

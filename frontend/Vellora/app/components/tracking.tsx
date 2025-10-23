@@ -4,16 +4,19 @@ import { useState, useEffect } from "react";
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 
+
+// Constants
 const LOCATION_TASK_NAME = 'background_location_tracking';
-let coordinates = '';                                       // initalize the empty string
+let coordinates = '';                                  
 const PROFILE = 'driving';                                  // profile for mapbox api
 const MIN_DATA = 5;                                         // Minimum data for stationary check
 const STATIONARY_CHECK_INTERVAL = 10000;                    // Check for stationary every 3 seconds
 const STATIONARY_THRESHOLD = 3                              // Check for not moving / not driving 3 times minimum
-const SPEED_THRESHOLD = 1;
+const SPEED_THRESHOLD = 1;                                  // Threshold for Stationary speed
 let stationaryCount = 0;
 let lastCheckTime = 0;
 let recentLocations: Location.LocationObject[] = [];
+const MAPBOX_KEY = process.env.MAPBOX_PRIVATE_ACCESS_TOKEN;
 
 TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
         if (error) {
@@ -30,7 +33,7 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
                 if (coordinates.length <= 500) { // API Limitation
                     // parse location to add to coordinates
                     let lat = locations[0].coords.latitude.toString();
-                    let long = locations[0].coords.longitude.toString();
+                    let long = locations[0].coords.longitude.toString();4
                     coordinates += lat + ',' + long + ';'; // Making the semi colon separated list for the API Call
                     console.log('Coordinate String: ', coordinates);
 
@@ -48,7 +51,7 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
                     console.log(`Stationary count: ${stationaryCount}`);
 
                     if (stationaryCount >= STATIONARY_THRESHOLD) {
-                        await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME);
+                        stopTracking();
                         console.log("Location tracking stopped. User appears to be stationary.");
 
                         // Reset Variables
@@ -110,7 +113,7 @@ async function getPermissions(setErrorMessage: (msg: string | null) => void): Pr
     }
 }
 
-async function startTracking(setIsTracking: (v: boolean) => void, setErrorMessage: (msg: string | null) => void) {
+async function startTracking(setIsTracking: (isTracking: boolean) => void, setErrorMessage: (errorMessage: string | null) => void) {
     try {
         const hasPermissions = await getPermissions(setErrorMessage);
         if (!hasPermissions) return;
@@ -135,12 +138,12 @@ async function startTracking(setIsTracking: (v: boolean) => void, setErrorMessag
     }
 }
 
-async function stopTracking(setIsTracking: (v: boolean) => void) {
+async function stopTracking(setIsTracking?: (isTracking: boolean) => void) {    // optional state change param
     try {
         // stop regardless of local isTracking state to allow external stop
         await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME);
         console.log("Tracking stopped.");
-        setIsTracking(false);
+        if (setIsTracking) setIsTracking(false);
         // reset variables
         coordinates = '';
         stationaryCount = 0;
@@ -149,7 +152,7 @@ async function stopTracking(setIsTracking: (v: boolean) => void) {
 
     } catch (error) {
         console.error('Error to stop tracking: ', error);
-        setIsTracking(false);
+        if (setIsTracking) setIsTracking(false);
         return;
     }
 }
