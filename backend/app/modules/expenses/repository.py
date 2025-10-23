@@ -24,7 +24,7 @@ class ExpenseRepo:
         return result.scalars().all()
 
     async def get_by_trip_and_type(self, trip_id: UUID, type: str) -> Expense | None:
-        query = select(Expense).where(Expense.trip_id == trip_id, Expense.type == type)
+        query = select(Expense).where(Expense.trip_id == trip_id, Expense.type.ilike(type))
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
     
