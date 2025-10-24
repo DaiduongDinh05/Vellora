@@ -3,12 +3,14 @@ import {  View, Text, Button  } from "react-native";
 import { useState, useEffect } from "react";
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
+import Mapbox from '@rnmapbox/maps';
+import { fetch } from 'expo/fetch';
 
 
 // Constants
 const LOCATION_TASK_NAME = 'background_location_tracking';
 let coordinates = '';                                  
-const PROFILE = 'driving';                                  // profile for mapbox api
+const PROFILE = 'mapbox/driving';                                  // profile for mapbox api
 const MIN_DATA = 5;                                         // Minimum data for stationary check
 const STATIONARY_CHECK_INTERVAL = 10000;                    // Check for stationary every 3 seconds
 const STATIONARY_THRESHOLD = 3                              // Check for not moving / not driving 3 times minimum
@@ -16,7 +18,9 @@ const SPEED_THRESHOLD = 1;                                  // Threshold for Sta
 let stationaryCount = 0;
 let lastCheckTime = 0;
 let recentLocations: Location.LocationObject[] = [];
-const MAPBOX_KEY = process.env.MAPBOX_PRIVATE_ACCESS_TOKEN;
+const MAPBOX_KEY = process.env.EXPO_PUBLIC_API_KEY_MAPBOX_PUBLIC_ACCESS_TOKEN;
+
+Mapbox.setAccessToken(`${MAPBOX_KEY}`);
 
 TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
         if (error) {
@@ -33,14 +37,13 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
                 if (coordinates.length <= 500) { // API Limitation
                     // parse location to add to coordinates
                     let lat = locations[0].coords.latitude.toString();
-                    let long = locations[0].coords.longitude.toString();4
-                    coordinates += lat + ',' + long + ';'; // Making the semi colon separated list for the API Call
+                    let long = locations[0].coords.longitude.toString();
+                    coordinates += long + ',' + lat + ';'; // Making the semi colon separated list for the API Call
                     console.log('Coordinate String: ', coordinates);
 
                 }
 
-              // Periodic Checking for Stationary Activity
-
+            // Periodic Checking for Stationary Activity
               const now = Date.now();
             
               if (now - lastCheckTime >= STATIONARY_CHECK_INTERVAL) {
@@ -53,12 +56,6 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
                     if (stationaryCount >= STATIONARY_THRESHOLD) {
                         stopTracking();
                         console.log("Location tracking stopped. User appears to be stationary.");
-
-                        // Reset Variables
-                        coordinates = '';
-                        stationaryCount = 0;
-                        recentLocations = [];
-                        return;
                     }
                 }
               } else {
@@ -67,11 +64,9 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
               }
             }
 
-              // TODO: check if the user is stationary and needing to end the background task
         } catch (err) {
             console.error('Error with location update:', err);
-        }
-                
+        }               
     });
 
 function isStationary(locations: Location.LocationObject[]) {
@@ -121,7 +116,7 @@ async function startTracking(setIsTracking: (isTracking: boolean) => void, setEr
         await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
             accuracy: Location.Accuracy.Balanced,
             timeInterval: 10,
-            distanceInterval: 200, // was: 1610 ~1 mile TODO: MODIFY THIS VALUE TO MAKE ACCURATE LOCATION UPDATES
+            distanceInterval:  200, // 1 km
             // For android to allow background location services
             foregroundService: {
                 notificationTitle: 'Location Tracking is Active',
@@ -144,11 +139,20 @@ async function stopTracking(setIsTracking?: (isTracking: boolean) => void) {    
         await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME);
         console.log("Tracking stopped.");
         if (setIsTracking) setIsTracking(false);
+        coordinates = coordinates.slice(0,-1);
+        const response = await fetch(`https://api.mapbox.com/matching/v5/${PROFILE}/${coordinates}?access_token=${MAPBOX_KEY}`, 
+            { method: 'GET' }
+        );
+        console.log(response);
+
         // reset variables
         coordinates = '';
         stationaryCount = 0;
         recentLocations = [];
+
+        
         return;
+        // TODO: this is where i would call backend and store the last coordinates in the back trip, look at aseel code
 
     } catch (error) {
         console.error('Error to stop tracking: ', error);
