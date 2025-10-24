@@ -25,10 +25,10 @@ pytest
 pytest -v
 
 # Run with coverage report
-pytest tests/modules/expenses/ --cov=app.modules.expenses --cov-report=term-missing
+pytest tests/modules/<folder_name>/ --cov=app.modules.<folder_name> --cov-report=term-missing
 
 # Run specific test file
-pytest tests/modules/expenses/<file_name>.py
+pytest tests/modules/<folder_name>/<file_name>.py
 ```
 
 ## Test Design Principles
