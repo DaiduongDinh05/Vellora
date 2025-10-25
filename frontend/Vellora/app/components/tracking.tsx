@@ -139,11 +139,20 @@ async function stopTracking(setIsTracking?: (isTracking: boolean) => void) {    
         await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME);
         console.log("Tracking stopped.");
         if (setIsTracking) setIsTracking(false);
-        coordinates = coordinates.slice(0,-1);
+        coordinates = coordinates.slice(0,-1);          // remove the last semicolon for call
         const response = await fetch(`https://api.mapbox.com/matching/v5/${PROFILE}/${coordinates}?access_token=${MAPBOX_KEY}`, 
-            { method: 'GET' }
-        );
-        console.log(response);
+            { method: 'GET' })
+        .then(response => response.json())
+        .then(tripData => {
+            console.log(tripData.matchings?.[0]?.distance);
+        })
+        .catch(error => {
+            console.log('Error fetching mapbox: ', error);
+        });
+
+       
+        
+
 
         // reset variables
         coordinates = '';
