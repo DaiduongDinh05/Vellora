@@ -19,6 +19,7 @@ let stationaryCount = 0;
 let lastCheckTime = 0;
 let recentLocations: Location.LocationObject[] = [];
 const MAPBOX_KEY = process.env.EXPO_PUBLIC_API_KEY_MAPBOX_PUBLIC_ACCESS_TOKEN;
+let distance = 0;
 
 Mapbox.setAccessToken(`${MAPBOX_KEY}`);
 
@@ -116,7 +117,7 @@ async function startTracking(setIsTracking: (isTracking: boolean) => void, setEr
         await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
             accuracy: Location.Accuracy.Balanced,
             timeInterval: 10,
-            distanceInterval:  200, // 1 km
+            distanceInterval:  1000, // 1 km
             // For android to allow background location services
             foregroundService: {
                 notificationTitle: 'Location Tracking is Active',
@@ -140,19 +141,8 @@ async function stopTracking(setIsTracking?: (isTracking: boolean) => void) {    
         console.log("Tracking stopped.");
         if (setIsTracking) setIsTracking(false);
         coordinates = coordinates.slice(0,-1);          // remove the last semicolon for call
-        const response = await fetch(`https://api.mapbox.com/matching/v5/${PROFILE}/${coordinates}?access_token=${MAPBOX_KEY}`, 
-            { method: 'GET' })
-        .then(response => response.json())
-        .then(tripData => {
-            console.log(tripData.matchings?.[0]?.distance);
-        })
-        .catch(error => {
-            console.log('Error fetching mapbox: ', error);
-        });
-
        
-        
-
+        let totalTripDistance = getTripDistance(coordinates);
 
         // reset variables
         coordinates = '';
@@ -168,6 +158,27 @@ async function stopTracking(setIsTracking?: (isTracking: boolean) => void) {    
         if (setIsTracking) setIsTracking(false);
         return;
     }
+}
+
+async function getTripDistance(coordinates: string | null) {
+    if (coordinates === null) {
+        return; 
+    }
+    
+    try {
+        const response = await fetch(`https://api.mapbox.com/matching/v5/${PROFILE}/${coordinates}?access_token=${MAPBOX_KEY}`, 
+            { method: 'GET' })
+        .then(response => response.json())
+        .then(tripData => {
+            let distance = tripData.matchings?.[0]?.distance;
+            return distance;
+        })
+        .catch(error => {
+            console.log('Error fetching mapbox: ', error);
+        });
+    } catch (error) {
+        console.error('Error getting trip distance: ', error);
+    }   
 }
 
 function LocationTracker() {
