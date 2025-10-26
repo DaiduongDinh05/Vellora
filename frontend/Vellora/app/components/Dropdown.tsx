@@ -18,7 +18,7 @@ const Dropdown = ({
   }) => {
 
   return (
-    <View className="flex-row border items-center border-gray-300 bg-white rounded-lg px-3 py-3">
+    <View className="flex-row border items-center border-gray-300 bg-white rounded-lg px-3 py-3 mb-4">
       <View className='w-6 items-center'>
         {icon}
       </View>
@@ -28,10 +28,16 @@ const Dropdown = ({
             value={value}
             placeholder={placeholder ? { label: placeholder, value: null } : {}}
             style={pickerSelectStyles}
+            pickerProps={{
+              itemStyle: {
+                color: 'black',
+              }
+            }}
 
             Icon={() => {
               return <FontAwesome name="chevron-down" size={12}/>
             }}
+
         />
             
     </View>
@@ -39,15 +45,19 @@ const Dropdown = ({
 }
 
 const pickerSelectStyles = StyleSheet.create({
+
+  viewContainer: {
+    flex: 1,
+  },
+  
   inputIOS: {
     fontSize: 16,
     borderRadius: 8,
     color: 'black',
     backgroundColor: 'white',
     paddingRight: 30, // to ensure the text is never behind the icon
-    marginBottom: 14,
     flex: 1,
-    marginLeft: 8,
+    marginLeft: 10,
 
   },
   inputAndroid: {
@@ -56,13 +66,15 @@ const pickerSelectStyles = StyleSheet.create({
     color: 'black',
     backgroundColor: 'white',
     paddingRight: 30, // to ensure the text is never behind the icon
+    flex: 1,
+    marginLeft: 10,
   },
   placeholder: {
     color: 'gray',
   },
   iconContainer: {
     top: '50%',
-    marginTop: -12,
+    marginTop: -6,
     right: 15,
   },
   inputIOSContainer: {
