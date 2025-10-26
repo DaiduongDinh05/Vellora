@@ -52,12 +52,12 @@ const CurrencyInput: React.FC<CurrencyInputProps> = ({
     };
     
     return (
-        <View className={`w-20 flex-none ${className}`}>
+        <View className={`${className}`}>
             <Text className='text-sm text-gray-500 mb-1'>{label}</Text>
-            <View className={`flex-row py-3 px-2.5 items-center border border-gray-300 rounded-lg text-black bg-white ${className}`}>
+            <View className={`flex-row py-3 px-2.5 items-center border border-gray-300 rounded-lg text-black bg-white`}>
                 <Text className='text-base text-black font-bold w-5'>$</Text>
                 <TextInput 
-                    className=""
+                    className="flex-1"
                     placeholderTextColor='gray'
                     placeholder="0.00"
                     editable

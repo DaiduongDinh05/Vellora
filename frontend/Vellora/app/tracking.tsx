@@ -15,6 +15,8 @@ const Tracking = () => {
   const [type, setType] = useState<string | null>(null);
   const [rate, setRate] = useState<string | null>(null);
   const [parking, setParking] = useState<string>('');
+  const [gas, setGas] = useState<string>('');
+
 
   // common style for icons
   const iconProps = {
@@ -50,11 +52,6 @@ const Tracking = () => {
             {/* create a scrollable form and add gaps between child components */}
             <ScrollView contentContainerStyle={{rowGap: 16}}>
 
-              <CurrencyInput 
-                label='Parking'
-                value={parking}
-                onChangeText={setParking}
-              />
               {/* render notes input */}
               <NoteInput 
                 placeholder="Add your crazy notes"
@@ -62,6 +59,22 @@ const Tracking = () => {
                 onChangeText={setNotes}
                 className=''
               />
+
+              <View className='flex-row gap-4'>
+                <CurrencyInput 
+                  label='Parking'
+                  value={parking}
+                  onChangeText={setParking}
+                  className="flex-1"
+                />
+
+                <CurrencyInput 
+                  label='Gas'
+                  value={gas}
+                  onChangeText={setGas}
+                  className="flex-1"
+                />
+              </View>
 
               {/* render vehicle dropdown */}
               <Dropdown 
