@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from 'react-native'
+import { View } from 'react-native'
 import React, { useState } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context';
 import NoteInput from './components/NoteInput'
@@ -19,12 +19,14 @@ const Tracking = () => {
     size: 18,
   }
   // these are temporary test values to make sure the components work
+  // vehicle options
   const vehicleItems = [
     {label: 'Personal Car (Toyota)', value: 'ABC1234'},
     {label: 'Business Car (Mazda)', value: 'XYZ1234'},
     {label: 'Random Car (Nissan)', value: 'LOL1234'},
   ];
 
+  // type options
   const typeItems = [
     {label: 'Business', value: 'business', category: 'builtin'},
     {label: 'Charity', value: 'charity', category: 'builtin'},
@@ -33,6 +35,7 @@ const Tracking = () => {
 
   ];
 
+  // reimbursement rate options
   const rateItems = [
     {label: 'IRS Standard Rate', value: 'irs', category: 'builtin'},
     {label: 'Company A Rate', value: 'companyA', category: 'category'}
@@ -41,15 +44,19 @@ const Tracking = () => {
   return (
     <SafeAreaView style={{flex: 1}}>
         <View style={{flex:1, padding: 20}}>
-            
+
+            {/* create a scrollable form and add gaps between child components */}
             <ScrollView contentContainerStyle={{rowGap: 16}}>
+
+              {/* render notes input */}
               <NoteInput 
                 placeholder="Add your crazy notes"
                 value={notes}
                 onChangeText={setNotes}
                 className=''
               />
-              
+
+              {/* render vehicle dropdown */}
               <Dropdown 
                 placeholder="Select vehicle"
                 items={vehicleItems}
@@ -58,6 +65,7 @@ const Tracking = () => {
                 icon={<FontAwesome name="car" {...iconProps} />}
               />
 
+              {/* render type dropdown */}
               <Dropdown 
                 placeholder="Select type"
                 items={typeItems}
@@ -66,6 +74,7 @@ const Tracking = () => {
                 icon={<FontAwesome name="list-ul" {...iconProps} />}
               />
 
+              {/* render rate dropdown */}
               <Dropdown 
                 placeholder="Select reimbursement rate"
                 items={rateItems}
