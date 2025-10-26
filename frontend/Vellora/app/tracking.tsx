@@ -11,14 +11,13 @@ const Tracking = () => {
 
   // state variables
   const [notes, setNotes] = useState('');
-  const [vehicle, setVehicle] = useState(null);
-  const [type, setType] = useState(null);
-  const [rate, setRate] = useState(null);
+  const [vehicle, setVehicle] = useState<string | null>(null);
+  const [type, setType] = useState<string | null>(null);
+  const [rate, setRate] = useState<string | null>(null);
 
   // common style for icons
   const iconProps = {
-    size: 20,
-    className: 'text-gray-500 mr-2',
+    size: 18,
   }
   // these are temporary test values to make sure the components work
   const vehicleItems = [

@@ -1,11 +1,27 @@
-import { StyleSheet, Text, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 import React from 'react'
 import RNPickerSelect from 'react-native-picker-select'
+import { FontAwesome } from '@expo/vector-icons';
 
-const Dropdown = ({ items, onValueChange, placeholder, value, icon }) => {
+const Dropdown = ({ 
+    items = [], 
+    onValueChange, 
+    placeholder = "Select an option", // default prompt 
+    value, 
+    icon 
+  }: {
+    items?: {label: string, value: string | number}[];
+    onValueChange: (value: string | null) => void;
+    placeholder?: string;
+    value: string | number | null;
+    icon?: React.ReactNode;
+  }) => {
+
   return (
-    <View className="bg-gray-100 rounded-lg-mb-4">
+    <View className="flex-row border items-center border-gray-300 bg-white rounded-lg px-3 py-3">
+      <View className='w-6 items-center'>
         {icon}
+      </View>
         <RNPickerSelect 
             onValueChange={onValueChange}
             items = {items}
@@ -13,44 +29,29 @@ const Dropdown = ({ items, onValueChange, placeholder, value, icon }) => {
             placeholder={placeholder ? { label: placeholder, value: null } : {}}
             style={pickerSelectStyles}
 
-            pickerProps={{
-                itemStyle: {
-                    color: 'black',
-                }
+            Icon={() => {
+              return <FontAwesome name="chevron-down" size={12}/>
             }}
-                
         />
-
-        {value && (
-            <Text>You selected: {value}</Text>
-        )}
             
     </View>
   )
 }
 
-export default Dropdown
-
-
 const pickerSelectStyles = StyleSheet.create({
   inputIOS: {
     fontSize: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 10,
-    borderWidth: 1,
-    borderColor: 'gray',
     borderRadius: 8,
     color: 'black',
     backgroundColor: 'white',
     paddingRight: 30, // to ensure the text is never behind the icon
-    marginBottom: 14
+    marginBottom: 14,
+    flex: 1,
+    marginLeft: 8,
+
   },
   inputAndroid: {
     fontSize: 16,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: 'gray',
     borderRadius: 8,
     color: 'black',
     backgroundColor: 'white',
@@ -59,7 +60,16 @@ const pickerSelectStyles = StyleSheet.create({
   placeholder: {
     color: 'gray',
   },
+  iconContainer: {
+    top: '50%',
+    marginTop: -12,
+    right: 15,
+  },
   inputIOSContainer: {
     zIndex: 100,
   },
+
 });
+
+export default Dropdown
+
