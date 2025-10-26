@@ -50,6 +50,11 @@ const Tracking = () => {
             {/* create a scrollable form and add gaps between child components */}
             <ScrollView contentContainerStyle={{rowGap: 16}}>
 
+              <CurrencyInput 
+                label='Parking'
+                value={parking}
+                onChangeText={setParking}
+              />
               {/* render notes input */}
               <NoteInput 
                 placeholder="Add your crazy notes"
@@ -87,11 +92,7 @@ const Tracking = () => {
 
             </ScrollView>
             
-            <CurrencyInput 
-              label='Parking'
-              value={parking}
-              onChangeText={setParking}
-            />
+            
         </View>
     </SafeAreaView>
 
