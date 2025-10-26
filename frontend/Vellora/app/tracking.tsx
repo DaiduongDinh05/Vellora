@@ -5,6 +5,7 @@ import NoteInput from './components/NoteInput'
 import Dropdown from './components/Dropdown'
 import { ScrollView } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
+import CurrencyInput from './components/CurrencyInput';
 
 const Tracking = () => {
 
@@ -13,6 +14,7 @@ const Tracking = () => {
   const [vehicle, setVehicle] = useState<string | null>(null);
   const [type, setType] = useState<string | null>(null);
   const [rate, setRate] = useState<string | null>(null);
+  const [parking, setParking] = useState<string>('');
 
   // common style for icons
   const iconProps = {
@@ -85,7 +87,11 @@ const Tracking = () => {
 
             </ScrollView>
             
-            
+            <CurrencyInput 
+              label='Parking'
+              value={parking}
+              onChangeText={setParking}
+            />
         </View>
     </SafeAreaView>
 
