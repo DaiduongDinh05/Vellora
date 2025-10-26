@@ -1,6 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native'
 import React, { useState } from 'react'
-import RNPickerSelect from 'react-native-picker-select'
 import { SafeAreaView } from 'react-native-safe-area-context';
 import NoteInput from './components/NoteInput'
 import Dropdown from './components/Dropdown'
@@ -43,20 +42,20 @@ const Tracking = () => {
     <SafeAreaView style={{flex: 1}}>
         <View style={{flex:1, padding: 20}}>
             
-            <ScrollView className=''>
+            <ScrollView contentContainerStyle={{rowGap: 16}}>
               <NoteInput 
                 placeholder="Add your crazy notes"
                 value={notes}
                 onChangeText={setNotes}
                 className=''
               />
+              
               <Dropdown 
                 placeholder="Select vehicle"
                 items={vehicleItems}
                 onValueChange={setVehicle}
                 value={vehicle}
                 icon={<FontAwesome name="car" {...iconProps} />}
-              
               />
 
               <Dropdown 
@@ -65,7 +64,6 @@ const Tracking = () => {
                 onValueChange={setType}
                 value={type}
                 icon={<FontAwesome name="list-ul" {...iconProps} />}
-              
               />
 
               <Dropdown 
@@ -75,7 +73,6 @@ const Tracking = () => {
                 value={rate}
                 icon={<FontAwesome name="dollar" {...iconProps} />}
               />
-
 
             </ScrollView>
             
