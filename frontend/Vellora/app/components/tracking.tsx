@@ -10,7 +10,7 @@ import { fetch } from 'expo/fetch';
 // Constants
 const LOCATION_TASK_NAME = 'background_location_tracking';
 let coordinates = '';                                  
-const PROFILE = 'mapbox/driving';                                  // profile for mapbox api
+const PROFILE = 'mapbox/driving';                              // profile for mapbox api
 const MIN_DATA = 5;                                         // Minimum data for stationary check
 const STATIONARY_CHECK_INTERVAL = 10000;                    // Check for stationary every 3 seconds
 const STATIONARY_THRESHOLD = 3                              // Check for not moving / not driving 3 times minimum
@@ -19,7 +19,7 @@ let stationaryCount = 0;
 let lastCheckTime = 0;
 let recentLocations: Location.LocationObject[] = [];
 const MAPBOX_KEY = process.env.EXPO_PUBLIC_API_KEY_MAPBOX_PUBLIC_ACCESS_TOKEN;
-let distance = 0;
+let totalTripDistance = 0;
 
 Mapbox.setAccessToken(`${MAPBOX_KEY}`);
 
@@ -136,22 +136,30 @@ async function startTracking(setIsTracking: (isTracking: boolean) => void, setEr
 
 async function stopTracking(setIsTracking?: (isTracking: boolean) => void) {    // optional state change param
     try {
-        // stop regardless of local isTracking state to allow external stop
+        // If location updates were never started, skip stopping to avoid errors
+        const started = await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK_NAME);
+        if (!started) {
+            console.log('stopTracking: location updates not started, nothing to stop.');
+            if (setIsTracking) setIsTracking(false);
+            return;
+        }
+
         await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME);
         console.log("Tracking stopped.");
         if (setIsTracking) setIsTracking(false);
-        coordinates = coordinates.slice(0,-1);          // remove the last semicolon for call
-       
-        let totalTripDistance = getTripDistance(coordinates);
+        // remove trailing semicolon before using coordinates if needed
+        if (coordinates.endsWith(';')) coordinates = coordinates.slice(0, -1);
 
+        await getTripDistance(coordinates);
+
+        console.log('Total Trip Distance:', totalTripDistance);
+        
         // reset variables
         coordinates = '';
         stationaryCount = 0;
         recentLocations = [];
-
-        
+        totalTripDistance = 0;
         return;
-        // TODO: this is where i would call backend and store the last coordinates in the back trip, look at aseel code
 
     } catch (error) {
         console.error('Error to stop tracking: ', error);
@@ -166,15 +174,14 @@ async function getTripDistance(coordinates: string | null) {
     }
     
     try {
-        const response = await fetch(`https://api.mapbox.com/matching/v5/${PROFILE}/${coordinates}?access_token=${MAPBOX_KEY}`, 
+        await fetch(`https://api.mapbox.com/matching/v5/${PROFILE}/${coordinates}?access_token=${MAPBOX_KEY}`, 
             { method: 'GET' })
         .then(response => response.json())
         .then(tripData => {
-            let distance = tripData.matchings?.[0]?.distance;
-            return distance;
+            totalTripDistance += tripData.matchings?.[0]?.distance;
         })
         .catch(error => {
-            console.log('Error fetching mapbox: ', error);
+            console.error('Error fetching mapbox: ', error);
         });
     } catch (error) {
         console.error('Error getting trip distance: ', error);
@@ -190,7 +197,7 @@ function LocationTracker() {
        startTracking(setIsTracking, setErrorMessage);
 
        return () => { // useEffect Cleanup Function to stop tracking location when Component dismounts
-            stopTracking(setIsTracking);
+            stopTracking(setIsTracking); // Call stopTracking with UI state setter
        };
     }, []);
 
