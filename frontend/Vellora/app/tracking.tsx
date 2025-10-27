@@ -1,4 +1,4 @@
-import { View } from 'react-native'
+import { View, Text } from 'react-native'
 import React, { useState } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context';
 import NoteInput from './components/NoteInput'
@@ -48,7 +48,7 @@ const Tracking = () => {
   return (
     <SafeAreaView style={{flex: 1}}>
         <View style={{flex:1, padding: 20}}>
-
+            <Text className="text-3xl text-primaryPurple font-bold">Live Track Current Trip</Text>
             {/* create a scrollable form and add gaps between child components */}
             <ScrollView contentContainerStyle={{rowGap: 16}}>
 
