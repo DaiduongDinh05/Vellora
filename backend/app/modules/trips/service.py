@@ -80,15 +80,14 @@ class TripsService:
         # if data.end_address.strip().lower() == trip.start_address_encrypted:
         #     raise InvalidTripDataError("Start and end addresses cannot be the same")
 
-        if data.miles is None:
-            raise InvalidTripDataError("Miles are required to complete the trip")
-        if data.miles < 0:
+        miles = data.miles
+        if miles < 0:
             raise InvalidTripDataError("Miles must be non-negative")
                 
         try: 
 
-            trip.miles = data.miles
-            trip.mileage_reimbursement_total = data.miles * (trip.reimbursement_rate or 0.0)
+            trip.miles = miles
+            trip.mileage_reimbursement_total = miles * (trip.reimbursement_rate or 0.0)
             trip.status = TripStatus.completed
             trip.end_address_encrypted = encrypt_address(data.end_address)
             trip.ended_at = datetime.now(timezone.utc)

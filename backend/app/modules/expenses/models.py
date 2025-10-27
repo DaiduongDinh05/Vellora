@@ -14,6 +14,6 @@ class Expense(Base):
     #user_id will be added once implemented
     trip_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), sa.ForeignKey("trips.id", ondelete="CASCADE"), nullable=False)
     type: Mapped[str] = mapped_column(sa.String(50), nullable = False)
-    amount_cents: Mapped[float] = mapped_column(DOUBLE_PRECISION, nullable=False)
+    amount: Mapped[float] = mapped_column(DOUBLE_PRECISION, nullable=False)
     created_at: Mapped[sa.DateTime] = mapped_column(sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False)
     trip: Mapped["Trip"] = relationship("Trip", back_populates="expenses")

@@ -28,14 +28,14 @@ class TestCreateExpenseEndpoint:
         expense.id = uuid4()
         expense.trip_id = uuid4()
         expense.type = "Parking"
-        expense.amount_cents = 1500.0
+        expense.amount = 1500.0
         return expense
 
     @pytest.mark.asyncio
     async def test_create_expense_success(self, mock_service, mock_expense):
 
         trip_id = uuid4()
-        request_body = {"type": "Parking", "amount_cents": 1500.0}
+        request_body = {"type": "Parking", "amount": 1500.0}
         mock_service.create_expense.return_value = mock_expense
 
         from app.modules.expenses.router import create_expense
@@ -53,7 +53,7 @@ class TestCreateExpenseEndpoint:
     async def test_create_expense_trip_not_found(self, mock_service):
 
         trip_id = uuid4()
-        request_body = {"type": "Parking", "amount_cents": 1500.0}
+        request_body = {"type": "Parking", "amount": 1500.0}
         mock_service.create_expense.side_effect = TripNotFoundError("Trip not found")
 
         from app.modules.expenses.router import create_expense
@@ -71,7 +71,7 @@ class TestCreateExpenseEndpoint:
     async def test_create_expense_invalid_data(self, mock_service):
 
         trip_id = uuid4()
-        request_body = {"type": "", "amount_cents": 1500.0}
+        request_body = {"type": "", "amount": 1500.0}
         mock_service.create_expense.side_effect = InvalidExpenseDataError("Type is required")
 
         from app.modules.expenses.router import create_expense
@@ -88,7 +88,7 @@ class TestCreateExpenseEndpoint:
     @pytest.mark.asyncio
     async def test_create_expense_duplicate(self, mock_service):
         trip_id = uuid4()
-        request_body = {"type": "Parking", "amount_cents": 1500.0}
+        request_body = {"type": "Parking", "amount": 1500.0}
         mock_service.create_expense.side_effect = DuplicateExpenseError(
             "An expense with this type already exists"
         )
@@ -119,7 +119,7 @@ class TestGetExpensesEndpoint:
             expense = MagicMock(spec=Expense)
             expense.id = uuid4()
             expense.type = f"Type{i}"
-            expense.amount_cents = 1000.0 * (i + 1)
+            expense.amount = 1000.0 * (i + 1)
             expenses.append(expense)
         return expenses
 
@@ -176,7 +176,7 @@ class TestGetExpenseEndpoint:
         expense.id = uuid4()
         expense.trip_id = uuid4()
         expense.type = "Parking"
-        expense.amount_cents = 1500.0
+        expense.amount = 1500.0
         return expense
 
     @pytest.mark.asyncio
@@ -219,14 +219,14 @@ class TestEditExpenseEndpoint:
         expense.id = uuid4()
         expense.trip_id = uuid4()
         expense.type = "Tolls"
-        expense.amount_cents = 2500.0
+        expense.amount = 2500.0
         return expense
 
     @pytest.mark.asyncio
     async def test_edit_expense_success(self, mock_service, mock_expense):
 
         expense_id = uuid4()
-        request_body = {"type": "Tolls", "amount_cents": 2500.0}
+        request_body = {"type": "Tolls", "amount": 2500.0}
         mock_service.edit_expense.return_value = mock_expense
 
         from app.modules.expenses.router import edit_expense
@@ -244,7 +244,7 @@ class TestEditExpenseEndpoint:
     async def test_edit_expense_partial_update(self, mock_service, mock_expense):
 
         expense_id = uuid4()
-        request_body = {"amount_cents": 2500.0}
+        request_body = {"amount": 2500.0}
         mock_service.edit_expense.return_value = mock_expense
 
         from app.modules.expenses.router import edit_expense
@@ -279,7 +279,7 @@ class TestEditExpenseEndpoint:
     async def test_edit_expense_invalid_data(self, mock_service):
 
         expense_id = uuid4()
-        request_body = {"amount_cents": -100.0}
+        request_body = {"amount": -100.0}
         mock_service.edit_expense.side_effect = InvalidExpenseDataError("Amount must be positive")
 
         from app.modules.expenses.router import edit_expense

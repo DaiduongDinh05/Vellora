@@ -16,7 +16,7 @@ class TestExpenseRepoSave:
         expense.id = sample_expense_id
         expense.trip_id = sample_trip_id
         expense.type = "Parking"
-        expense.amount_cents = 15.50
+        expense.amount = 15.50
         return expense
 
     @pytest.mark.asyncio
@@ -42,7 +42,7 @@ class TestExpenseRepoGetExpense:
         expense.id = sample_expense_id
         expense.trip_id = sample_trip_id
         expense.type = "Parking"
-        expense.amount_cents = 12.25
+        expense.amount = 12.25
         return expense
 
     @pytest.mark.asyncio
@@ -79,7 +79,7 @@ class TestExpenseRepoGetExpensesByTripId:
             expense = MagicMock(spec=Expense)
             expense.id = sample_expense_id
             expense.type = f"Type{i}"
-            expense.amount_cents = 10.50 * (i + 1)
+            expense.amount = 10.50 * (i + 1)
             expenses.append(expense)
         return expenses
 
@@ -121,7 +121,7 @@ class TestExpenseRepoGetByTripAndType:
         expense.id = sample_expense_id
         expense.trip_id = sample_trip_id
         expense.type = "Parking"
-        expense.amount_cents = 8.75
+        expense.amount = 8.75
         return expense
 
     @pytest.mark.asyncio
@@ -175,7 +175,7 @@ class TestExpenseRepoDeleteExpense:
         expense.id = sample_expense_id
         expense.trip_id = sample_trip_id
         expense.type = "Parking"
-        expense.amount_cents = 6.50
+        expense.amount = 6.50
         return expense
 
     @pytest.mark.asyncio

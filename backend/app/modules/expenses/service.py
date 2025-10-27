@@ -32,7 +32,7 @@ class ExpensesService:
         if not data.type.strip():
             raise InvalidExpenseDataError("Type is required")
         
-        if data.amount_cents <= 0:
+        if data.amount <= 0:
             raise InvalidExpenseDataError("Amount must be positive")
         
         cleaned_type = data.type.strip().capitalize()
@@ -45,7 +45,7 @@ class ExpensesService:
             expense = Expense(
                 trip_id = trip_id,
                 type = cleaned_type,
-                amount_cents = data.amount_cents
+                amount = data.amount
             )
 
             saved_expense = await self.expense_repo.save(expense)
@@ -87,10 +87,10 @@ class ExpensesService:
                     raise DuplicateExpenseError("An expense with this type already exists for the trip")
             expense.type = cleaned
 
-        if data.amount_cents is not None:
-            if data.amount_cents <= 0:
+        if data.amount is not None:
+            if data.amount <= 0:
                 raise InvalidExpenseDataError("Amount must be positive")
-            expense.amount_cents = data.amount_cents
+            expense.amount = data.amount
         
         saved_expense = await self.expense_repo.save(expense)
         await self._update_trip_total(expense.trip_id)

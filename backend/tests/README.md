@@ -1,6 +1,30 @@
 # Tests
 
-This directory contains comprehensive unit tests for the expenses module of the Vellora backend application.
+This directory contains comprehensive tests for the Vellora backend application.
+
+## Test Structure
+
+```
+tests/
+├── modules/           # Unit tests (mocked dependencies, fast)
+│   ├── expenses/
+│   │   ├── test_schemas.py
+│   │   ├── test_service.py
+│   │   ├── test_repository.py
+│   │   └── test_router.py
+│   ├── rate_categories/
+│   ├── rate_customizations/
+│   └── trips/
+│       ├── test_schemas.py
+│       ├── test_service.py
+│       ├── test_repository.py
+│       ├── test_router.py
+│       ├── test_distance.py  # Distance conversion utilities
+│       └── test_crypto.py    # Address encryption utilities
+├── integration/       # Integration tests (real database, slower)
+│   ├── conftest.py   # Test database fixtures (SQLite in-memory)
+│   └── test_trip_repository.py
+└── conftest.py       # Shared test fixtures
 
 
 ## Running Tests
@@ -11,24 +35,50 @@ This directory contains comprehensive unit tests for the expenses module of the 
 # Install production dependencies
 pip install -r requirements.txt
 
-# Install test dependencies
+# Install test dependencies (includes pytest, pytest-asyncio, pytest-cov, pytest-mock, aiosqlite)
 pip install -r requirements-test.txt
 ```
 
-### Run All Tests
+### Run Unit Tests Only (Fast, Default)
 
 ```bash
-# Run all tests
-pytest
+# Run all unit tests
+pytest tests/modules/ -v
 
-# Run with verbose output
+# Run specific module unit tests
+pytest tests/modules/trips/ -v
+
+# Run with coverage
+pytest tests/modules/trips/ --cov=app.modules.trips --cov-report=term-missing
+```
+
+### Run Integration Tests (Slower, Requires DB)
+
+```bash
+# Run all integration tests
+pytest tests/integration/ -v -m integration
+
+# Run specific integration test file
+pytest tests/integration/test_trip_repository.py -v
+
+# Skip integration tests when running all tests
+pytest -v -m "not integration"
+```
+
+### Run All Tests (Unit + Integration)
+
+```bash
+# Run everything
 pytest -v
 
-# Run with coverage report
-pytest tests/modules/<folder_name>/ --cov=app.modules.<folder_name> --cov-report=term-missing
+# Run with coverage for all modules
+pytest --cov=app.modules --cov-report=term-missing
 
-# Run specific test file
-pytest tests/modules/<folder_name>/<file_name>.py
+# Run and stop on first failure
+pytest -x
+
+# Run with verbose output and show print statements
+pytest -v -s
 ```
 
 ## Test Design Principles
@@ -50,6 +100,17 @@ async def test_create_expense_success(self, service, mock_expense):
     expense_repo.save.assert_called_once()
 ```
 
+### 2. Isolation via Mocking
+Unit tests mock all external dependencies (database, repositories, external services):
+```python
+@pytest.fixture
+def mock_trip_repo(mocker):
+    return mocker.AsyncMock(spec=TripRepo)
+
+@pytest.fixture
+def service(mock_trip_repo, mock_expense_repo):
+    return TripsService(trip_repo=mock_trip_repo, expense_repo=mock_expense_repo)
+```
 
 ### 3. Descriptive Names
 Test names follow the pattern: `test_<method>_<scenario>`
@@ -57,6 +118,7 @@ Test names follow the pattern: `test_<method>_<scenario>`
 test_create_expense_success
 test_create_expense_trip_not_found
 test_create_expense_duplicate_type
+test_create_expense_negative_amount
 ```
 
 ## Maintenance
@@ -64,4 +126,6 @@ test_create_expense_duplicate_type
 ### Adding New Tests
 1. Follow existing test structure and naming conventions
 2. Use appropriate fixtures from `conftest.py`
+3. Mock external dependencies in unit tests
+4. Add integration tests for complex database operations
 5. Run tests locally before committing

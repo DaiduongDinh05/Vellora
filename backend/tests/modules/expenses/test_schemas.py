@@ -9,43 +9,43 @@ from app.modules.expenses.schemas import CreateExpenseDTO, EditExpenseDTO, Expen
 class TestCreateExpenseDTO:
 
     def test_create_expense_dto_valid(self):
-        data = {"type": "Parking", "amount_cents": 15.50}
+        data = {"type": "Parking", "amount": 15.50}
         
         dto = CreateExpenseDTO(**data)
         
         assert dto.type == "Parking"
-        assert dto.amount_cents == 15.50
+        assert dto.amount == 15.50
 
     def test_create_expense_dto_missing_required_fields(self):
         with pytest.raises(ValidationError):
             CreateExpenseDTO(type="Parking")
         
         with pytest.raises(ValidationError):
-            CreateExpenseDTO(amount_cents=15.50)
+            CreateExpenseDTO(amount=15.50)
 
 
 class TestEditExpenseDTO:
 
     def test_edit_expense_dto_all_fields(self):
-        dto = EditExpenseDTO(type="Tolls", amount_cents=25.00)
+        dto = EditExpenseDTO(type="Tolls", amount=25.00)
         
         assert dto.type == "Tolls"
-        assert dto.amount_cents == 25.00
+        assert dto.amount == 25.00
 
     def test_edit_expense_dto_partial_fields(self):
         dto1 = EditExpenseDTO(type="Tolls")
         assert dto1.type == "Tolls"
-        assert dto1.amount_cents is None
+        assert dto1.amount is None
         
-        dto2 = EditExpenseDTO(amount_cents=25.00)
+        dto2 = EditExpenseDTO(amount=25.00)
         assert dto2.type is None
-        assert dto2.amount_cents == 25.00
+        assert dto2.amount == 25.00
 
     def test_edit_expense_dto_empty(self):
         dto = EditExpenseDTO()
         
         assert dto.type is None
-        assert dto.amount_cents is None
+        assert dto.amount is None
 
 
 class TestExpenseResponseDTO:
@@ -59,14 +59,14 @@ class TestExpenseResponseDTO:
             id=expense_id,
             trip_id=trip_id,
             type="Parking",
-            amount_cents=15.50,
+            amount=15.50,
             created_at=created_at
         )
         
         assert dto.id == expense_id
         assert dto.trip_id == trip_id
         assert dto.type == "Parking"
-        assert dto.amount_cents == 15.50
+        assert dto.amount == 15.50
         assert dto.created_at == created_at
 
     def test_expense_response_dto_from_orm(self):
@@ -81,7 +81,7 @@ class TestExpenseResponseDTO:
         mock_expense.id = expense_id
         mock_expense.trip_id = trip_id
         mock_expense.type = "Parking"
-        mock_expense.amount_cents = 15.50
+        mock_expense.amount = 15.50
         mock_expense.created_at = created_at
         
         dto = ExpenseResponseDTO.model_validate(mock_expense)
@@ -89,7 +89,7 @@ class TestExpenseResponseDTO:
         assert dto.id == expense_id
         assert dto.trip_id == trip_id
         assert dto.type == "Parking"
-        assert dto.amount_cents == 15.50
+        assert dto.amount == 15.50
         assert dto.created_at == created_at
 
     def test_expense_response_dto_missing_required_fields(self):
@@ -97,6 +97,6 @@ class TestExpenseResponseDTO:
             ExpenseResponseDTO(
                 trip_id=uuid4(),
                 type="Parking",
-                amount_cents=15.50,
+                amount=15.50,
                 created_at=datetime.now(timezone.utc)
             )

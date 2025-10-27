@@ -1,4 +1,4 @@
-﻿import pytest
+import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
@@ -42,7 +42,7 @@ class TestExpensesServiceCreateExpense:
         expense.id = uuid4()
         expense.trip_id = uuid4()
         expense.type = "Parking"
-        expense.amount_cents = 15.50
+        expense.amount = 15.50
         return expense
 
     @pytest.mark.asyncio
@@ -50,7 +50,7 @@ class TestExpensesServiceCreateExpense:
         self, service, expense_repo, trip_repo, mock_trip, mock_expense
     ):
         trip_id = uuid4()
-        dto = CreateExpenseDTO(type="Parking", amount_cents=15.50)
+        dto = CreateExpenseDTO(type="Parking", amount=15.50)
         trip_repo.get.return_value = mock_trip
         expense_repo.get_by_trip_and_type.return_value = None
         expense_repo.save.return_value = mock_expense
@@ -66,7 +66,7 @@ class TestExpensesServiceCreateExpense:
     @pytest.mark.asyncio
     async def test_create_expense_trip_not_found(self, service, trip_repo):
         trip_id = uuid4()
-        dto = CreateExpenseDTO(type="Parking", amount_cents=15.50)
+        dto = CreateExpenseDTO(type="Parking", amount=15.50)
         trip_repo.get.return_value = None
 
         with pytest.raises(TripNotFoundError):
@@ -77,7 +77,7 @@ class TestExpensesServiceCreateExpense:
         self, service, expense_repo, trip_repo, mock_trip, mock_expense
     ):
         trip_id = uuid4()
-        dto = CreateExpenseDTO(type="Parking", amount_cents=15.50)
+        dto = CreateExpenseDTO(type="Parking", amount=15.50)
         trip_repo.get.return_value = mock_trip
         expense_repo.get_by_trip_and_type.return_value = mock_expense
 
@@ -182,7 +182,7 @@ class TestExpensesServiceEditExpense:
         expense.id = uuid4()
         expense.trip_id = uuid4()
         expense.type = "Parking"
-        expense.amount_cents = 15.50
+        expense.amount = 15.50
         return expense
 
     @pytest.fixture
@@ -197,7 +197,7 @@ class TestExpensesServiceEditExpense:
         self, service, expense_repo, trip_repo, mock_expense, mock_trip
     ):
         expense_id = uuid4()
-        dto = EditExpenseDTO(type="Tolls", amount_cents=25.00)
+        dto = EditExpenseDTO(type="Tolls", amount=25.00)
         expense_repo.get_expense.return_value = mock_expense
         trip_repo.get.return_value = mock_trip
         expense_repo.get_by_trip_and_type.return_value = None

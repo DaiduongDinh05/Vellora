@@ -3,7 +3,8 @@ from typing import List
 from uuid import UUID
 from app.modules.trips.models import Trip, TripStatus
 from app.modules.trips.utils.crypto import decrypt_address
-from pydantic import BaseModel, Field
+from app.modules.trips.utils.distance import meters_to_miles
+from pydantic import BaseModel, Field, field_validator
 
 class CreateTripDTO(BaseModel):
     start_address: str
@@ -13,7 +14,18 @@ class CreateTripDTO(BaseModel):
 
 class EndTripDTO(BaseModel):
     end_address: str
-    miles: float
+    distance_meters: float
+    
+    @field_validator('distance_meters')
+    @classmethod
+    def validate_distance(cls, v: float) -> float:
+        if v < 0:
+            raise ValueError("Distance must be non-negative")
+        return v
+    
+    @property
+    def miles(self) -> float:
+        return meters_to_miles(self.distance_meters)
 
 class EditTripDTO(BaseModel):
     purpose: str | None = None
@@ -23,7 +35,7 @@ class EditTripDTO(BaseModel):
 class ExpenseResponseDTO(BaseModel):
     id: str
     type: str
-    amount_cents: float
+    amount: float
     created_at: datetime.datetime
 
 class TripResponseDTO(BaseModel):
@@ -68,7 +80,7 @@ class TripResponseDTO(BaseModel):
                 ExpenseResponseDTO(
                     id=str(e.id),
                     type=e.type,
-                    amount_cents=e.amount_cents,
+                    amount=e.amount,
                     created_at=e.created_at,
                 )
                 for e in getattr(trip, "expenses", [])

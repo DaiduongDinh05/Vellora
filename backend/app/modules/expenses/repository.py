@@ -34,7 +34,7 @@ class ExpenseRepo:
 
     async def sum_by_trip(self, trip_id: UUID) -> float:
         result = await self.db.execute(
-            select(func.sum(Expense.amount_cents))
+            select(func.sum(Expense.amount))
             .where(Expense.trip_id == trip_id)
         )
         return result.scalar() or 0.0
