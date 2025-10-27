@@ -6,6 +6,7 @@ import Dropdown from './components/Dropdown'
 import { ScrollView } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import CurrencyInput from './components/CurrencyInput';
+import Button from './components/Button';
 
 const Tracking = () => {
 
@@ -18,10 +19,14 @@ const Tracking = () => {
   const [gas, setGas] = useState<string>('');
 
 
+  const handleStartTrip = () => {
+    console.log('Starting trip...');
+  };
+
   // common style for icons
   const iconProps = {
     size: 18,
-  }
+  };
   // these are temporary test values to make sure the components work
   // vehicle options
   const vehicleItems = [
@@ -47,10 +52,20 @@ const Tracking = () => {
 
   return (
     <SafeAreaView style={{flex: 1}}>
-        <View style={{flex:1, padding: 20}}>
-            <Text className="text-3xl text-primaryPurple font-bold">Live Track Current Trip</Text>
+        <Text className="text-3xl text-primaryPurple font-bold p-6">Live Track Current Trip</Text>
+        <View style={{flex:1, backgroundColor: '#fff', padding: 24}}>
             {/* create a scrollable form and add gaps between child components */}
             <ScrollView contentContainerStyle={{rowGap: 16}}>
+              <View className='flex-row justify-between'>
+                <Text className='text-xl'>
+                  Value: {' '}
+                  <Text className='font-bold'>$0</Text>
+                </Text>
+                <Text className='text-xl'>
+                  Distance: {' '}
+                  <Text className='font-bold'>0 mi</Text>
+                </Text>
+              </View>
 
               {/* render notes input */}
               <NoteInput 
@@ -103,6 +118,12 @@ const Tracking = () => {
                 icon={<FontAwesome name="dollar" {...iconProps} />}
               />
 
+            <Button 
+              title="Start Trip"
+              onPress={handleStartTrip}
+              className=""
+            
+            />
             </ScrollView>
             
             
