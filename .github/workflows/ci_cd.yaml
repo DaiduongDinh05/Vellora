@@ -125,3 +125,15 @@ jobs:
       - name: Sts GetCallerIdentity
         run: |
           aws sts get-caller-identity
+
+      - name: AWS ECR Login
+        run: |
+          aws ecr-public get-login-password --region us-east-2 | docker login --username AWS --password-stdin public.ecr.aws/n9j0x7c9
+
+      - name: Build, Tag, and Push Docker Image
+        working-directory: backend
+        run: |
+          docker build -t vellora/backend-images .
+          docker tag vellora/backend-images:latest public.ecr.aws/n9j0x7c9/vellora/backend-images:latest
+          docker push public.ecr.aws/n9j0x7c9/vellora/backend-images:latest
+
