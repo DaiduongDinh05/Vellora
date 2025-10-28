@@ -74,7 +74,7 @@ jobs:
         working-directory: frontend
         run: npx tsc --noEmit
   
-    regression_tests:
+  regression_tests:
     name: Regression Tests
     needs: [backend_basic_checks, frontend_basic_checks]
     if: github.base_ref == 'qa'
@@ -87,7 +87,7 @@ jobs:
           # Add your regression test commands here when you have them
           echo "QA tests done, merging..."
 
-    main_branch_check:
+  main_branch_check:
     name: Main Branch Merge Protection
     if: github.base_ref == 'main'
     needs: regression_tests
@@ -99,4 +99,3 @@ jobs:
             echo "Error: Can only merge to main from qa branch"
             exit 1
           fi
-          
