@@ -122,7 +122,6 @@ jobs:
           role-to-assume: arn:aws:iam::260125007066:role/GitHubActions  # Update with correct ARN
           aws-region: us-east-2
           role-session-name: gha-${{ github.run_id }}
-          audience: sts.amazonaws.com
       - name: Sts GetCallerIdentity
         run: |
           aws sts get-caller-identity
