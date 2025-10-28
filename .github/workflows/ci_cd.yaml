@@ -108,6 +108,9 @@ jobs:
   
   deploy_production:
     name: Deploy to Production
+    permissions:
+      id-token: write   # This is required for requesting the JWT
+      contents: read    # This is required for actions/checkout
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the code
@@ -119,3 +122,7 @@ jobs:
           role-to-assume: arn:aws:iam::260125007066:role/GitHubActions  # Update with correct ARN
           aws-region: us-east-2
           role-session-name: gha-${{ github.run_id }}
+          audience: sts.amazonaws.com
+      - name: Sts GetCallerIdentity
+        run: |
+          aws sts get-caller-identity
