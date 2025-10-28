@@ -1,12 +1,13 @@
-import { View, Text } from 'react-native'
+import { View, Text, StyleSheet } from 'react-native'
 import React, { useState } from 'react'
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import NoteInput from './components/NoteInput'
 import Dropdown from './components/Dropdown'
 import { ScrollView } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import CurrencyInput from './components/CurrencyInput';
 import Button from './components/Button';
+import MapView from 'react-native-maps'
 
 const Tracking = () => {
 
@@ -18,6 +19,7 @@ const Tracking = () => {
   const [parking, setParking] = useState<string>('');
   const [gas, setGas] = useState<string>('');
 
+  const insets = useSafeAreaInsets();
 
   const handleStartTrip = () => {
     console.log('Starting trip...');
@@ -51,21 +53,27 @@ const Tracking = () => {
   ];
 
   return (
-    <SafeAreaView style={{flex: 1}}>
+    <View style={{flex: 1, backgroundColor: '#fff'}}>
+      <ScrollView style={{flex: 1}} 
+        contentContainerStyle={{ paddingBottom: 120 }}
+        indicatorStyle='black' 
+        persistentScrollbar={true}>
+        
+        <View style={{paddingTop: insets.top}} />
         <Text className="text-3xl text-primaryPurple font-bold p-6">Live Track Current Trip</Text>
-        <View style={{flex:1, backgroundColor: '#fff', padding: 24}}>
-            {/* create a scrollable form and add gaps between child components */}
-            <ScrollView contentContainerStyle={{rowGap: 16}}>
-              <View className='flex-row justify-between'>
-                <Text className='text-xl'>
-                  Value: {' '}
-                  <Text className='font-bold'>$0</Text>
-                </Text>
-                <Text className='text-xl'>
-                  Distance: {' '}
-                  <Text className='font-bold'>0 mi</Text>
-                </Text>
-              </View>
+        <MapView style={{width: '100%', height: 300}}/>
+          {/* create a scrollable form and add gaps between child components */}
+          <View style={{padding: 25, gap: 16}}>
+            <View className='flex-row justify-between'>
+              <Text className='text-xl'>
+                Value: {' '}
+                <Text className='font-bold'>$0</Text>
+              </Text>
+              <Text className='text-xl'>
+                Distance: {' '}
+                <Text className='font-bold'>0 mi</Text>
+              </Text>
+            </View>
 
               {/* render notes input */}
               <NoteInput 
@@ -118,17 +126,19 @@ const Tracking = () => {
                 icon={<FontAwesome name="dollar" {...iconProps} />}
               />
 
-            <Button 
-              title="Start Trip"
-              onPress={handleStartTrip}
-              className=""
-            
-            />
-            </ScrollView>
-            
-            
-        </View>
-    </SafeAreaView>
+          </View>    
+              
+      </ScrollView>
+      <View className='bg-white px-6 pt-4 border border-gray-300' style={{position: 'absolute', bottom: 0, padding: 30, paddingTop: 20, width: '100%'}}>
+        <Button 
+          title="Start Trip"
+          onPress={handleStartTrip}
+          className=""
+        />
+
+      </View>
+
+    </View>
 
   )
 }
