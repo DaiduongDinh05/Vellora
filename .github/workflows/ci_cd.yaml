@@ -90,7 +90,6 @@ jobs:
   main_branch_check:
     name: Main Branch Merge Protection
     if: github.base_ref == 'main'
-    needs: regression_tests
     runs-on: ubuntu-latest
     steps:
       - name: Verify QA Branch
