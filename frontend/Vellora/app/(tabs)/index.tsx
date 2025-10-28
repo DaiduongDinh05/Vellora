@@ -7,6 +7,8 @@ export default function Index() {
     >
       <Text className="text-5xl text-primaryPurple font-bold">Welcome!</Text>
       <Link href="../tracking">Tracking Screen</Link>
+      <Link href="../trackingInAction">Tracking in actionScreen</Link>
+
     </View>
   );
 }
