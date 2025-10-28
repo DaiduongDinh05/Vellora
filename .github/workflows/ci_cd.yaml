@@ -108,8 +108,14 @@ jobs:
   
   deploy_production:
     name: Deploy to Production
-    uses: aws-actions/configure-aws-credentials@v4
-    with:
-      role-to-assume: arn:aws:iam::2601-2500-7066:role/GitHubActions
-      aws-region: us-east-2  # your AWS region
-      role-session-name: gha-${{ github.run_id }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::260125007066:role/GitHubActions  # Update with correct ARN
+          aws-region: us-east-2
+          role-session-name: gha-${{ github.run_id }}
