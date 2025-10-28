@@ -44,6 +44,13 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      
+      - name: Run Backend Tests
+        working-directory: backend
+        run: |
+          echo "Running backend tests..."
+          pytest pytest tests/modules/ -v
+          echo "Backend tests completed."
 
   # Job 3: Run frontend deployment if frontend files changed
   frontend_basic_checks:
