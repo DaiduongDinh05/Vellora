@@ -25,8 +25,8 @@ jobs:
               - 'frontend/**'
 
   # Job 2: Run backend tests/deployment if backend files changed
-  backend_deploy:
-    name: Deploy Backend 
+  backend_basic_checks:
+    name: Backend Basic Checks
     needs: paths
     if: ${{ needs.paths.outputs.backend == 'true' }}
     runs-on: ubuntu-latest
@@ -46,8 +46,8 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
   # Job 3: Run frontend deployment if frontend files changed
-  frontend_deploy:
-    name: Deploy Frontend
+  frontend_basic_checks:
+    name: Frontend Basic Checks
     needs: paths
     if: ${{ needs.paths.outputs.frontend == 'true' }}
     runs-on: ubuntu-latest
@@ -73,3 +73,30 @@ jobs:
       - name: Check TypeScript types
         working-directory: frontend
         run: npx tsc --noEmit
+  
+    regression_tests:
+    name: Regression Tests
+    needs: [backend_basic_checks, frontend_basic_checks]
+    if: github.base_ref == 'qa'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run Regression Tests
+        run: |
+          echo "Running regression tests..."
+          # Add your regression test commands here when you have them
+          echo "QA tests done, merging..."
+
+    main_branch_check:
+    name: Main Branch Merge Protection
+    if: github.base_ref == 'main'
+    needs: regression_tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify QA Branch
+        run: |
+          if [[ "${{ github.head_ref }}" != "qa" ]]; then
+            echo "Error: Can only merge to main from qa branch"
+            exit 1
+          fi
+          
