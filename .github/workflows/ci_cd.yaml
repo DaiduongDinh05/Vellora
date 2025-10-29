@@ -137,3 +137,11 @@ jobs:
           docker tag vellora/backend-images:latest public.ecr.aws/n9j0x7c9/vellora/backend-images:latest
           docker push public.ecr.aws/n9j0x7c9/vellora/backend-images:latest
 
+      - name: Deploy to EC2 with SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.KEY }}
+          port: 22
+          script: whoami
