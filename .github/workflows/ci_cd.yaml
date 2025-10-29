@@ -136,6 +136,9 @@ jobs:
           docker build -t vellora/backend .
           docker tag vellora/backend:latest 260125007066.dkr.ecr.us-east-2.amazonaws.com/vellora/backend:latest
           docker push 260125007066.dkr.ecr.us-east-2.amazonaws.com/vellora/backend:latest
+          docker push 260125007066.dkr.ecr.us-east-2.amazonaws.com/vellora/backend:latest
+          docker push 260125007066.dkr.ecr.us-east-2.amazonaws.com/vellora/backend:latest
+          docker push 260125007066.dkr.ecr.us-east-2.amazonaws.com/vellora/backend:latest
 
       - name: Delete old images from ECR
         run: |
