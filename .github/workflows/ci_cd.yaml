@@ -152,6 +152,7 @@ jobs:
           key: ${{ secrets.KEY }}
           port: 22
           script: |
+            aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin 260125007066.dkr.ecr.us-east-2.amazonaws.com
             docker pull 260125007066.dkr.ecr.us-east-2.amazonaws.com/vellora/backend:latest
             docker rm -f vellora-backend || true
             docker run -d --name vellora-backend \
