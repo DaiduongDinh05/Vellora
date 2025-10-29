@@ -128,14 +128,14 @@ jobs:
 
       - name: AWS ECR Login
         run: |
-          aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/n9j0x7c9
+          aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin 260125007066.dkr.ecr.us-east-2.amazonaws.com
 
       - name: Build, Tag, and Push Docker Image
         working-directory: backend
         run: |
           docker build -t vellora/backend-images .
-          docker tag vellora/backend-images:latest public.ecr.aws/n9j0x7c9/vellora/backend-images:latest
-          docker push public.ecr.aws/n9j0x7c9/vellora/backend-images:latest
+          docker tag vellora/backend:latest 260125007066.dkr.ecr.us-east-2.amazonaws.com/vellora/backend:latest
+          docker push 260125007066.dkr.ecr.us-east-2.amazonaws.com/vellora/backend:latest
 
       - name: Deploy to EC2 with SSH
         uses: appleboy/ssh-action@v1
