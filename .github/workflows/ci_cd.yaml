@@ -140,9 +140,11 @@ jobs:
 
       - name: Delete old images from ECR
         run: |
-          aws ecr list-images --repository-name vellora/backend --query "imageIds[?imageTag!='latest'].[imageTag]" --output text | \
+          aws ecr list-images --repository-name vellora/backend --query "imageIds[?imageTag!='latest'].imageTag" --output text | \
           while read IMAGE_TAG; do
-            aws ecr batch-delete-image --repository-name vellora/backend --image-ids imageTag=$IMAGE_TAG
+            if [[ "$IMAGE_TAG" != "None" ]]; then
+              aws ecr batch-delete-image --repository-name vellora/backend --image-ids imageTag=$IMAGE_TAG
+            fi
           done
 
       - name: Deploy to EC2 with SSH
