@@ -139,11 +139,11 @@ jobs:
 
       - name: Delete old images from ECR
         run: |
-          aws ecr list-images --repository-name vellora/backend --query "imageIds[?imageTag!='latest'].imageTag" --output text | \
-          while read IMAGE_TAG; do
-            if [[ "$IMAGE_TAG" != "None" && -n "$IMAGE_TAG" ]]; then
-              echo "Deleting image with tag: $IMAGE_TAG"
-              aws ecr batch-delete-image --repository-name vellora/backend --image-ids imageTag=$IMAGE_TAG
+          aws ecr list-images --repository-name vellora/backend --query "imageIds[?imageTag=='null']" --output text | \
+          while read IMAGE_ID; do
+            if [[ "$IMAGE_ID" != "None" && -n "$IMAGE_ID" ]]; then
+              echo "Deleting untagged image with ID: $IMAGE_ID"
+              aws ecr batch-delete-image --repository-name vellora/backend --image-ids imageDigest=$IMAGE_ID
             fi
           done
 
