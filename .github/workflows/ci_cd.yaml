@@ -108,6 +108,7 @@ jobs:
   
   deploy_production:
     name: Deploy to Production
+    needs: [backend_basic_checks, frontend_basic_checks, regression_tests]
     permissions:
       id-token: write   # This is required for requesting the JWT
       contents: read    # This is required for actions/checkout
@@ -137,6 +138,10 @@ jobs:
           docker tag vellora/backend:latest 260125007066.dkr.ecr.us-east-2.amazonaws.com/vellora/backend:latest
           docker push 260125007066.dkr.ecr.us-east-2.amazonaws.com/vellora/backend:latest
 
+      - name: Delete old images from ECR
+        run: |
+          aws ecr batch-delete-image --repository-name vellora/backend --image-ids $(aws ecr list-images --repository-name vellora/backend --query 'imageIds[?imageTag!=`latest`]' --output text) || echo "No images to delete"
+          
       - name: Deploy to EC2 with SSH
         uses: appleboy/ssh-action@v1
         with:
