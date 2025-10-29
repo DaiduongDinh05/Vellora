@@ -144,4 +144,7 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.KEY }}
           port: 22
-          script: whoami
+          script: |
+            echo "Running command"
+            whoami
+
