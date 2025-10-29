@@ -152,6 +152,11 @@ jobs:
           key: ${{ secrets.KEY }}
           port: 22
           script: |
-            echo "Running command"
-            whoami
+            docker pull 260125007066.dkr.ecr.us-east-2.amazonaws.com/vellora/backend:latest
+            docker rm -f vellora-backend || true
+            docker run -d --name vellora-backend \
+            --restart=always \
+            -p 80:8000 \
+            -e NODE_ENV=production \
+            260125007066.dkr.ecr.us-east-2.amazonaws.com/vellora/backend:latest
 
