@@ -141,6 +141,9 @@ jobs:
           docker push 260125007066.dkr.ecr.us-east-2.amazonaws.com/vellora/backend:latest
 
       - name: Delete old images from ECR
+        run: |
+          echo "Error: Can only merge to main from qa branch"
+
 
       - name: Deploy to EC2 with SSH
         uses: appleboy/ssh-action@v1
