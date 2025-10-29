@@ -133,7 +133,7 @@ jobs:
       - name: Build, Tag, and Push Docker Image
         working-directory: backend
         run: |
-          docker build -t vellora/backend-images .
+          docker build -t vellora/backend .
           docker tag vellora/backend:latest 260125007066.dkr.ecr.us-east-2.amazonaws.com/vellora/backend:latest
           docker push 260125007066.dkr.ecr.us-east-2.amazonaws.com/vellora/backend:latest
 
