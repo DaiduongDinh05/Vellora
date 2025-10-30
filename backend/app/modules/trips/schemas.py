@@ -14,6 +14,7 @@ class CreateTripDTO(BaseModel):
 
 class EndTripDTO(BaseModel):
     end_address: str
+    geometry: str
     distance_meters: float
     
     @field_validator('distance_meters')

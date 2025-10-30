@@ -87,6 +87,7 @@ class TripsService:
         try: 
 
             trip.miles = miles
+            trip.geometry = data.geometry
             trip.mileage_reimbursement_total = miles * (trip.reimbursement_rate or 0.0)
             trip.status = TripStatus.completed
             trip.end_address_encrypted = encrypt_address(data.end_address)
