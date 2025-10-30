@@ -27,9 +27,8 @@ jobs:
   # Job 2: Run backend tests/deployment if backend files changed
   backend_basic_checks:
     name: Backend Basic Checks
-    if: github.base_ref == 'dev' || github.base_ref == 'main'
     needs: paths
-    if: ${{ needs.paths.outputs.backend == 'true' }}
+    if: ${{ (github.base_ref == 'dev' || github.base_ref == 'main') && needs.paths.outputs.backend == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -57,9 +56,8 @@ jobs:
   # Job 3: Run frontend deployment if frontend files changed
   frontend_basic_checks:
     name: Frontend Basic Checks
-    if: github.base_ref == 'dev' || github.base_ref == 'main'
     needs: paths
-    if: ${{ needs.paths.outputs.frontend == 'true' }}
+    if: ${{ (github.base_ref == 'dev' || github.base_ref == 'main') && needs.paths.outputs.backend == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
