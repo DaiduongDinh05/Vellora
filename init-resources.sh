@@ -3,10 +3,10 @@ set -e
 
 # Create S3 bucket
 echo "[INFO] Creating S3 bucket..."
-awslocal s3 mb s3://vellora-files
+awslocal s3 mb s3://vellora-s3-bucket
 
 echo "[INFO] Setting up CORS configuration for S3 bucket..."
-awslocal s3api put-bucket-cors --bucket vellora-files --cors-configuration '{
+awslocal s3api put-bucket-cors --bucket vellora-s3-bucket --cors-configuration '{
     "CORSRules": [
         {
             "AllowedOrigins": ["*"],
