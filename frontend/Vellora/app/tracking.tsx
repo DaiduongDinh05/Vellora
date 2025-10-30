@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet } from 'react-native'
+import { View, Text, StyleSheet, TouchableWithoutFeedback, Keyboard } from 'react-native'
 import React, { useState } from 'react'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import NoteInput from './components/NoteInput'
@@ -53,92 +53,95 @@ const Tracking = () => {
   ];
 
   return (
-    <View style={{flex: 1, backgroundColor: '#fff'}}>
-      <ScrollView style={{flex: 1}} 
-        contentContainerStyle={{ paddingBottom: 120 }}
-        indicatorStyle='black' 
-        persistentScrollbar={true}>
-        
-        <View style={{paddingTop: insets.top}} />
-        <Text className="text-3xl text-primaryPurple font-bold p-6">Live Track Current Trip</Text>
-        <MapView style={{width: '100%', height: 300}}/>
-          {/* create a scrollable form and add gaps between child components */}
-          <View style={{padding: 25, gap: 16}}>
-            <View className='flex-row justify-between'>
-              <Text className='text-xl'>
-                Value: {' '}
-                <Text className='font-bold'>$0</Text>
-              </Text>
-              <Text className='text-xl'>
-                Distance: {' '}
-                <Text className='font-bold'>0 mi</Text>
-              </Text>
-            </View>
+    <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()} accessible={false}>
 
-              {/* render notes input */}
-              <NoteInput 
-                placeholder="Add your crazy notes"
-                value={notes}
-                onChangeText={setNotes}
-                className=''
-              />
-
-              <View className='flex-row gap-4'>
-                <CurrencyInput 
-                  label='Parking'
-                  value={parking}
-                  onChangeText={setParking}
-                  className="flex-1"
-                />
-
-                <CurrencyInput 
-                  label='Gas'
-                  value={gas}
-                  onChangeText={setGas}
-                  className="flex-1"
-                />
+      <View style={{flex: 1, backgroundColor: '#fff'}}>
+        <ScrollView style={{flex: 1}} 
+          contentContainerStyle={{ paddingBottom: 120 }}
+          indicatorStyle='black' 
+          persistentScrollbar={true}>
+          
+          <View style={{paddingTop: insets.top}} />
+          <Text className="text-3xl text-primaryPurple font-bold p-6">Live Track Current Trip</Text>
+          <MapView style={{width: '100%', height: 300}}/>
+            {/* create a scrollable form and add gaps between child components */}
+            <View style={{padding: 25, gap: 16}}>
+              <View className='flex-row justify-between'>
+                <Text className='text-xl'>
+                  Value: {' '}
+                  <Text className='font-bold'>$0</Text>
+                </Text>
+                <Text className='text-xl'>
+                  Distance: {' '}
+                  <Text className='font-bold'>0 mi</Text>
+                </Text>
               </View>
 
-              {/* render vehicle dropdown */}
-              <Dropdown 
-                placeholder="Select vehicle"
-                items={vehicleItems}
-                onValueChange={setVehicle}
-                value={vehicle}
-                icon={<FontAwesome name="car" {...iconProps} />}
-              />
+                {/* render notes input */}
+                <NoteInput 
+                  placeholder="Add your crazy notes"
+                  value={notes}
+                  onChangeText={setNotes}
+                  className=''
+                />
 
-              {/* render type dropdown */}
-              <Dropdown 
-                placeholder="Select type"
-                items={typeItems}
-                onValueChange={setType}
-                value={type}
-                icon={<FontAwesome name="list-ul" {...iconProps} />}
-              />
+                <View className='flex-row gap-4'>
+                  <CurrencyInput 
+                    label='Parking'
+                    value={parking}
+                    onChangeText={setParking}
+                    className="flex-1"
+                  />
 
-              {/* render rate dropdown */}
-              <Dropdown 
-                placeholder="Select reimbursement rate"
-                items={rateItems}
-                onValueChange={setRate}
-                value={rate}
-                icon={<FontAwesome name="dollar" {...iconProps} />}
-              />
+                  <CurrencyInput 
+                    label='Gas'
+                    value={gas}
+                    onChangeText={setGas}
+                    className="flex-1"
+                  />
+                </View>
 
-          </View>    
-              
-      </ScrollView>
-      <View className='bg-white px-6 pt-4 border border-gray-300' style={{position: 'absolute', bottom: 0, padding: 30, paddingTop: 20, width: '100%'}}>
-        <Button 
-          title="Start Trip"
-          onPress={handleStartTrip}
-          className=""
-        />
+                {/* render vehicle dropdown */}
+                <Dropdown 
+                  placeholder="Select vehicle"
+                  items={vehicleItems}
+                  onValueChange={setVehicle}
+                  value={vehicle}
+                  icon={<FontAwesome name="car" {...iconProps} />}
+                />
+
+                {/* render type dropdown */}
+                <Dropdown 
+                  placeholder="Select type"
+                  items={typeItems}
+                  onValueChange={setType}
+                  value={type}
+                  icon={<FontAwesome name="list-ul" {...iconProps} />}
+                />
+
+                {/* render rate dropdown */}
+                <Dropdown 
+                  placeholder="Select reimbursement rate"
+                  items={rateItems}
+                  onValueChange={setRate}
+                  value={rate}
+                  icon={<FontAwesome name="dollar" {...iconProps} />}
+                />
+
+            </View>    
+                
+        </ScrollView>
+        <View className='bg-white px-6 pt-4 border border-gray-300' style={{position: 'absolute', bottom: 0, padding: 30, paddingTop: 20, width: '100%'}}>
+          <Button 
+            title="Start Trip"
+            onPress={handleStartTrip}
+            className=""
+          />
+
+        </View>
 
       </View>
-
-    </View>
+    </TouchableWithoutFeedback>
 
   )
 }
