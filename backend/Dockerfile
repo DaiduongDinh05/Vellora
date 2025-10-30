@@ -8,6 +8,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . /backend/
 
+RUN apt-get update && apt-get install -y libpq-dev
 
 EXPOSE 8000
 
