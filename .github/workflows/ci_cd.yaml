@@ -50,6 +50,7 @@ jobs:
         working-directory: backend
         run: |
           echo "Running backend tests..."
+          pytest tests/modules/trips/ --cov=app.modules.trips --cov-report=term-missing
           echo "Backend tests completed."
 
   # Job 3: Run frontend deployment if frontend files changed
@@ -160,6 +161,6 @@ jobs:
             -e FERNET_KEY=$FERNET_KEY \
             --restart=always \
             -p 80:8000 \
-            -e NODE_ENV=production \
+            -e ENV=production \
             260125007066.dkr.ecr.us-east-2.amazonaws.com/vellora/backend:latest
 
