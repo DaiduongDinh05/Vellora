@@ -8,6 +8,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . /backend/
 
+RUN apt-get update && apt-get install -y libpq-dev
+
+RUN pip install psycopg-binary
+
+RUN pip install asyncpg
 
 EXPOSE 8000
 
