@@ -1,5 +1,7 @@
-.DS_Store
-
+# --- Virtual Environment ---
+.venv/
+venv/
+ENV/
+env/
 .env
-
-.venv
+.DS_Store

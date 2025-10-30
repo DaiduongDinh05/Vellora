@@ -10,6 +10,11 @@ from alembic import context
 from app.config import settings
 from app.core.base import Base
 
+from app.modules.trips import models
+from app.modules.expenses import models
+from app.modules.rate_customizations import models
+from app.modules.rate_categories import models
+
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
