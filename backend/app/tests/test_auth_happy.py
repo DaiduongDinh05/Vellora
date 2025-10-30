@@ -98,6 +98,7 @@ async def test_google_oauth_flow(client, session_maker, monkeypatch):
         )
 
     monkeypatch.setattr(registry, "get_provider", _get_stub_provider)
+    monkeypatch.setattr("app.modules.auth.oauth_service.get_provider", _get_stub_provider)
 
     authorize_response = await client.get("/api/v1/auth/providers/google/authorize")
     assert authorize_response.status_code == 200

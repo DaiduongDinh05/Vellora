@@ -38,7 +38,7 @@ class RefreshTokenRepository:
         )
         result = await self.session.execute(stmt)
         token = result.scalar_one_or_none()
-        if token and token.expires_at <= datetime.now(timezone.utc):
+        if token and _ensure_timezone(token.expires_at) <= datetime.now(timezone.utc):
             return None
         return token
 
@@ -92,7 +92,7 @@ class OAuthStateRepository:
         if (
             oauth_state is None
             or oauth_state.consumed_at is not None
-            or oauth_state.expires_at <= now
+            or _ensure_timezone(oauth_state.expires_at) <= now
         ):
             return None
 
@@ -100,6 +100,12 @@ class OAuthStateRepository:
         self.session.add(oauth_state)
         await self.session.flush()
         return oauth_state
+
+
+def _ensure_timezone(dt: datetime) -> datetime:
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
 
 
 class OAuthAccountRepository:
