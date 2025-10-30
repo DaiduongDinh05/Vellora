@@ -108,7 +108,7 @@ jobs:
   
   deploy_production:
     name: Deploy to Production
-    needs: [backend_basic_checks, frontend_basic_checks, regression_tests]
+    needs: [backend_basic_checks, frontend_basic_checks, regression_tests, main_branch_check]
     permissions:
       id-token: write   # This is required for requesting the JWT
       contents: read    # This is required for actions/checkout
