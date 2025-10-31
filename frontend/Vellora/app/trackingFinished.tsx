@@ -8,6 +8,7 @@ import ScreenLayout from './components/ScreenLayout';
 import TripDetailsForm from './components/TripDetailsForm';
 import EditableNumericDisplay from './components/EditableNumericDisplay';
 import Button from './components/Button';
+import { vehicleItems, typeItems, rateItems } from '../app/constants/dropdownOptions';
 
 const TrackingFinished = () => {
 
@@ -33,28 +34,6 @@ const TrackingFinished = () => {
     router.push('/(tabs)/history');
   };
 
-  // these are temporary test values to make sure the components work
-  // vehicle options
-  const vehicleItems = [
-    {label: 'Personal Car (Toyota)', value: 'ABC1234'},
-    {label: 'Business Car (Mazda)', value: 'XYZ1234'},
-    {label: 'Random Car (Nissan)', value: 'LOL1234'},
-  ];
-
-  // type options
-  const typeItems = [
-    {label: 'Business', value: 'business', category: 'builtin'},
-    {label: 'Charity', value: 'charity', category: 'builtin'},
-    {label: 'Military', value: 'military', category: 'builtin'},
-    {label: 'Between Offices', value: 'between', category: 'custom'}
-
-  ];
-
-  // reimbursement rate options
-  const rateItems = [
-    {label: 'IRS Standard Rate', value: 'irs', category: 'builtin'},
-    {label: 'Company A Rate', value: 'companyA', category: 'category'}
-  ];
 
   return (
     <ScreenLayout       // screen layout as the main wrapper
