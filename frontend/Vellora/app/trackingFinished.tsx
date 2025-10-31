@@ -1,16 +1,12 @@
-import { View, Text, StyleSheet, TouchableWithoutFeedback, Keyboard } from 'react-native'
+import { View, Text } from 'react-native'
 import React, { useState } from 'react'
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import NoteInput from './components/NoteInput'
-import Dropdown from './components/Dropdown'
-import { ScrollView } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
-import CurrencyInput from './components/CurrencyInput';
-import Button from './components/Button';
 import MapView from 'react-native-maps';
 import { useRouter } from 'expo-router';
-import FilledAddressBox from './components/FilledAddressBox';
+
+import ScreenLayout from './components/ScreenLayout';
+import TripDetailsForm from './components/TripDetailsForm';
 import EditableNumericDisplay from './components/EditableNumericDisplay';
+import Button from './components/Button';
 
 const TrackingFinished = () => {
 
@@ -20,6 +16,7 @@ const TrackingFinished = () => {
   const [type, setType] = useState<string | null>(null);
   const [rate, setRate] = useState<string | null>(null);
   const [parking, setParking] = useState<string>('0.00');
+  const [tolls, setTolls] = useState<string>('0.00');
   const [gas, setGas] = useState<string>('0.00');
   const [tripValue, setTripValue] = useState('0.00');
   const [tripDistance, setTripDistance] = useState('0');
@@ -27,17 +24,12 @@ const TrackingFinished = () => {
   const [endAddress, setEndAddress] = useState<string>('123 End Street, Denton TX');
 
   const router = useRouter();
-  const insets = useSafeAreaInsets();
 
-  const handleStartTrip = () => {
-    console.log('Starting trip...');
+  const handleSaveTrip = () => {
+    console.log('Saving trip...');
     router.push('/(tabs)/history');
   };
 
-  // common style for icons
-  const iconProps = {
-    size: 18,
-  };
   // these are temporary test values to make sure the components work
   // vehicle options
   const vehicleItems = [
@@ -62,112 +54,54 @@ const TrackingFinished = () => {
   ];
 
   return (
-    <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()} accessible={false}>
-
-      <View style={{flex: 1, backgroundColor: '#fff'}}>
-        <ScrollView style={{flex: 1}} 
-          contentContainerStyle={{ paddingBottom: 120 }}
-          indicatorStyle='black' 
-          persistentScrollbar={true}>
-          
-          <MapView style={{width: '100%', height: 300}}/>
-          <Text className="text-3xl text-primaryPurple font-bold pt-6 pl-6">You arrived!</Text>
-          <Text className="text-xl text-black p-6">Make sure to update trip details:</Text>
-            {/* create a scrollable form and add gaps between child components */}
-            <View style={{padding: 25, gap: 16}}>
-
-                {/* render notes input */}
-                <FilledAddressBox 
-                    value={startAddress}
-                    onChangeText={setStartAddress}
-                
-                />
-                <FilledAddressBox 
-                    value={endAddress}
-                    onChangeText={setEndAddress}
-                />
-
-                <View className='flex-row gap-4'>
-                  <CurrencyInput 
-                    label='Parking'
-                    value={parking}
-                    onChangeText={setParking}
-                    className="flex-1"
-                  />
-                  <CurrencyInput 
-                    label='Tolls'
-                    value={parking}
-                    onChangeText={setParking}
-                    className="flex-1"
-                  />
-
-                  <CurrencyInput 
-                    label='Gas'
-                    value={gas}
-                    onChangeText={setGas}
-                    className="flex-1"
-                  />
+    <ScreenLayout
+        footer={
+            <>
+                <View className='flex-row justify-between mb-4'>
+                    <EditableNumericDisplay
+                        label='Value'
+                        value={tripValue}
+                        onChangeText={setTripValue}
+                        unit='$'
+                    />
+                    <EditableNumericDisplay
+                        label='Distance'
+                        value={tripDistance}
+                        onChangeText={setTripDistance}
+                        unit='mi'
+                    />
                 </View>
-
-                {/* render vehicle dropdown */}
-                <Dropdown 
-                  placeholder="Select vehicle"
-                  items={vehicleItems}
-                  onValueChange={setVehicle}
-                  value={vehicle}
-                  icon={<FontAwesome name="car" {...iconProps} />}
+                <Button
+                    title='Save trip'
+                    onPress={handleSaveTrip}
+                    style={{top: 10}}
                 />
+            </>
+        }
+    >
+        <MapView style={{width: '100%', height: 300}}/>
+        <Text className='text-3xl text-primaryPurple font-bold pt-6 pl-6'>You arrived!</Text>
+        <Text className='text-xl text-black p-6'>Make sure to update trip details:</Text>
 
-                {/* render type dropdown */}
-                <Dropdown 
-                  placeholder="Select type"
-                  items={typeItems}
-                  onValueChange={setType}
-                  value={type}
-                  icon={<FontAwesome name="list-ul" {...iconProps} />}
-                />
+        <TripDetailsForm 
+            notes={notes} setNotes={setNotes}
+            vehicle={vehicle} setVehicle={setVehicle}
+            type={type} setType={setType}
+            rate={rate} setRate={setRate}
+            parking={parking} setParking={setParking}
+            gas={gas} setGas={setGas}
+            tolls={tolls} setTolls={setTolls}
+            startAddress={startAddress} setStartAddress={setStartAddress}
+            endAddress={endAddress} setEndAddress={setEndAddress}
+            vehicleItems={vehicleItems}
+            typeItems={typeItems}
+            rateItems={rateItems}
+            
+        />
 
-                {/* render rate dropdown */}
-                <Dropdown 
-                  placeholder="Select reimbursement rate"
-                  items={rateItems}
-                  onValueChange={setRate}
-                  value={rate}
-                  icon={<FontAwesome name="dollar" {...iconProps} />}
-                />
+    </ScreenLayout>
 
-            </View>    
-                
-        </ScrollView>
-        <View className='bg-white px-6 pt-4 border border-gray-300' style={{position: 'absolute', bottom: 0, padding: 30, paddingTop: 20, width: '100%'}}>
-          
-            <View className='flex-row justify-between'>
-                <EditableNumericDisplay
-                    label='Value'
-                    value={tripValue}
-                    onChangeText={setTripValue}
-                    unit='$'
-                />
-                <EditableNumericDisplay
-                    label='Distance'
-                    value={tripDistance}
-                    onChangeText={setTripDistance}
-                    unit='mi'
-                />
-                 
-            </View>
-            <Button 
-                title="End Trip"
-                onPress={handleStartTrip}
-                className="top-4"
-            />
-
-        </View>
-
-      </View>
-    </TouchableWithoutFeedback>
-
-  )
+  );
 }
 
 export default TrackingFinished;
