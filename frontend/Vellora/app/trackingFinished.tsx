@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import MapView from 'react-native-maps';
 import { useRouter } from 'expo-router';
 
+// Import reusable components
 import ScreenLayout from './components/ScreenLayout';
 import TripDetailsForm from './components/TripDetailsForm';
 import EditableNumericDisplay from './components/EditableNumericDisplay';
@@ -23,8 +24,10 @@ const TrackingFinished = () => {
   const [startAddress, setStartAddress] = useState<string>('123 Start Street, Denton TX');
   const [endAddress, setEndAddress] = useState<string>('123 End Street, Denton TX');
 
+  // initialize router hook for navigation
   const router = useRouter();
 
+  // end end trip event handler. TO BE ADJUSTED
   const handleSaveTrip = () => {
     console.log('Saving trip...');
     router.push('/(tabs)/history');
@@ -54,7 +57,9 @@ const TrackingFinished = () => {
   ];
 
   return (
-    <ScreenLayout
+    <ScreenLayout       // screen layout as the main wrapper
+
+        // return calculated value and distance with an option for user to edit them
         footer={
             <>
                 <View className='flex-row justify-between mb-4'>
@@ -79,11 +84,14 @@ const TrackingFinished = () => {
             </>
         }
     >
+        {/* Temporary map display. TO BE CHANGED TO AN IMPLEMENTATION WITH GEOMETRY PATH */}
         <MapView style={{width: '100%', height: 300}}/>
         <Text className='text-3xl text-primaryPurple font-bold pt-6 pl-6'>You arrived!</Text>
         <Text className='text-xl text-black p-6'>Make sure to update trip details:</Text>
 
         <TripDetailsForm 
+
+            // state variables
             notes={notes} setNotes={setNotes}
             vehicle={vehicle} setVehicle={setVehicle}
             type={type} setType={setType}
@@ -93,6 +101,8 @@ const TrackingFinished = () => {
             tolls={tolls} setTolls={setTolls}
             startAddress={startAddress} setStartAddress={setStartAddress}
             endAddress={endAddress} setEndAddress={setEndAddress}
+
+            // mock data arrays
             vehicleItems={vehicleItems}
             typeItems={typeItems}
             rateItems={rateItems}

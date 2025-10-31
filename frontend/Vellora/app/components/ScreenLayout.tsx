@@ -17,6 +17,7 @@ const ScreenLayout: React.FC<ScreenLayoutProps> = ({ children, footer }) => {
         <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()} accessible={false}>
             <View style={{ flex: 1, backgroundColor: '#fff' }}>
 
+                {/* Area for the scrollable content */}
                 <ScrollView
                     style={{flex: 1}}
                     contentContainerStyle={{
@@ -25,12 +26,13 @@ const ScreenLayout: React.FC<ScreenLayoutProps> = ({ children, footer }) => {
                     }}
                     indicatorStyle='black'
                     persistentScrollbar={true}
-                    keyboardShouldPersistTaps="handled"
+                    keyboardShouldPersistTaps="handled"     // keyboard dismissal
                 
                 >
                     {children}
                 </ScrollView>
-
+                
+                {/* sticky footer area */}
                 <View
                     className='w-full bg-white px-6 pt-4 border-t border-gray-300'
                     style={{

@@ -1,6 +1,7 @@
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, TouchableOpacityProps, View } from 'react-native'
 import React from 'react'
 
+// typescript types for the expected props
 type ButtonProps = TouchableOpacityProps & {
     title: string;
     className?: string;

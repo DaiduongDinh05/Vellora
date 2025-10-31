@@ -7,6 +7,7 @@ type NoteInputProps = TextInputProps & {
     multiline?: boolean;
 }
 
+// this component is made for note inputs that are either multiline or single line
 const NoteInput: React.FC<NoteInputProps> = ({ 
     className = '',
     multiline = false,

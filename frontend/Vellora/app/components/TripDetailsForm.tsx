@@ -1,40 +1,52 @@
-import { View } from 'react-native'
-import React from 'react'
-import { FontAwesome } from '@expo/vector-icons'
-import NoteInput from './NoteInput'
-import Dropdown from './Dropdown'
-import CurrencyInput from './CurrencyInput'
-// import FilledAddressBox from './FilledAddressBox'
+import { View } from 'react-native';
+import React from 'react';
+import { FontAwesome } from '@expo/vector-icons';
 
+// import custom components
+import NoteInput from './NoteInput';
+import Dropdown from './Dropdown';
+import CurrencyInput from './CurrencyInput';
 
+// typescript type for expected props
 type TripDtailsFormProps = {
+
+    // notes text input
     notes: string,
     setNotes: (value: string) => void;
 
+    // vehicle choice
     vehicle: string | null;
     setVehicle: (value: string | null) => void;
 
+    // type/category choice
     type: string | null;
     setType: (value: string | null) => void;
 
+    // reimbursement rate choice
     rate: string | null;
     setRate: (value: string | null) => void;
 
+    // parking cost input
     parking: string;
     setParking: (value: string) => void;
 
+    // gas cost input
     gas: string;
     setGas: (value: string) => void;
 
+    // optional start address
     startAddress?: string;
     setStartAddress?: (value: string) => void;
 
+    // optional end address
     endAddress?: string;
     setEndAddress?: (value: string) => void;
 
+    // optional tolls
     tolls?: string;
     setTolls?: (value: string) => void;
 
+    // test arrays for dropdown data
     vehicleItems: any[];
     typeItems: any[];
     rateItems: any[];
@@ -42,12 +54,17 @@ type TripDtailsFormProps = {
     
 };
 
+// this is a reusable controlled component that does not manage its own data (but receives it in props)
+// is used to create forms when starting, updating, or ending trip details
 const TripDetailsForm: React.FC<TripDtailsFormProps> = (props) => {
 
+    // common icon properties
     const iconProps = { size: 18 };
 
     return (
         <View style={{ padding: 25, gap: 16 }}>
+
+            {/* Conditionally render start and end addresses (only if those props are provided) */}
             {props.startAddress !== undefined && props.setStartAddress && (
                 <NoteInput 
                     value={props.startAddress}
@@ -62,7 +79,7 @@ const TripDetailsForm: React.FC<TripDtailsFormProps> = (props) => {
             )}
 
 
-            {/* render notes input */}
+            {/* render multiline notes input */}
             <NoteInput 
                 multiline
                 placeholder="Add your crazy notes"
@@ -71,6 +88,7 @@ const TripDetailsForm: React.FC<TripDtailsFormProps> = (props) => {
                 className=''
             />
 
+            {/* render currency type inputs */}
             <View className='flex-row gap-4'>
                 <CurrencyInput 
                     label='Parking'
@@ -79,6 +97,7 @@ const TripDetailsForm: React.FC<TripDtailsFormProps> = (props) => {
                     className="flex-1"
                 />
                 
+                {/* conditionally render tolls if the tolls prop is provided. If not, render gas instead     */}
                 {props.tolls !== undefined && props.setTolls ? (
                     <CurrencyInput 
                         label='Tolls'
@@ -96,6 +115,7 @@ const TripDetailsForm: React.FC<TripDtailsFormProps> = (props) => {
                 )}
             </View>
 
+            {/* if tolls were rendered earlier, also render gas */}
             {props.tolls !== undefined && (
                 <CurrencyInput 
                     label='Gas'

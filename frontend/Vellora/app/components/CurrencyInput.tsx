@@ -1,6 +1,7 @@
 import { Text, View, TextInput } from 'react-native'
 import React from 'react'
 
+// typescript types for the expected props
 type CurrencyInputProps = {
     label: string;
     value: string;
@@ -14,9 +15,14 @@ const CurrencyInput: React.FC<CurrencyInputProps> = ({
     className = ''
 }) => {
 
+    // handle changes while the user is typing
+    // ensures numeric validity
     const handleTextChange = (text: string) => {
 
+        // remove non digit characters
         const formattedText = text.replace(/[^0-9.]/g, '');
+
+        // make sure there are no multiple deicmal points like 1.20.23
         const parts = formattedText.split('.');
 
         if (text == ''){
@@ -29,6 +35,7 @@ const CurrencyInput: React.FC<CurrencyInputProps> = ({
             return;
         }
 
+        // accept only two decimal points
         if (parts[1] && parts[1].length > 2){
             onChangeText(value);
             return;
@@ -37,13 +44,17 @@ const CurrencyInput: React.FC<CurrencyInputProps> = ({
         onChangeText(formattedText);
     };
 
+
+    // apply formatting when the user is done typing
     const handleFormatting = () => {
 
+        // automatically put 0 if the input is empty
         if (value == '' || value == '.' || value == '0'){
             onChangeText('0.00');
             return;
         }
 
+        // parse to floating point and ensure its success
         const num = parseFloat(value);
 
         if (!isNaN(num)){
