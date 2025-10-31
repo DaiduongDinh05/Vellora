@@ -1,4 +1,4 @@
-import { StyleSheet, ScrollView, TouchableWithoutFeedback, Keyboard, View } from 'react-native'
+import { ScrollView, TouchableWithoutFeedback, Keyboard, View } from 'react-native'
 import React from 'react'
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -31,23 +31,21 @@ const ScreenLayout: React.FC<ScreenLayoutProps> = ({ children, footer }) => {
                     {children}
                 </ScrollView>
 
+                <View
+                    className='w-full bg-white px-6 pt-4 border-t border-gray-300'
+                    style={{
+                        position: 'absolute',
+                        bottom: 0,
+                        paddingBottom: insets.bottom == 0 ? 12 : insets.bottom,
+                    }}
+                >
+                    {footer}
+                </View>
             </View>
 
-            <View
-                className='w-full bg-white px-6 pt-4 border-t border-gray-300'
-                style={{
-                    position: 'absolute',
-                    bottom: 0,
-                    paddingBottom: insets.bottom == 0 ? 12 : insets.bottom,
-                }}
-            >
-                {footer}
-            </View>
 
         </TouchableWithoutFeedback>
     )
 }
 
 export default ScreenLayout
-
-const styles = StyleSheet.create({})
