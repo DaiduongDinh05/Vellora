@@ -6,9 +6,8 @@ export default function Index() {
     <View className="flex-1 justify-center items-center"
     >
       <Text className="text-5xl text-primaryPurple font-bold">Welcome!</Text>
-      <Link href="../tracking">Tracking Screen</Link>
-      <Link href="../trackingInAction">Tracking in actionScreen</Link>
-
+      <Link href="../tracking">Live track a trip</Link>
+      <Link href="../trackingFinished">Finished screen</Link>
     </View>
   );
 }

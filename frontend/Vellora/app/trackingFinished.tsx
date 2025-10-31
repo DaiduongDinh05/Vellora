@@ -10,7 +10,7 @@ import Button from './components/Button';
 import MapView from 'react-native-maps';
 import { useRouter } from 'expo-router';
 
-const Tracking = () => {
+const TrackingFinished = () => {
 
   // state variables
   const [notes, setNotes] = useState('');
@@ -64,21 +64,11 @@ const Tracking = () => {
           indicatorStyle='black' 
           persistentScrollbar={true}>
           
-          <View style={{paddingTop: insets.top}} />
-          <Text className="text-3xl text-primaryPurple font-bold p-6">Live Track Current Trip</Text>
           <MapView style={{width: '100%', height: 300}}/>
+          <Text className="text-3xl text-primaryPurple font-bold pt-6 pl-6">You arrived!</Text>
+          <Text className="text-xl text-black p-6">Make sure to update trip details:</Text>
             {/* create a scrollable form and add gaps between child components */}
             <View style={{padding: 25, gap: 16}}>
-              <View className='flex-row justify-between'>
-                <Text className='text-xl'>
-                  Value: {' '}
-                  <Text className='font-bold'>$0</Text>
-                </Text>
-                <Text className='text-xl'>
-                  Distance: {' '}
-                  <Text className='font-bold'>0 mi</Text>
-                </Text>
-              </View>
 
                 {/* render notes input */}
                 <NoteInput 
@@ -91,6 +81,12 @@ const Tracking = () => {
                 <View className='flex-row gap-4'>
                   <CurrencyInput 
                     label='Parking'
+                    value={parking}
+                    onChangeText={setParking}
+                    className="flex-1"
+                  />
+                  <CurrencyInput 
+                    label='Tolls'
                     value={parking}
                     onChangeText={setParking}
                     className="flex-1"
@@ -135,11 +131,22 @@ const Tracking = () => {
                 
         </ScrollView>
         <View className='bg-white px-6 pt-4 border border-gray-300' style={{position: 'absolute', bottom: 0, padding: 30, paddingTop: 20, width: '100%'}}>
-          <Button 
-            title="Start Trip"
-            onPress={handleStartTrip}
-            className=""
-          />
+          
+            <View className='flex-row justify-between'>
+                <Text className='text-xl'>
+                  Value: {' '}
+                  <Text className='font-bold'>$0</Text>
+                </Text>
+                <Text className='text-xl'>
+                  Distance: {' '}
+                  <Text className='font-bold'>0 mi</Text>
+                </Text>
+            </View>
+            <Button 
+                title="End Trip"
+                onPress={handleStartTrip}
+                className="top-4"
+            />
 
         </View>
 
@@ -149,4 +156,4 @@ const Tracking = () => {
   )
 }
 
-export default Tracking
+export default TrackingFinished;
