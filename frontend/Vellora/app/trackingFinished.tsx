@@ -9,6 +9,7 @@ import CurrencyInput from './components/CurrencyInput';
 import Button from './components/Button';
 import MapView from 'react-native-maps';
 import { useRouter } from 'expo-router';
+import FilledAddressBox from './components/FilledAddressBox';
 
 const TrackingFinished = () => {
 
@@ -19,13 +20,15 @@ const TrackingFinished = () => {
   const [rate, setRate] = useState<string | null>(null);
   const [parking, setParking] = useState<string>('');
   const [gas, setGas] = useState<string>('');
+  const [startAddress, setStartAddress] = useState<string>('123 Start Street, Denton TX');
+  const [endAddress, setEndAddress] = useState<string>('123 End Street, Denton TX');
 
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
   const handleStartTrip = () => {
     console.log('Starting trip...');
-    router.push('/trackingInAction');
+    router.push('/(tabs)/history');
   };
 
   // common style for icons
@@ -71,11 +74,14 @@ const TrackingFinished = () => {
             <View style={{padding: 25, gap: 16}}>
 
                 {/* render notes input */}
-                <NoteInput 
-                  placeholder="Add your crazy notes"
-                  value={notes}
-                  onChangeText={setNotes}
-                  className=''
+                <FilledAddressBox 
+                    value={startAddress}
+                    onChangeText={setStartAddress}
+                
+                />
+                <FilledAddressBox 
+                    value={endAddress}
+                    onChangeText={setEndAddress}
                 />
 
                 <View className='flex-row gap-4'>

@@ -4,16 +4,20 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import NoteInput from './components/NoteInput';
 import CurrencyInput from './components/CurrencyInput';
 import Button from './components/Button';
+import { useRouter } from 'expo-router';
 
 const trackingInAction = () => {
     // state variables
     const [notes, setNotes] = useState('');
     const [parking, setParking] = useState<string>('');
     const [gas, setGas] = useState<string>('');
+    const router = useRouter();
     const insets = useSafeAreaInsets();
 
     const handleEndTrip = () => {
         console.log('Starting trip...');
+        router.push('/trackingFinished');
+
     };
     
     return (
