@@ -69,12 +69,15 @@ const TripDetailsForm: React.FC<TripDtailsFormProps> = (props) => {
                 <NoteInput 
                     value={props.startAddress}
                     onChangeText={props.setStartAddress}
+                    placeholder='Select Start Location...'
                 />
             )}
             {props.endAddress !== undefined && props.setEndAddress && (
                 <NoteInput 
                     value={props.endAddress}
                     onChangeText={props.setEndAddress}
+                    placeholder='Select End Location...'
+
                 />
             )}
 

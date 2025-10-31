@@ -7,7 +7,7 @@ export default function Index() {
     >
       <Text className="text-5xl text-primaryPurple font-bold">Welcome!</Text>
       <Link href="../tracking">Live track a trip</Link>
-      <Link href="../trackingFinished">Finished screen</Link>
+      <Link href="../manualLogScreen">Manually log a trip</Link>
     </View>
   );
 }
