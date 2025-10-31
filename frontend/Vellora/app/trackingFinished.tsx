@@ -10,6 +10,7 @@ import Button from './components/Button';
 import MapView from 'react-native-maps';
 import { useRouter } from 'expo-router';
 import FilledAddressBox from './components/FilledAddressBox';
+import EditableNumericDisplay from './components/EditableNumericDisplay';
 
 const TrackingFinished = () => {
 
@@ -18,8 +19,10 @@ const TrackingFinished = () => {
   const [vehicle, setVehicle] = useState<string | null>(null);
   const [type, setType] = useState<string | null>(null);
   const [rate, setRate] = useState<string | null>(null);
-  const [parking, setParking] = useState<string>('');
-  const [gas, setGas] = useState<string>('');
+  const [parking, setParking] = useState<string>('0.00');
+  const [gas, setGas] = useState<string>('0.00');
+  const [tripValue, setTripValue] = useState('0.00');
+  const [tripDistance, setTripDistance] = useState('0');
   const [startAddress, setStartAddress] = useState<string>('123 Start Street, Denton TX');
   const [endAddress, setEndAddress] = useState<string>('123 End Street, Denton TX');
 
@@ -139,14 +142,19 @@ const TrackingFinished = () => {
         <View className='bg-white px-6 pt-4 border border-gray-300' style={{position: 'absolute', bottom: 0, padding: 30, paddingTop: 20, width: '100%'}}>
           
             <View className='flex-row justify-between'>
-                <Text className='text-xl'>
-                  Value: {' '}
-                  <Text className='font-bold'>$0</Text>
-                </Text>
-                <Text className='text-xl'>
-                  Distance: {' '}
-                  <Text className='font-bold'>0 mi</Text>
-                </Text>
+                <EditableNumericDisplay
+                    label='Value'
+                    value={tripValue}
+                    onChangeText={setTripValue}
+                    unit='$'
+                />
+                <EditableNumericDisplay
+                    label='Distance'
+                    value={tripDistance}
+                    onChangeText={setTripDistance}
+                    unit='mi'
+                />
+                 
             </View>
             <Button 
                 title="End Trip"
