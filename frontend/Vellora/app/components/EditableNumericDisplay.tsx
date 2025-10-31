@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, KeyboardTypeOptions } from 'react-native'
+import { Text, View, TextInput, TouchableOpacity, KeyboardTypeOptions } from 'react-native'
 import React, {useState} from 'react'
 import { FontAwesome } from '@expo/vector-icons'
 
@@ -27,6 +27,12 @@ const EditableNumericDisplay: React.FC<Props> = ({ label, value, onChangeText, u
         let formattedText = text;
         if (unit == '$'){
             formattedText = text.replace(/[^0-9.]/g, '');
+
+            const parts = formattedText.split('.');
+            if (parts.length > 2){
+                onChangeText(value);
+                return;
+            }
         }
         else {
             formattedText = text.replace(/[^0-9]/g, '');
@@ -74,5 +80,3 @@ const EditableNumericDisplay: React.FC<Props> = ({ label, value, onChangeText, u
 }
 
 export default EditableNumericDisplay
-
-const styles = StyleSheet.create({})

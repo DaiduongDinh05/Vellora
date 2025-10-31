@@ -4,7 +4,7 @@ import { FontAwesome } from '@expo/vector-icons'
 import NoteInput from './NoteInput'
 import Dropdown from './Dropdown'
 import CurrencyInput from './CurrencyInput'
-import FilledAddressBox from './FilledAddressBox'
+// import FilledAddressBox from './FilledAddressBox'
 
 
 type TripDtailsFormProps = {
@@ -49,13 +49,13 @@ const TripDetailsForm: React.FC<TripDtailsFormProps> = (props) => {
     return (
         <View style={{ padding: 25, gap: 16 }}>
             {props.startAddress !== undefined && props.setStartAddress && (
-                <FilledAddressBox 
+                <NoteInput 
                     value={props.startAddress}
                     onChangeText={props.setStartAddress}
                 />
             )}
             {props.endAddress !== undefined && props.setEndAddress && (
-                <FilledAddressBox 
+                <NoteInput 
                     value={props.endAddress}
                     onChangeText={props.setEndAddress}
                 />
@@ -64,6 +64,7 @@ const TripDetailsForm: React.FC<TripDtailsFormProps> = (props) => {
 
             {/* render notes input */}
             <NoteInput 
+                multiline
                 placeholder="Add your crazy notes"
                 value={props.notes}
                 onChangeText={props.setNotes}

@@ -4,17 +4,24 @@ import { TextInput, TextInputProps } from 'react-native';
 // define prop types by extending the standard textinputprops
 type NoteInputProps = TextInputProps & {
     className?: string;
+    multiline?: boolean;
 }
 
-const NoteInput: React.FC<NoteInputProps> = ({ className = '', ...props }) => {
+const NoteInput: React.FC<NoteInputProps> = ({ 
+    className = '',
+    multiline = false,
+    ...props 
+}) => {
+
+    const multilineStyle = multiline ? 'h-24 pr-8' : '';
+
     return (
         <TextInput
             // add base styles through classname. Append other passed classNames
-            className={`text-base py-3 px-2.5 border border-gray-300 rounded-lg text-black bg-white pr-8 h-24 ${className}`}
-            textAlignVertical='top'     // keep text at the top
-            editable
-            multiline
-            maxLength={300}             // limit max characters
+            className={`text-base py-3 px-2.5 border border-gray-300 rounded-lg text-black bg-white ${multilineStyle} ${className}`}
+            
+            multiline={multiline}
+            textAlignVertical={multiline ? 'top' : 'auto'}
             placeholderTextColor='gray'
             {...props}                  // pass all other props
         />

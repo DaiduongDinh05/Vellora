@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, TextInput } from 'react-native'
+import { Text, View, TextInput } from 'react-native'
 import React from 'react'
 
 type CurrencyInputProps = {
@@ -73,5 +73,3 @@ const CurrencyInput: React.FC<CurrencyInputProps> = ({
 }
 
 export default CurrencyInput
-
-// const styles = StyleSheet.create({})
