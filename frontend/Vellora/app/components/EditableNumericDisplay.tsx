@@ -17,7 +17,7 @@ const EditableNumericDisplay: React.FC<Props> = ({ label, value, onChangeText, u
     let suffix = '';    // text to show after the value (like " mi" in "5 mi")
 
     // if the unit is currency, allow decimals and add the correct prefix
-    if (unit == '$'){
+    if (unit === '$'){
         keyboardType = 'decimal-pad';
         prefix = '$';
     }
@@ -29,7 +29,7 @@ const EditableNumericDisplay: React.FC<Props> = ({ label, value, onChangeText, u
 
     const handleTextChange = (text: string) => {
         let formattedText = text;
-        if (unit == '$'){
+        if (unit === '$'){
             // allow only digits and decimal points
             formattedText = text.replace(/[^0-9.]/g, '');
 
@@ -51,7 +51,7 @@ const EditableNumericDisplay: React.FC<Props> = ({ label, value, onChangeText, u
     // format the final value when a user taps away. Switch to display mode
     const handleBlur = () => {
         setIsEditing(false);    // exit editing
-        if (unit == '$'){
+        if (unit === '$'){
             const num = parseFloat(value) || 0;
             onChangeText(num.toFixed(2));
         }

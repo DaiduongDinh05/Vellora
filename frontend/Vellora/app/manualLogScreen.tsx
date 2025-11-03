@@ -1,4 +1,4 @@
-import { Text, View, TouchableOpacity, Platform } from 'react-native'
+import { Text, View, TouchableOpacity } from 'react-native'
 import React, { useState } from 'react'
 import { useRouter } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
@@ -11,7 +11,7 @@ import TripDetailsForm from './components/TripDetailsForm';
 import Button from './components/Button';
 import EditableNumericDisplay from './components/EditableNumericDisplay';
 
-const manualLogScreen = () => {
+const ManualLogScreen = () => {
 
     // state variables
     const [date, setDate] = useState(new Date());
@@ -139,4 +139,4 @@ const manualLogScreen = () => {
     )
 }
 
-export default manualLogScreen
+export default ManualLogScreen

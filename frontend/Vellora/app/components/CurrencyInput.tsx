@@ -25,7 +25,7 @@ const CurrencyInput: React.FC<CurrencyInputProps> = ({
         // make sure there are no multiple deicmal points like 1.20.23
         const parts = formattedText.split('.');
 
-        if (text == ''){
+        if (text === ''){
             onChangeText('');
             return;
         }
@@ -49,7 +49,7 @@ const CurrencyInput: React.FC<CurrencyInputProps> = ({
     const handleFormatting = () => {
 
         // automatically put 0 if the input is empty
-        if (value == '' || value == '.' || value == '0'){
+        if (value === '' || value === '.' || value === '0'){
             onChangeText('0.00');
             return;
         }

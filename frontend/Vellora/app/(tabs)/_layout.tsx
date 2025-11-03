@@ -1,4 +1,4 @@
-import { View, Text, ImageBase, useColorScheme } from 'react-native'
+import { View } from 'react-native'
 import React from 'react'
 import { Tabs } from 'expo-router'
 import { Colors } from '../Colors';

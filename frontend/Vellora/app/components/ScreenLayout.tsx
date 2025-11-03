@@ -38,7 +38,7 @@ const ScreenLayout: React.FC<ScreenLayoutProps> = ({ children, footer }) => {
                     style={{
                         position: 'absolute',
                         bottom: 0,
-                        paddingBottom: insets.bottom == 0 ? 12 : insets.bottom,
+                        paddingBottom: insets.bottom === 0 ? 12 : insets.bottom,
                     }}
                 >
                     {footer}

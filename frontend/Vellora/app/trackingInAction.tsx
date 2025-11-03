@@ -6,7 +6,7 @@ import NoteInput from './components/NoteInput';
 import CurrencyInput from './components/CurrencyInput';
 import Button from './components/Button';
 
-const trackingInAction = () => {
+const TrackingInAction = () => {
     // state variables
     const [notes, setNotes] = useState('');
     const [parking, setParking] = useState<string>('');
@@ -93,4 +93,4 @@ const trackingInAction = () => {
     );
 }
 
-export default trackingInAction
+export default TrackingInAction
