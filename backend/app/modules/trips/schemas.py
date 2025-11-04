@@ -2,7 +2,7 @@ import datetime
 from typing import List
 from uuid import UUID
 from app.modules.trips.models import Trip, TripStatus
-from app.modules.trips.utils.crypto import decrypt_address
+from app.modules.trips.utils.crypto import decrypt_address, decrypt_geometry
 from app.modules.trips.utils.distance import meters_to_miles
 from pydantic import BaseModel, Field, field_validator
 
@@ -44,6 +44,7 @@ class TripResponseDTO(BaseModel):
     status: TripStatus
     start_address: str
     end_address: str | None = None
+    geometry: str | None = None
     purpose: str | None = None
     miles: float | None = None
     reimbursement_rate: float | None = None
@@ -69,6 +70,7 @@ class TripResponseDTO(BaseModel):
             "purpose": trip.purpose,
             "miles": trip.miles,
             "reimbursement_rate": trip.reimbursement_rate,
+            "geometry": decrypt_geometry(trip.geometry_encrypted) if trip.geometry_encrypted else None,
             "mileage_reimbursement_total": trip.mileage_reimbursement_total,
             "expense_reimbursement_total": trip.expense_reimbursement_total,
             "total_reimbursement": (trip.mileage_reimbursement_total or 0) + (trip.expense_reimbursement_total or 0),

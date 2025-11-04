@@ -179,6 +179,7 @@ class TestTripResponseDTO:
         mock_trip.updated_at = datetime.now(timezone.utc)
         mock_trip.rate_customization_id = uuid4()
         mock_trip.rate_category_id = uuid4()
+        mock_trip.geometry_encrypted = None
         mock_trip.expenses = []
 
         with patch('app.modules.trips.schemas.decrypt_address', return_value="123 Main St"):
@@ -221,6 +222,7 @@ class TestTripResponseDTO:
         mock_trip.updated_at = datetime.now(timezone.utc)
         mock_trip.rate_customization_id = uuid4()
         mock_trip.rate_category_id = uuid4()
+        mock_trip.geometry_encrypted = None
         mock_trip.expenses = [mock_expense1, mock_expense2]
 
         with patch('app.modules.trips.schemas.decrypt_address', side_effect=["123 Main St", "456 Oak Ave"]):
