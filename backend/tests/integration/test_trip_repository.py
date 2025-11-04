@@ -37,6 +37,7 @@ class TestTripRepoIntegration:
             status=TripStatus.active,
             start_address_encrypted="encrypted_start_address",
             purpose="Business meeting",
+            geometry_encrypted="gAAAAABhZ6_encrypted_geometry_data_here",
             rate_customization_id=customization.id,
             rate_category_id=category.id,
             reimbursement_rate=0.67
@@ -84,6 +85,7 @@ class TestTripRepoIntegration:
             end_address_encrypted="encrypted_end",
             purpose="Client visit",
             miles=50.5,
+            geometry_encrypted="gAAAAABhZ7_client_visit_geometry_encrypted",
             reimbursement_rate=0.67,
             mileage_reimbursement_total=33.84,
             rate_customization_id=customization.id,
@@ -132,6 +134,7 @@ class TestTripRepoIntegration:
             id=uuid4(),
             status=TripStatus.active,
             start_address_encrypted="encrypted_start",
+            geometry_encrypted="gAAAAABhZ8_travel_geometry_encrypted",
             rate_customization_id=customization.id,
             rate_category_id=category.id,
             reimbursement_rate=0.67
@@ -175,6 +178,7 @@ class TestTripRepoIntegration:
             id=uuid4(),
             status=TripStatus.active,
             start_address_encrypted="encrypted_start",
+            geometry_encrypted="gAAAAABhZ9_mileage_geometry_encrypted",
             rate_customization_id=customization.id,
             rate_category_id=category.id,
             reimbursement_rate=0.67

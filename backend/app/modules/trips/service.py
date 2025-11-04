@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from uuid import UUID
 from app.modules.trips.repository import TripRepo
 from app.modules.trips.schemas import CreateTripDTO, EditTripDTO, EndTripDTO
-from app.modules.trips.utils.crypto import encrypt_address
+from app.modules.trips.utils.crypto import encrypt_address, encrypt_geometry
 from app.modules.trips.models import Trip, TripStatus
 from app.modules.trips.exceptions import InvalidTripDataError, TripNotFoundError, TripPersistenceError
 from app.modules.rate_categories.repository import RateCategoryRepo
@@ -87,7 +87,7 @@ class TripsService:
         try: 
 
             trip.miles = miles
-            trip.geometry = data.geometry
+            trip.geometry_encrypted = encrypt_geometry(data.geometry)
             trip.mileage_reimbursement_total = miles * (trip.reimbursement_rate or 0.0)
             trip.status = TripStatus.completed
             trip.end_address_encrypted = encrypt_address(data.end_address)

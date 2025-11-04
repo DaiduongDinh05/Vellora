@@ -54,10 +54,12 @@ class TestEndTripDTO:
     def test_end_trip_dto_valid(self):
         dto = EndTripDTO(
             end_address="456 Oak Ave",
+            geometry='{"type":"LineString","coordinates":[[-122.4194,37.7749],[-122.4094,37.7849]]}',
             distance_meters=81320.0
         )
 
         assert dto.end_address == "456 Oak Ave"
+        assert dto.geometry == '{"type":"LineString","coordinates":[[-122.4194,37.7749],[-122.4094,37.7849]]}'
         assert dto.distance_meters == 81320.0
         assert dto.miles == 50.53
 

@@ -57,6 +57,7 @@ class TestTripsServiceStartTrip:
         trip = MagicMock(spec=Trip)
         trip.id = uuid4()
         trip.status = TripStatus.active
+        trip.geometry_encrypted = "gAAAAABhZ6_mock_geometry_encrypted"
         return trip
 
     @pytest.mark.asyncio
@@ -163,6 +164,7 @@ class TestTripsServiceGetTripById:
         trip = MagicMock(spec=Trip)
         trip.id = uuid4()
         trip.status = TripStatus.active
+        trip.geometry_encrypted = "gAAAAABhZ7_get_trip_geometry_encrypted"
         return trip
 
     @pytest.mark.asyncio
@@ -204,12 +206,13 @@ class TestTripsServiceEndTrip:
         trip.id = uuid4()
         trip.status = TripStatus.active
         trip.reimbursement_rate = 0.65
+        trip.geometry_encrypted = "gAAAAABhZ8_end_trip_geometry_encrypted"
         return trip
 
     @pytest.mark.asyncio
     async def test_end_trip_success(self, service, trip_repo, mock_trip):
         trip_id = uuid4()
-        dto = EndTripDTO(end_address="456 Oak Ave", distance_meters=81320.0)
+        dto = EndTripDTO(end_address="456 Oak Ave", geometry='{"type":"LineString","coordinates":[[-122.4194,37.7749],[-122.4094,37.7849]]}', distance_meters=81320.0)
         trip_repo.get.return_value = mock_trip
         trip_repo.save.return_value = mock_trip
 
@@ -225,7 +228,7 @@ class TestTripsServiceEndTrip:
     @pytest.mark.asyncio
     async def test_end_trip_empty_address(self, service, trip_repo, mock_trip):
         trip_id = uuid4()
-        dto = EndTripDTO(end_address="   ", distance_meters=81320.0)
+        dto = EndTripDTO(end_address="   ", geometry='{"type":"Point","coordinates":[-122.4194,37.7749]}', distance_meters=81320.0)
         trip_repo.get.return_value = mock_trip
 
         with pytest.raises(InvalidTripDataError) as exc_info:
@@ -235,7 +238,7 @@ class TestTripsServiceEndTrip:
     @pytest.mark.asyncio
     async def test_end_trip_already_completed(self, service, trip_repo, mock_trip):
         trip_id = uuid4()
-        dto = EndTripDTO(end_address="456 Oak Ave", distance_meters=81320.0)
+        dto = EndTripDTO(end_address="456 Oak Ave", geometry='{"type":"Polygon","coordinates":[[[-122.4,37.8],[-122.4,37.7],[-122.3,37.7],[-122.3,37.8],[-122.4,37.8]]]}', distance_meters=81320.0)
         mock_trip.status = TripStatus.completed
         trip_repo.get.return_value = mock_trip
 
@@ -246,7 +249,7 @@ class TestTripsServiceEndTrip:
     @pytest.mark.asyncio
     async def test_end_trip_cancelled(self, service, trip_repo, mock_trip):
         trip_id = uuid4()
-        dto = EndTripDTO(end_address="456 Oak Ave", distance_meters=81320.0)
+        dto = EndTripDTO(end_address="456 Oak Ave", geometry='{"type":"MultiPoint","coordinates":[[-122.4194,37.7749],[-122.4094,37.7849]]}', distance_meters=81320.0)
         mock_trip.status = TripStatus.cancelled
         trip_repo.get.return_value = mock_trip
 
@@ -259,7 +262,7 @@ class TestTripsServiceEndTrip:
         trip_id = uuid4()
         # Negative distance should be caught by Pydantic validator
         with pytest.raises(ValueError) as exc_info:
-            dto = EndTripDTO(end_address="456 Oak Ave", distance_meters=-10.5)
+            dto = EndTripDTO(end_address="456 Oak Ave", geometry='{"type":"Point","coordinates":[-122.4194,37.7749]}', distance_meters=-10.5)
         assert "Distance must be non-negative" in str(exc_info.value)
 
 
@@ -292,6 +295,7 @@ class TestTripsServiceEditTrip:
         trip.rate_customization_id = uuid4()
         trip.rate_category_id = uuid4()
         trip.reimbursement_rate = 0.65
+        trip.geometry_encrypted = "gAAAAABhZ9_edit_trip_geometry_encrypted"
         return trip
 
     @pytest.mark.asyncio
@@ -434,6 +438,7 @@ class TestTripsServiceCancelTrip:
         trip = MagicMock(spec=Trip)
         trip.id = uuid4()
         trip.status = TripStatus.active
+        trip.geometry_encrypted = "gAAAAABhZ10_cancel_trip_geometry_encrypted"
         return trip
 
     @pytest.mark.asyncio

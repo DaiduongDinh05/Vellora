@@ -21,7 +21,7 @@ class Trip(Base):
     purpose: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     reimbursement_rate: Mapped[float | None] = mapped_column(DOUBLE_PRECISION, nullable=True)
     miles: Mapped[float | None] = mapped_column(DOUBLE_PRECISION, nullable=True)
-    geometry: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    geometry_encrypted: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     mileage_reimbursement_total: Mapped[float | None] = mapped_column(DOUBLE_PRECISION, nullable=True)
     expense_reimbursement_total: Mapped[float | None] = mapped_column(DOUBLE_PRECISION, nullable=True)
     started_at: Mapped[sa.DateTime] = mapped_column(sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False)

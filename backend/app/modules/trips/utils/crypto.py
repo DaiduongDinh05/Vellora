@@ -12,3 +12,13 @@ def decrypt_address(token: str) -> str:
     if not token:
         return ""
     return f.decrypt(token.encode()).decode()
+
+def encrypt_geometry(geometry: str) -> str:
+    if not geometry:
+        return ""
+    return f.encrypt(geometry.encode()).decode()
+
+def decrypt_geometry(token: str) -> str:
+    if not token:
+        return ""
+    return f.decrypt(token.encode()).decode()
