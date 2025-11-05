@@ -1,7 +1,10 @@
 # app/tests/conftest.py
 
 import os
+import sys
 import asyncio
+from pathlib import Path
+
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
@@ -33,6 +36,11 @@ os.environ["DATABASE_URL"] = TEST_DB_URL
 os.environ.setdefault("GOOGLE_CLIENT_ID", "test-google-client-id")
 os.environ.setdefault("GOOGLE_CLIENT_SECRET", "test-google-client-secret")
 os.environ.setdefault("GOOGLE_REDIRECT_URI", "http://test/oauth/google/callback")
+
+# Ensure the backend package is available for imports regardless of CWD
+BACKEND_DIR = Path(__file__).resolve().parents[2]
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(BACKEND_DIR))
 
 from app.main import app as fastapi_app
 from app.core.base import Base
