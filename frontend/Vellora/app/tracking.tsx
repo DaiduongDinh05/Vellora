@@ -1,13 +1,17 @@
 import { View, Text } from 'react-native'
 import React, { useState } from 'react'
-import MapView from 'react-native-maps';
+// import MapView from 'react-native-maps';
 import { useRouter } from 'expo-router';
+import Mapbox from '@rnmapbox/maps';
 
 // Import reusable components
 import ScreenLayout from './components/ScreenLayout';
 import TripDetailsForm from './components/TripDetailsForm';
 import Button from './components/Button';
 import { vehicleItems, typeItems, rateItems } from '../app/constants/dropdownOptions';
+
+const MAPBOX_KEY = process.env.EXPO_PUBLIC_API_KEY_MAPBOX_PUBLIC_ACCESS_TOKEN;
+Mapbox.setAccessToken(`${MAPBOX_KEY}`);
 
 const Tracking = () => {
 
@@ -45,7 +49,10 @@ const Tracking = () => {
       <Text className="text-3xl text-primaryPurple font-bold p-6">Live Track Current Trip</Text>
 
       {/* Temporary map display. TO BE CHANGED TO AN IMPLEMENTATION WITH CURRENT LOCATION VIA MAPBOX */}
-      <MapView style={{width: '100%', height: 300}}/>
+      <View style={{ height: 300, width: '100%', overflow: 'hidden' }}>
+        <Mapbox.MapView style = {{ flex: 1 }}/>
+
+      </View>
 
       {/* Container for displaying trip value and distance */}
       <View className='flex-row justify-between px-6 pt-6'>
