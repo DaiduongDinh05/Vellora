@@ -42,6 +42,5 @@ app-example
 /ios
 /android
 
-
+# Location Tracking
 *.gpx
-.DS_Store
