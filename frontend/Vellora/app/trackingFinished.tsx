@@ -1,6 +1,5 @@
 import { View, Text } from 'react-native'
 import React, { useState } from 'react'
-import MapView from 'react-native-maps';
 import { useRouter } from 'expo-router';
 
 // Import reusable components
@@ -9,6 +8,7 @@ import TripDetailsForm from './components/TripDetailsForm';
 import EditableNumericDisplay from './components/EditableNumericDisplay';
 import Button from './components/Button';
 import { vehicleItems, typeItems, rateItems } from '../app/constants/dropdownOptions';
+import UserLocationMap from './components/UserLocationMap';
 
 const TrackingFinished = () => {
 
@@ -64,7 +64,9 @@ const TrackingFinished = () => {
         }
     >
         {/* Temporary map display. TO BE CHANGED TO AN IMPLEMENTATION WITH GEOMETRY PATH */}
-        <MapView style={{width: '100%', height: 300}}/>
+        <View style={{ height: 300, width: '100%', borderRadius: 16, overflow: 'hidden' }}>
+            <UserLocationMap />
+        </View>
         <Text className='text-3xl text-primaryPurple font-bold pt-6 pl-6'>You arrived!</Text>
         <Text className='text-xl text-black p-6'>Make sure to update trip details:</Text>
 
