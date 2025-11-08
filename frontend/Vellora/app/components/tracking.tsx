@@ -20,6 +20,7 @@ let lastCheckTime = 0;
 let recentLocations: Location.LocationObject[] = [];
 const MAPBOX_KEY = process.env.EXPO_PUBLIC_API_KEY_MAPBOX_PUBLIC_ACCESS_TOKEN;
 let totalTripDistance = 0;
+let tripGeoJSON: object | null = null;
 
 Mapbox.setAccessToken(`${MAPBOX_KEY}`);
 
@@ -153,12 +154,16 @@ async function stopTracking(setIsTracking?: (isTracking: boolean) => void) {    
         await getTripDistance(coordinates);
 
         console.log('Total Trip Distance:', totalTripDistance);
+        console.log('geometry: ', tripGeoJSON);
+        
+        // CALL API TO STORE HERE 
         
         // reset variables
         coordinates = '';
         stationaryCount = 0;
         recentLocations = [];
         totalTripDistance = 0;
+        tripGeoJSON = null;
         return;
 
     } catch (error) {
@@ -174,11 +179,12 @@ async function getTripDistance(coordinates: string | null) {
     }
     
     try {
-        await fetch(`https://api.mapbox.com/matching/v5/${PROFILE}/${coordinates}?access_token=${MAPBOX_KEY}`, 
+        await fetch(`https://api.mapbox.com/matching/v5/${PROFILE}/${coordinates}?geometries=geojson&access_token=${MAPBOX_KEY}`, 
             { method: 'GET' })
         .then(response => response.json())
         .then(tripData => {
             totalTripDistance += tripData.matchings?.[0]?.distance;
+            tripGeoJSON = tripData.matchings?.[0].geometry;
         })
         .catch(error => {
             console.error('Error fetching mapbox: ', error);
