@@ -1,5 +1,6 @@
 {
-
+    "type": "Feature",
+    "properties": {},
     "geometry":  {
         "coordinates": [
             [-122.061293, 37.332867], [-122.064478, 37.333984], 
