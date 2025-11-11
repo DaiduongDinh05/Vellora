@@ -1,5 +1,7 @@
 import { Text, View } from "react-native";
 import { Link } from "expo-router";
+import Tracking from "../components/tracking";
+
 export default function Index() {
   return (
     <View className="flex-1 justify-center items-center"
@@ -7,6 +9,8 @@ export default function Index() {
       <Text className="text-5xl text-primaryPurple font-bold">Welcome!</Text>
       <Link href="../tracking">Live track a trip</Link>
       <Link href="../manualLogScreen">Manually log a trip</Link>
+      <Link href="../trackingTest"></Link>
+      <Tracking></Tracking>
     </View>
   );
 }
