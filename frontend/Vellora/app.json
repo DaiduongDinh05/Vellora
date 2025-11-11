@@ -4,7 +4,7 @@
     "slug": "Vellora",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./app/assets/Vellora_Dark_Logo.png",
     "scheme": "vellora",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -29,9 +29,9 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "foregroundImage": "./app/assets/Vellora_Dark_Logo.png",
+        "backgroundImage": "./app/assets/Vellora_Dark_Logo.png",
+        "monochromeImage": "./app/assets/Vellora_Dark_Logo.png"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
@@ -46,14 +46,14 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./app/assets/Vellora_Dark_Logo.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./app/assets/Vellora_Dark_Logo.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
@@ -75,13 +75,20 @@
       [
         "@rnmapbox/maps",
         {
-          "RNMAPBOX_MAPS_DOWNLOAD_TOKEN": "process.env.MAPBOX_PRIVATE_ACCESS_TOKEN"
+          "RNMAPBOX_MAPS_DOWNLOAD_TOKEN": "process.env.MAPBOX_PRIVATE_ACCESS_TOKEN",
+          "RNMapboxAccessToken": "process.env.EXPO_PUBLIC_API_KEY_MAPBOX_PUBLIC_ACCESS"
         }
       ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "7a1814f5-9fa7-4919-9f69-4eeaa99339c2"
+      }
     }
   }
 }
