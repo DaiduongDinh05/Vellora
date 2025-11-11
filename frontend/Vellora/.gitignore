@@ -44,3 +44,4 @@ app-example
 
 .DS_Store
 .env
+*.gpx
