@@ -14,7 +14,7 @@ from app.modules.rate_categories import models
 for module in [
     "app.modules.users.models",
     "app.modules.auth.models",
-    # add other model modules here when you create them
+    
 ]:
     importlib.import_module(module)
 
