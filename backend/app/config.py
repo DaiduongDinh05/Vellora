@@ -15,6 +15,8 @@ class OAuthProviders(BaseModel):
 
 
 class Settings(BaseSettings):
+    DATABASE_URL : str
+    FERNET_KEY : str
     DATABASE_URL: str
     JWT_SECRET_KEY: str = Field(min_length=32)
     JWT_ALGORITHM: str = "HS256"

@@ -6,6 +6,11 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from app.core.base import Base
 
+from app.modules.trips import models
+from app.modules.expenses import models
+from app.modules.rate_customizations import models
+from app.modules.rate_categories import models
+
 for module in [
     "app.modules.users.models",
     "app.modules.auth.models",
