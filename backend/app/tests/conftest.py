@@ -1,22 +1,19 @@
-# app/tests/conftest.py
+
 
 import os
-import sys
 import asyncio
-from pathlib import Path
-
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.pool import StaticPool
 
-# -------------------- TEST ENV --------------------
+
 os.environ.setdefault("GOOGLE_CLIENT_ID", "test-google-client-id")
 os.environ.setdefault("GOOGLE_CLIENT_SECRET", "test-google-client-secret")
 os.environ.setdefault("GOOGLE_REDIRECT_URI", "http://test/oauth/google/callback")
 
-# also try generic OAuth names in case your loader uses them
+
 os.environ.setdefault("OAUTH_GOOGLE_CLIENT_ID", "test-google-client-id")
 os.environ.setdefault("OAUTH_GOOGLE_CLIENT_SECRET", "test-google-client-secret")
 os.environ.setdefault("OAUTH_GOOGLE_REDIRECT_URI", "http://test/oauth/google/callback")
@@ -32,29 +29,23 @@ TEST_DB_URL = "sqlite+aiosqlite:///:memory:"
 os.environ["DATABASE_URL"] = TEST_DB_URL
 
 # Dummy Google OAuth so provider registry is happy
-# (adjust names to match your Settings if different)
 os.environ.setdefault("GOOGLE_CLIENT_ID", "test-google-client-id")
 os.environ.setdefault("GOOGLE_CLIENT_SECRET", "test-google-client-secret")
 os.environ.setdefault("GOOGLE_REDIRECT_URI", "http://test/oauth/google/callback")
 
-# Ensure the backend package is available for imports regardless of CWD
-BACKEND_DIR = Path(__file__).resolve().parents[2]
-if str(BACKEND_DIR) not in sys.path:
-    sys.path.insert(0, str(BACKEND_DIR))
-
 from app.main import app as fastapi_app
 from app.core.base import Base
-from app.infra.db import get_db  # dependency to override
+from app.infra.db import get_db  
 
-# If your app exposes a Settings dependency, import it to override too:
+
 try:
-    from app.core.settings import get_settings as _get_settings_dep, Settings  # <-- adjust if your path differs
+    from app.core.settings import get_settings as _get_settings_dep, Settings  
 except Exception:
-    # Fallback to a typical location/name if yours differs; if not present, we just won't override it.
+    
     _get_settings_dep = None
     Settings = None
 
-# -------------------- EVENT LOOP --------------------
+# Event Loop
 @pytest_asyncio.fixture(scope="session")
 def event_loop():
     """One session-scoped loop so the async engine/sessions share it."""
@@ -62,7 +53,7 @@ def event_loop():
     yield loop
     loop.close()
 
-# -------------------- ENGINE & SESSIONS --------------------
+# Engine and Sessions 
 @pytest_asyncio.fixture(scope="session")
 async def async_engine():
     engine = create_async_engine(
@@ -92,7 +83,7 @@ async def async_session(session_maker):
         finally:
             await session.rollback()
 
-# -------------------- PATCH APP GLOBALS (important) --------------------
+
 @pytest_asyncio.fixture(scope="session", autouse=True)
 async def patch_app_db_layer(async_engine, session_maker):
     """
@@ -103,7 +94,7 @@ async def patch_app_db_layer(async_engine, session_maker):
         from app import infra as _infra
         from app.infra import db as db_module
     except Exception:
-        return  # if your structure differs, skip; get_db override still handles most paths
+        return  
 
     # Patch globals commonly used in FastAPI templates
     if hasattr(db_module, "engine"):
@@ -117,7 +108,6 @@ async def patch_app_db_layer(async_engine, session_maker):
     except Exception:
         pass
 
-# -------------------- DEPENDENCY OVERRIDES --------------------
 @pytest.fixture()
 def app(async_session):
     async def _override_db():

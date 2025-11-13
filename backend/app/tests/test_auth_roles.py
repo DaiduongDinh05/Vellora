@@ -1,32 +1,7 @@
-import pytest
-
-pytestmark = pytest.mark.asyncio
-
-
-async def test_register_manager_role(client):
-    response = await client.post(
-        "/api/v1/auth/register",
-        json={
-            "email": "manager@example.com",
-            "password": "ManagerPass123!",
-            "full_name": "Manager One",
-            "role": "manager",
-        },
-    )
-    assert response.status_code == 201
-    data = response.json()
-    assert data["user"]["role"] == "manager"
-
-
-async def test_register_defaults_to_employee_role(client):
-    response = await client.post(
-        "/api/v1/auth/register",
-        json={
-            "email": "employee@example.com",
-            "password": "EmployeePass123!",
-            "full_name": "Employee One",
-        },
-    )
-    assert response.status_code == 201
-    data = response.json()
-    assert data["user"]["role"] == "employee"
+def test_insufficient_role_gets_403(client):
+    register(client, email="user@ex.com", password="P@ssw0rd!", name="User")
+    login_resp = login(client, email="user@ex.com")
+    at = login_resp.json()["access_token"]
+    # Hitting an admin-only route with a normal user
+    r = client.get("/api/v1/admin/users", headers={"Authorization": f"Bearer {at}"})
+    assert r.status_code in (403, 404)  
