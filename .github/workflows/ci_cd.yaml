@@ -66,7 +66,7 @@ jobs:
         with:
           node-version: '24'
           cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: frontend/Vellora/package-lock.json
   
       # Add any frontend build/test steps if needed.
       - name: Install Frontend Dependencies
