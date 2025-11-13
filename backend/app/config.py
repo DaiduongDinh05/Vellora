@@ -15,10 +15,12 @@ class OAuthProviders(BaseModel):
 
 
 class Settings(BaseSettings):
-    DATABASE_URL : str
-    FERNET_KEY : str
     DATABASE_URL: str
-    JWT_SECRET_KEY: str = Field(min_length=32)
+    FERNET_KEY: str | None = None
+    JWT_SECRET_KEY: str = Field(
+        default="__change_me_in_prod_please_1234567890abcd",
+        min_length=32,
+    )
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
