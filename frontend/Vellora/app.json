@@ -78,7 +78,8 @@
           "RNMAPBOX_MAPS_DOWNLOAD_TOKEN": "process.env.MAPBOX_PRIVATE_ACCESS_TOKEN",
           "RNMapboxAccessToken": "process.env.EXPO_PUBLIC_API_KEY_MAPBOX_PUBLIC_ACCESS"
         }
-      ]
+      ],
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true,
