@@ -1,7 +1,7 @@
 import pytest
 from sqlalchemy import select
 
-from app.modules.auth.models import OAuthAccount
+from app.modules.auth.models import OAuthAccount, OAuthState
 from app.modules.auth.providers import registry
 from app.modules.auth.providers.base import OAuthProviderBase
 from app.modules.auth.providers.types import OAuthToken, OAuthUserInfo
@@ -123,3 +123,58 @@ async def test_google_oauth_flow(client, session_maker, monkeypatch):
     account = accounts[0]
     assert account.provider == "google"
     assert account.email == "stub@example.com"
+
+
+async def test_authorize_endpoint_persists_state(client, session_maker, monkeypatch):
+    def _get_stub_provider(_: str) -> _StubProvider:
+        return _StubProvider(
+            client_id="stub-client-id",
+            client_secret="stub-client-secret",
+            redirect_uri="http://testserver/api/v1/auth/providers/google/callback",
+            scopes=["openid", "email", "profile"],
+        )
+
+    monkeypatch.setattr(registry, "get_provider", _get_stub_provider)
+    monkeypatch.setattr("app.modules.auth.oauth_service.get_provider", _get_stub_provider)
+
+    response = await client.get("/api/v1/auth/providers/google/authorize")
+    assert response.status_code == 200
+    data = response.json()
+    state = data["state"]
+
+    async with session_maker() as session:
+        stmt = select(OAuthState).where(OAuthState.state == state)
+        result = await session.execute(stmt)
+        stored_state = result.scalar_one_or_none()
+    assert stored_state is not None
+    assert stored_state.provider == "google"
+    assert stored_state.redirect_uri.endswith("/providers/google/callback")
+
+
+async def test_oauth_callback_rejects_reused_state(client, monkeypatch):
+    def _get_stub_provider(_: str) -> _StubProvider:
+        return _StubProvider(
+            client_id="stub-client-id",
+            client_secret="stub-client-secret",
+            redirect_uri="http://testserver/api/v1/auth/providers/google/callback",
+            scopes=["openid", "email", "profile"],
+        )
+
+    monkeypatch.setattr(registry, "get_provider", _get_stub_provider)
+    monkeypatch.setattr("app.modules.auth.oauth_service.get_provider", _get_stub_provider)
+
+    authorize_resp = await client.get("/api/v1/auth/providers/google/authorize")
+    state = authorize_resp.json()["state"]
+
+    first_callback = await client.get(
+        "/api/v1/auth/providers/google/callback",
+        params={"code": "dummy-code", "state": state},
+    )
+    assert first_callback.status_code == 200
+
+    second_callback = await client.get(
+        "/api/v1/auth/providers/google/callback",
+        params={"code": "dummy-code", "state": state},
+    )
+    assert second_callback.status_code == 400
+    assert second_callback.json()["detail"] == "Invalid or expired state parameter."

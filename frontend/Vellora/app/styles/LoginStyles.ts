@@ -66,6 +66,22 @@ export const styles = StyleSheet.create({
 		fontSize: 18,
 		fontWeight: "700",
 	},
+	secondaryButton: {
+		marginTop: 16,
+		height: 52,
+		borderRadius: 12,
+		borderWidth: 1,
+		borderColor: BLUE,
+		alignItems: "center",
+		justifyContent: "center",
+		flexDirection: "row",
+		gap: 8,
+	},
+	secondaryButtonText: {
+		color: BLUE,
+		fontSize: 16,
+		fontWeight: "600",
+	},
 	footerText: {
 		marginTop: 14,
 		textAlign: "center",
@@ -74,5 +90,15 @@ export const styles = StyleSheet.create({
 	link: {
 		color: BLUE,
 		fontWeight: "700",
+	},
+	message: {
+		marginTop: 16,
+		fontSize: 14,
+	},
+	messageError: {
+		color: "#dc2626",
+	},
+	messageSuccess: {
+		color: "#16a34a",
 	},
 });

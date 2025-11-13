@@ -42,6 +42,7 @@ class OAuthService:
             code_verifier=None,
             expires_at=expires_at,
         )
+        await self.session.commit()
 
         authorization_url = provider.build_authorization_url(state=state_value, redirect_uri=target_redirect)
         return OAuthAuthorizeResponse(
