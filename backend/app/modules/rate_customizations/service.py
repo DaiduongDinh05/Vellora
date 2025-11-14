@@ -39,6 +39,11 @@ class RateCustomizationsService:
         rate_customization = await self.repo.get(customization_id, user_id=user_id)
 
         if not rate_customization:
+            #if not found check if its an IRS customization
+            if await self.repo.is_irs_customization(customization_id):
+                rate_customization = await self.repo.get(customization_id)
+
+        if not rate_customization:
             raise RateCustomizationNotFoundError("Customization not found.")
         
         return rate_customization
@@ -48,6 +53,9 @@ class RateCustomizationsService:
     
     async def edit_customization(self, user_id: UUID, customization_id : UUID, data: EditRateCustomizationDTO):
         customization = await self.get_customization(user_id, customization_id)
+        
+        if await self.repo.is_irs_customization(customization_id):
+            raise InvalidRateCustomizationDataError("IRS standard rates cannot be modified")
 
         if data.name is not None:
             if not data.name.strip():
@@ -72,4 +80,9 @@ class RateCustomizationsService:
     
     async def delete_customization(self, user_id: UUID, customization_id: UUID):
         customization = await self.get_customization(user_id, customization_id)
+        
+        if await self.repo.is_irs_customization(customization_id):
+            raise InvalidRateCustomizationDataError("IRS standard rates cannot be deleted")
+            
         return await self.repo.delete(customization)
+

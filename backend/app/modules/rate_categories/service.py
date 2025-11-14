@@ -15,6 +15,9 @@ class RateCategoriesService:
         self.customization_repo = customization_repo
 
     async def create_rate_category(self, user_id: UUID, customization_id: UUID, data: CreateRateCategoryDTO):
+        
+        if await self.customization_repo.is_irs_customization(customization_id):
+            raise InvalidRateCategoryDataError("Cannot add categories to IRS standard rates")
 
         rate_customization = await self.customization_repo.get(customization_id, user_id)
 
@@ -52,16 +55,25 @@ class RateCategoriesService:
             raise RateCategoryNotFoundError("Category not found.")
         
         rate_customization = await self.customization_repo.get(rate_category.rate_customization_id, user_id)
+        
         if not rate_customization:
-            raise RateCategoryNotFoundError("Category not found or not owned by user.")
+            if await self.customization_repo.is_irs_customization(rate_category.rate_customization_id):
+                rate_customization = await self.customization_repo.get(rate_category.rate_customization_id)
+        
+        if not rate_customization:
+            raise RateCategoryNotFoundError("Category not found or not accessible to user.")
         
         return rate_category
     
     async def get_categories_by_customization(self, user_id: UUID, customization_id: UUID):
         rate_customization = await self.customization_repo.get(customization_id, user_id)
-
+        
         if not rate_customization:
-            raise RateCustomizationNotFoundError("Customization not found or not owned by user.")
+            if await self.customization_repo.is_irs_customization(customization_id):
+                rate_customization = await self.customization_repo.get(customization_id)
+        
+        if not rate_customization:
+            raise RateCustomizationNotFoundError("Customization not found or not accessible to user.")
 
         try:
             categories = await self.category_repo.get_by_customization_id(customization_id)
@@ -71,6 +83,9 @@ class RateCategoriesService:
     
     async def edit_category(self, user_id: UUID, category_id: UUID, data: EditRateCategoryDTO):
         rate_category = await self.get_category(user_id, category_id)
+        
+        if await self.customization_repo.is_irs_customization(rate_category.rate_customization_id):
+            raise InvalidRateCategoryDataError("Cannot modify IRS standard rate categories")
 
         if data.name is not None:
             if not data.name.strip():
@@ -97,4 +112,10 @@ class RateCategoriesService:
     
     async def delete_category(self, user_id: UUID, category_id: UUID):
         rate_category = await self.get_category(user_id, category_id)
+        
+        if await self.customization_repo.is_irs_customization(rate_category.rate_customization_id):
+            raise InvalidRateCategoryDataError("Cannot delete IRS standard rate categories")
+            
         return await self.category_repo.delete(rate_category)
+    
+

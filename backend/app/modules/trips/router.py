@@ -74,6 +74,18 @@ async def cancel_trip(
     trip = await svc.cancel_trip(current_user.id, trip_id)
     return TripResponseDTO.model_validate(trip)
     
+@router.get("/active", response_model=TripResponseDTO)
+@error_handler
+async def get_active_trip(
+    svc: TripsService = Depends(get_trips_service),
+    current_user: User = Depends(get_current_user)
+):
+    trip = await svc.get_active_trip(current_user.id)
+    if not trip:
+        from fastapi import HTTPException, status
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No active trip found")
+    return TripResponseDTO.model_validate(trip)
+
 @router.get("/{trip_id}", response_model=TripResponseDTO)
 @error_handler
 async def get_trip(
@@ -92,16 +104,4 @@ async def get_user_trips(
 ):
     trips = await svc.get_trips_by_userId(current_user.id)
     return [TripResponseDTO.model_validate(trip) for trip in trips]
-
-@router.get("/active", response_model=TripResponseDTO)
-@error_handler
-async def get_active_trip(
-    svc: TripsService = Depends(get_trips_service),
-    current_user: User = Depends(get_current_user)
-):
-    trip = await svc.get_active_trip(current_user.id)
-    if not trip:
-        from fastapi import HTTPException, status
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No active trip found")
-    return TripResponseDTO.model_validate(trip)
 

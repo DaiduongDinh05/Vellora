@@ -32,7 +32,20 @@ class TripsService:
         
         customization = await self.customization_repo.get(data.rate_customization_id, user_id)
         if not customization:
-            raise RateCustomizationNotFoundError("Rate customization not found or not owned by user")
+            customization = await self.customization_repo.get(data.rate_customization_id)
+            if customization:
+                from app.modules.users.models import User
+                from sqlalchemy import select
+                irs_user_result = await self.customization_repo.db.execute(
+                    select(User.id).where(User.email == 'system@irs.gov')
+                )
+                irs_user_id = irs_user_result.scalar_one_or_none()
+                
+                if not (irs_user_id and customization.user_id == irs_user_id):
+                    customization = None
+        
+        if not customization:
+            raise RateCustomizationNotFoundError("Rate customization not found or not accessible to user")
         
         category = await self.category_repo.get(data.rate_category_id)
         if not category:
@@ -178,6 +191,14 @@ class TripsService:
 
             if data.vehicle is not None:
                 trip.vehicle = data.vehicle
+                
+            if data.miles is not None:
+                if data.miles < 0:
+                    raise InvalidTripDataError("Miles must be non-negative")
+                trip.miles = data.miles
+
+                if trip.reimbursement_rate:
+                    trip.mileage_reimbursement_total = data.miles * trip.reimbursement_rate
 
             if data.rate_customization_id is not None:
                 customization = await self.customization_repo.get(data.rate_customization_id)

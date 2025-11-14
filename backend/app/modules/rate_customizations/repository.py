@@ -50,3 +50,15 @@ class RateCustomizationRepo:
         
         result = await self.db.execute(query)
         return result.scalars().all()
+    
+    async def is_irs_customization(self, customization_id: UUID) -> bool:
+        irs_user_result = await self.db.execute(
+            select(User.id).where(User.email == 'system@irs.gov')
+        )
+        irs_user_id = irs_user_result.scalar_one_or_none()
+        
+        if not irs_user_id:
+            return False
+            
+        customization = await self.get(customization_id)
+        return customization and customization.user_id == irs_user_id

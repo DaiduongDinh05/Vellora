@@ -5,7 +5,7 @@ from app.modules.trips.models import Trip, TripStatus
 from app.modules.trips.utils.crypto import decrypt_address, decrypt_geometry
 from app.modules.trips.utils.distance import meters_to_miles
 from app.modules.expenses.schemas import CreateExpenseDTO
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ValidationError
 
 class CreateTripDTO(BaseModel):
     start_address: str
@@ -13,6 +13,15 @@ class CreateTripDTO(BaseModel):
     vehicle: str | None = None
     rate_customization_id: UUID
     rate_category_id: UUID
+    
+    @field_validator('rate_customization_id', 'rate_category_id')
+    @classmethod
+    def validate_uuids(cls, v):
+        if isinstance(v, str):
+            v = v.strip()
+            if len(v) > 36:
+                v = v[:36]
+        return v
 
 class EndTripDTO(BaseModel):
     end_address: str
@@ -33,8 +42,16 @@ class EndTripDTO(BaseModel):
 class EditTripDTO(BaseModel):
     purpose: str | None = None
     vehicle: str | None = None
+    miles: float | None = None
     rate_customization_id: UUID | None = None
     rate_category_id: UUID | None = None
+    
+    @field_validator('miles')
+    @classmethod
+    def validate_miles(cls, v: float | None) -> float | None:
+        if v is not None and v < 0:
+            raise ValueError("Miles must be non-negative")
+        return v
 
 class ManualCreateTripDTO(BaseModel):
     start_address: str
