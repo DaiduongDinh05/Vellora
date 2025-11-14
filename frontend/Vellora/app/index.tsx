@@ -3,10 +3,7 @@ import { router } from "expo-router";
 
 export default function Index() {
   return (
-    <ReimbursementRateListPage
-      onCreateCustom={() => router.push("/reimbursement/add")}
-      onOpenIRS={() => router.push("/reimbursement/irs")}
-      onOpenCustomRate={() => router.push("/reimbursement/custom-1")}
-    />
+      //<LoginPage />
+      <RegisterPage />
   );
 }

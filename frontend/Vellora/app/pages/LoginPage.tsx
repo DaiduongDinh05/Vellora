@@ -11,14 +11,12 @@ import {
   Image,
 } from "react-native";
 import { styles } from "../styles/LoginStyles";
-import { getProviderAuthorizeUrl, login, register } from "../services/auth";
-
-type AuthMode = "login" | "register";
+import { getProviderAuthorizeUrl, login } from "../services/auth";
+import { router } from "expo-router";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [mode, setMode] = useState<AuthMode>("login");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -34,10 +32,7 @@ export default function LoginPage() {
     setMessage(null);
 
     try {
-      const response =
-        mode === "login"
-          ? await login(email.trim(), password)
-          : await register({ email: email.trim(), password });
+      const response = await login(email.trim(), password);
 
       setMessage(
         `Welcome ${
@@ -64,12 +59,6 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const toggleMode = () => {
-    setMode((prev) => (prev === "login" ? "register" : "login"));
-    setError(null);
-    setMessage(null);
   };
 
   return (
@@ -127,7 +116,11 @@ export default function LoginPage() {
               { width: "100%" },
             ]}
           >
-            <Text style={styles.ctaText}>Login</Text>
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.ctaText}>Login</Text>
+            )}
           </Pressable>
         </View>
 
@@ -147,9 +140,12 @@ export default function LoginPage() {
         </View>
 
         <Text style={styles.footerText}>
-          {mode === "login" ? "Don't have an account? " : "Already have an account? "}
-          <Text style={styles.link} onPress={toggleMode}>
-            {mode === "login" ? "Sign up" : "Sign in"}
+          Don't have an account?{" "}
+          <Text
+            style={styles.link}
+            onPress={() => router.push("/pages/Register")}
+          >
+            Sign up
           </Text>
         </Text>
       </View>
