@@ -45,6 +45,7 @@ class TripsService:
             trip = Trip(
                 start_address_encrypted = encrypted_address,
                 purpose = data.purpose,
+                vehicle = data.vehicle,
                 reimbursement_rate=reimbursement_rate,
                 rate_customization_id=data.rate_customization_id,
                 rate_category_id=data.rate_category_id,
@@ -108,6 +109,9 @@ class TripsService:
 
             if data.purpose is not None:
                 trip.purpose = data.purpose
+
+            if data.vehicle is not None:
+                trip.vehicle = data.vehicle
 
             if data.rate_customization_id is not None:
                 customization = await self.customization_repo.get(data.rate_customization_id)

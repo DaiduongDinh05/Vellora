@@ -22,12 +22,14 @@ class TestCreateTripDTO:
         dto = CreateTripDTO(
             start_address="123 Main St",
             purpose="Business meeting",
+            vehicle="Toyota Camry",
             rate_customization_id=customization_id,
             rate_category_id=category_id
         )
 
         assert dto.start_address == "123 Main St"
         assert dto.purpose == "Business meeting"
+        assert dto.vehicle == "Toyota Camry"
         assert dto.rate_customization_id == customization_id
         assert dto.rate_category_id == category_id
 
@@ -47,6 +49,7 @@ class TestCreateTripDTO:
 
         assert dto.start_address == "123 Main St"
         assert dto.purpose is None
+        assert dto.vehicle is None
 
 
 class TestEndTripDTO:
@@ -84,11 +87,13 @@ class TestEditTripDTO:
 
         dto = EditTripDTO(
             purpose="Updated purpose",
+            vehicle="Honda Civic",
             rate_customization_id=customization_id,
             rate_category_id=category_id
         )
 
         assert dto.purpose == "Updated purpose"
+        assert dto.vehicle == "Honda Civic"
         assert dto.rate_customization_id == customization_id
         assert dto.rate_category_id == category_id
 
@@ -96,8 +101,12 @@ class TestEditTripDTO:
         dto1 = EditTripDTO(purpose="Updated")
         dto2 = EditTripDTO(rate_customization_id=uuid4())
         dto3 = EditTripDTO(rate_category_id=uuid4())
+        dto4 = EditTripDTO(vehicle="Ford F150")
 
         assert dto1.purpose == "Updated"
+        assert dto1.vehicle is None
+        assert dto4.vehicle == "Ford F150"
+        assert dto4.purpose is None
         assert dto1.rate_customization_id is None
         assert dto1.rate_category_id is None
 
@@ -170,6 +179,7 @@ class TestTripResponseDTO:
         mock_trip.start_address_encrypted = "encrypted_start"
         mock_trip.end_address_encrypted = None
         mock_trip.purpose = "Business"
+        mock_trip.vehicle = "Honda Civic"
         mock_trip.miles = None
         mock_trip.reimbursement_rate = 0.65
         mock_trip.mileage_reimbursement_total = None
@@ -213,6 +223,7 @@ class TestTripResponseDTO:
         mock_trip.start_address_encrypted = "encrypted_start"
         mock_trip.end_address_encrypted = "encrypted_end"
         mock_trip.purpose = "Business"
+        mock_trip.vehicle = "Toyota Prius"
         mock_trip.miles = 50.0
         mock_trip.reimbursement_rate = 0.65
         mock_trip.mileage_reimbursement_total = 32.50

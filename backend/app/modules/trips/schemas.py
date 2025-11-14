@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field, field_validator
 class CreateTripDTO(BaseModel):
     start_address: str
     purpose: str | None = None
+    vehicle: str | None = None
     rate_customization_id: UUID
     rate_category_id: UUID
 
@@ -30,6 +31,7 @@ class EndTripDTO(BaseModel):
 
 class EditTripDTO(BaseModel):
     purpose: str | None = None
+    vehicle: str | None = None
     rate_customization_id: UUID | None = None
     rate_category_id: UUID | None = None
 
@@ -46,6 +48,7 @@ class TripResponseDTO(BaseModel):
     end_address: str | None = None
     geometry: str | None = None
     purpose: str | None = None
+    vehicle: str | None = None
     miles: float | None = None
     reimbursement_rate: float | None = None
     mileage_reimbursement_total: float | None = None
@@ -68,6 +71,7 @@ class TripResponseDTO(BaseModel):
             "start_address": decrypt_address(trip.start_address_encrypted),
             "end_address": decrypt_address(trip.end_address_encrypted) if trip.end_address_encrypted else None,
             "purpose": trip.purpose,
+            "vehicle": trip.vehicle,
             "miles": trip.miles,
             "reimbursement_rate": trip.reimbursement_rate,
             "geometry": decrypt_geometry(trip.geometry_encrypted) if trip.geometry_encrypted else None,

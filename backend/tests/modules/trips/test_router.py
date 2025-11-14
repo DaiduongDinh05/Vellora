@@ -42,6 +42,7 @@ class TestStartTripEndpoint:
         body = CreateTripDTO(
             start_address="123 Main St",
             purpose="Business",
+            vehicle="Honda Accord",
             rate_customization_id=uuid4(),
             rate_category_id=uuid4()
         )
@@ -61,6 +62,7 @@ class TestStartTripEndpoint:
         body = CreateTripDTO(
             start_address="",
             purpose="Business",
+            vehicle="Toyota Prius",
             rate_customization_id=uuid4(),
             rate_category_id=uuid4()
         )
@@ -78,6 +80,7 @@ class TestStartTripEndpoint:
         body = CreateTripDTO(
             start_address="123 Main St",
             purpose="Business",
+            vehicle="Ford Explorer",
             rate_customization_id=uuid4(),
             rate_category_id=uuid4()
         )
@@ -95,6 +98,7 @@ class TestStartTripEndpoint:
         body = CreateTripDTO(
             start_address="123 Main St",
             purpose="Business",
+            vehicle="Chevy Tahoe",
             rate_customization_id=uuid4(),
             rate_category_id=uuid4()
         )

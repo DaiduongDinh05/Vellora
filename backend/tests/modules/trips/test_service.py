@@ -69,6 +69,7 @@ class TestTripsServiceStartTrip:
         dto = CreateTripDTO(
             start_address="123 Main St",
             purpose="Business meeting",
+            vehicle="Toyota Camry",
             rate_customization_id=mock_customization.id,
             rate_category_id=mock_category.id
         )
@@ -89,6 +90,7 @@ class TestTripsServiceStartTrip:
         dto = CreateTripDTO(
             start_address="   ",
             purpose="Business",
+            vehicle="Honda Civic",
             rate_customization_id=uuid4(),
             rate_category_id=uuid4()
         )
@@ -104,6 +106,7 @@ class TestTripsServiceStartTrip:
         dto = CreateTripDTO(
             start_address="123 Main St",
             purpose="Business",
+            vehicle="Nissan Altima",
             rate_customization_id=uuid4(),
             rate_category_id=uuid4()
         )
@@ -119,6 +122,7 @@ class TestTripsServiceStartTrip:
         dto = CreateTripDTO(
             start_address="123 Main St",
             purpose="Business",
+            vehicle="Chevy Malibu",
             rate_customization_id=mock_customization.id,
             rate_category_id=uuid4()
         )
@@ -138,6 +142,7 @@ class TestTripsServiceStartTrip:
         dto = CreateTripDTO(
             start_address="123 Main St",
             purpose="Business",
+            vehicle="BMW X3",
             rate_customization_id=mock_customization.id,
             rate_category_id=mock_category.id
         )
@@ -309,6 +314,19 @@ class TestTripsServiceEditTrip:
 
         assert result == mock_trip
         assert mock_trip.purpose == "Updated purpose"
+        trip_repo.save.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_edit_trip_vehicle_only(self, service, trip_repo, mock_trip):
+        trip_id = uuid4()
+        dto = EditTripDTO(vehicle="Tesla Model 3")
+        trip_repo.get.return_value = mock_trip
+        trip_repo.save.return_value = mock_trip
+
+        result = await service.edit_trip(trip_id, dto)
+
+        assert result == mock_trip
+        assert mock_trip.vehicle == "Tesla Model 3"
         trip_repo.save.assert_called_once()
 
     @pytest.mark.asyncio

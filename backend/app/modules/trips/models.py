@@ -19,6 +19,7 @@ class Trip(Base):
     start_address_encrypted: Mapped[str] = mapped_column(sa.String(128), nullable=False)
     end_address_encrypted: Mapped[str | None] = mapped_column(sa.String(128), nullable=True)
     purpose: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    vehicle: Mapped[str | None] = mapped_column(sa.String(100), nullable=True)
     reimbursement_rate: Mapped[float | None] = mapped_column(DOUBLE_PRECISION, nullable=True)
     miles: Mapped[float | None] = mapped_column(DOUBLE_PRECISION, nullable=True)
     geometry_encrypted: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
