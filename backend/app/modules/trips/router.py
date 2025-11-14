@@ -12,7 +12,7 @@ from app.modules.expenses.repository import ExpenseRepo
 from app.modules.expenses.service import ExpensesService
 
 
-router = APIRouter(prefix="/trips") #will insert userid once implemented as this should live under users
+router = APIRouter(prefix="/trips", tags=["Trips"]) #will insert userid once implemented as this should live under users
 
 def get_trips_service(db: AsyncSession = Depends(get_db)):
     trip_repo = TripRepo(db)

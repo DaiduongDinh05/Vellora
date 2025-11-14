@@ -10,7 +10,7 @@ from app.modules.rate_customizations.repository import RateCustomizationRepo
 
 
 
-router = APIRouter(prefix="/rate_customizations/{customization_id}/rate_categories") #will insert userid once implemented as this should live under users
+router = APIRouter(prefix="/rate_customizations/{customization_id}/rate_categories", tags=["Rate Categories"]) #will insert userid once implemented as this should live under users
 
 def get_rate_category_service(db: AsyncSession = Depends(get_db)):
     return RateCategoriesService(RateCategoryRepo(db), RateCustomizationRepo(db))

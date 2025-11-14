@@ -9,7 +9,7 @@ from app.core.error_handler import error_handler
 from app.modules.trips.repository import TripRepo
 
 
-router = APIRouter(prefix="/trips/{trip_id}/expenses")
+router = APIRouter(prefix="/trips/{trip_id}/expenses", tags=["Expenses"])
 
 def get_expenses_service(db: AsyncSession = Depends(get_db)):
     return ExpensesService(ExpenseRepo(db), TripRepo(db))

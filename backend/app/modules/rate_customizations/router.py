@@ -9,7 +9,7 @@ from app.core.error_handler import error_handler
 
 
 
-router = APIRouter(prefix="/rate_customizations") #will insert userid once implemented as this should live under users
+router = APIRouter(prefix="/rate_customizations", tags=["Rate Customizations"]) #will insert userid once implemented as this should live under users
 
 def get_rate_customizations_service(db: AsyncSession = Depends(get_db)):
     return RateCustomizationsService(RateCustomizationRepo(db))
