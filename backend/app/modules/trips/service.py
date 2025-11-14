@@ -225,10 +225,10 @@ class TripsService:
 
 
     async def get_active_trip(self, user_id: UUID):
-        raise NotImplementedError("Users Not implemented yet")
+        return await self.repo.get_active_trip(user_id)
 
     async def get_trips_by_userId(self, user_id: UUID):
-        raise NotImplementedError("Users Not implemented yet")
+        return await self.repo.get_user_trips(user_id)
     
 
 

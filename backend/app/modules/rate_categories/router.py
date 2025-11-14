@@ -12,7 +12,7 @@ from app.modules.rate_customizations.repository import RateCustomizationRepo
 
 
 
-router = APIRouter(prefix="/rate_customizations/{customization_id}/categories", tags=["Rate Categories"])
+router = APIRouter(prefix="/rate-customizations/{customization_id}/categories", tags=["Rate Categories"])
 
 def get_rate_category_service(db: AsyncSession = Depends(get_db)):
     return RateCategoriesService(RateCategoryRepo(db), RateCustomizationRepo(db))

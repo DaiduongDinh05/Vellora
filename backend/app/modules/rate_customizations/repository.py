@@ -1,7 +1,8 @@
 from uuid import UUID
-from sqlalchemy import select
+from sqlalchemy import select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.modules.rate_customizations.models import RateCustomization
+from app.modules.users.models import User
 
 class RateCustomizationRepo:
     def __init__(self, db: AsyncSession):
@@ -33,9 +34,19 @@ class RateCustomizationRepo:
         return result.scalar_one_or_none()
     
     async def get_user_customizations(self, user_id: UUID):
-        result = await self.db.execute(
-            select(RateCustomization)
-            .where(RateCustomization.user_id == user_id)
-            .order_by(RateCustomization.created_at.desc())
+        #get IRS system user id to include global IRS rates
+        irs_user_result = await self.db.execute(
+            select(User.id).where(User.email == 'system@irs.gov')
         )
+        irs_user_id = irs_user_result.scalar_one_or_none()
+        
+        #include both users own customizations and the global IRS customization
+        query = select(RateCustomization).where(
+            or_(
+                RateCustomization.user_id == user_id,
+                RateCustomization.user_id == irs_user_id if irs_user_id else False
+            )
+        ).order_by(RateCustomization.created_at.desc())
+        
+        result = await self.db.execute(query)
         return result.scalars().all()
