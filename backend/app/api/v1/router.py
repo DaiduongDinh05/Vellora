@@ -4,6 +4,8 @@ from app.modules.expenses.router import router as expenses_router
 from app.modules.rate_customizations.router import router as rate_customizations_router
 from app.modules.rate_categories.router import router as rate_categories_router
 
+from app.modules.auth.router import router as auth_router
+
 
 router = APIRouter(prefix="/api/v1")
 
@@ -11,3 +13,4 @@ router.include_router(trips_router)
 router.include_router(expenses_router)
 router.include_router(rate_customizations_router)
 router.include_router(rate_categories_router)
+router.include_router(auth_router)
