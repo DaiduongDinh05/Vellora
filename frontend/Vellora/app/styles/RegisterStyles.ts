@@ -10,43 +10,33 @@ export const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 24,
-    justifyContent: "center", 
+    paddingTop: 80,
   },
   logoRow: {
-    width: "100%",
     alignItems: "center",
-    marginBottom: 32,
+    justifyContent: "center",
+    marginBottom: 40,
   },
-  logoImage: {
-    width: 220,
-    height: 70,
-    resizeMode: "contain",
+  logo: {
+    width: 200,
+    height: 64,
   },
   fieldGroup: {
-    marginTop: 16,
+    marginTop: 20,
   },
   label: {
     color: BLUE,
     fontSize: 14,
-    marginBottom: 10,
+    marginBottom: 8,
   },
   input: {
-    height: 40,
+    height: 44,
     borderBottomWidth: 1,
     borderBottomColor: "#111",
     fontSize: 16,
   },
-  ctaText: {
-    color: BLUE,
-    fontSize: 18,
-    fontWeight: "700",
-    borderWidth: 1,
-    borderColor: "#3F46D6",
-    borderRadius: 12,
-    padding: 10,
-  },
-  secondaryButton: {
-    marginTop: 16,
+  ctaButton: {
+    marginTop: 36,
     height: 52,
     borderRadius: 12,
     borderWidth: 1,
@@ -54,28 +44,18 @@ export const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  secondaryButtonText: {
+  ctaButtonText: {
     color: BLUE,
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 18,
+    fontWeight: "700",
   },
   footerText: {
-    marginTop: 18,
+    marginTop: 16,
     textAlign: "center",
     color: "#111",
   },
   link: {
     color: BLUE,
     fontWeight: "700",
-  },
-  message: {
-    marginTop: 16,
-    fontSize: 14,
-  },
-  messageError: {
-    color: "#dc2626",
-  },
-  messageSuccess: {
-    color: "#16a34a",
   },
 });
