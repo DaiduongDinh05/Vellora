@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState } from "react"
 import {
   View,
   Text,
@@ -8,92 +8,88 @@ import {
   KeyboardAvoidingView,
   Platform,
   Modal,
-  FlatList,
-} from "react-native";
-import { rateStyles } from "../styles/ReimbursementStyles";
-import CurrencyInput from "../components/CurrencyInput";
-
-type AddCustomRateProps = {
-  onClose?: () => void;
-  onSave?: () => void;
-};
+  FlatList
+} from "react-native"
+import { rateStyles } from "../styles/ReimbursementStyles"
+import CurrencyInput from "../components/CurrencyInput"
 
 type Category = {
-  id: string;
-  name: string;
-  rate: string;
-};
+  id: string
+  name: string
+  rate: string
+}
+
+type AddCustomRateProps = {
+  onClose?: () => void
+  onSave?: (data: {
+    name: string
+    description: string
+    year: string
+    categories: Category[]
+  }) => void
+}
 
 export default function AddCustomRatePage({ onClose, onSave }: AddCustomRateProps) {
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [year, setYear] = useState("");
-  const [yearPickerVisible, setYearPickerVisible] = useState(false);
+  const [name, setName] = useState("")
+  const [description, setDescription] = useState("")
+  const [year, setYear] = useState("")
+  const [yearPickerVisible, setYearPickerVisible] = useState(false)
 
-  const [categories, setCategories] = useState<Category[]>([
-    { id: "business", name: "Business", rate: "0.40" },
-    { id: "personal", name: "Personal", rate: "0.10" },
-  ]);
+  const [categories, setCategories] = useState<Category[]>([])
+  const [newCategoryName, setNewCategoryName] = useState("")
+  const [newCategoryRate, setNewCategoryRate] = useState("0.00")
+  const [errors, setErrors] = useState("")
 
-  const [isAddingCategory, setIsAddingCategory] = useState(false);
-  const [newCategoryName, setNewCategoryName] = useState("");
-  const [newCategoryRate, setNewCategoryRate] = useState("0.00");
-  const [errors, setErrors] = useState("");
-
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: currentYear - 1999 + 2 }, (_, i) => `${2000 + i}`);
+  const currentYear = new Date().getFullYear()
+  const years = Array.from({ length: currentYear - 1999 + 2 }, (_, i) => `${2000 + i}`)
 
   const isDuplicateCategory = (name: string) =>
-    categories.some((c) => c.name.toLowerCase() === name.toLowerCase());
+    categories.some((c) => c.name.toLowerCase() === name.toLowerCase())
 
   const validateBeforeSave = () => {
-    if (!name.trim()) return setErrors("Name is required.");
-    if (!year.trim()) return setErrors("Year is required.");
-    if (categories.length === 0) return setErrors("You must add at least one category.");
+    if (!name.trim()) return setErrors("Name is required.")
+    if (!year.trim()) return setErrors("Year is required.")
+    if (categories.length === 0) return setErrors("You must add at least one category.")
     for (const c of categories) {
-      if (!c.name.trim()) return setErrors("Category names cannot be empty.");
-      if (!c.rate.trim()) return setErrors("Category rates cannot be empty.");
+      if (!c.name.trim()) return setErrors("Category names cannot be empty.")
+      if (!c.rate.trim()) return setErrors("Category rates cannot be empty.")
     }
-    setErrors("");
-    return true;
-  };
+    setErrors("")
+    return true
+  }
 
   const handleSave = () => {
-    if (!validateBeforeSave()) return;
-    if (onSave) onSave();
-  };
+    if (!validateBeforeSave()) return
+    const payload = { name, description, year, categories }
+    if (onSave) onSave(payload)
+  }
 
-  const commitNewCategory = () => {
-    const trimmed = newCategoryName.trim();
-    if (!trimmed) {
-      setIsAddingCategory(false);
-      return;
-    }
-    if (isDuplicateCategory(trimmed)) {
-      setErrors("Category already exists.");
-      return;
-    }
+  const addCategory = () => {
+    const trimmed = newCategoryName.trim()
+    if (!trimmed) return setErrors("Category name cannot be empty.")
+    if (isDuplicateCategory(trimmed)) return setErrors("Category already exists.")
 
-    const next: Category = {
+    const newCat: Category = {
       id: `${Date.now()}`,
       name: trimmed,
-      rate: newCategoryRate || "0.00",
-    };
+      rate: newCategoryRate || "0.00"
+    }
 
-    setCategories([...categories, next]);
-    setIsAddingCategory(false);
-    setNewCategoryName("");
-    setNewCategoryRate("0.00");
-    setErrors("");
-  };
+    setCategories((prev) => [...prev, newCat])
+    setNewCategoryName("")
+    setNewCategoryRate("0.00")
+    setErrors("")
+  }
 
   const updateCategoryRate = (id: string, val: string) => {
-    setCategories((prev) => prev.map((c) => (c.id === id ? { ...c, rate: val } : c)));
-  };
+    setCategories((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, rate: val } : c))
+    )
+  }
 
   const deleteCategory = (id: string) => {
-    setCategories((prev) => prev.filter((c) => c.id !== id));
-  };
+    setCategories((prev) => prev.filter((c) => c.id !== id))
+  }
 
   return (
     <SafeAreaView style={rateStyles.safe}>
@@ -109,18 +105,18 @@ export default function AddCustomRatePage({ onClose, onSave }: AddCustomRateProp
             <Text style={rateStyles.formTitle}>Add custom rate</Text>
           </View>
 
-          {errors ? (
-            <Text style={{ color: "red", marginBottom: 8, fontSize: 14 }}>{errors}</Text>
-          ) : null}
+          {errors !== "" && (
+            <Text style={{ color: "red", marginBottom: 12 }}>{errors}</Text>
+          )}
 
           <View style={rateStyles.formFieldGroup}>
             <Text style={rateStyles.formLabel}>Name</Text>
             <TextInput
               style={rateStyles.formInput}
-              placeholder="Enter a name for custom rate"
-              placeholderTextColor="#9CA3AF"
               value={name}
               onChangeText={setName}
+              placeholder="Enter a name for custom rate"
+              placeholderTextColor="#9CA3AF"
             />
           </View>
 
@@ -128,10 +124,10 @@ export default function AddCustomRatePage({ onClose, onSave }: AddCustomRateProp
             <Text style={rateStyles.formLabel}>Description</Text>
             <TextInput
               style={rateStyles.formInput}
-              placeholder="Enter a description for custom rate"
-              placeholderTextColor="#9CA3AF"
               value={description}
               onChangeText={setDescription}
+              placeholder="Enter a description"
+              placeholderTextColor="#9CA3AF"
             />
           </View>
 
@@ -153,7 +149,7 @@ export default function AddCustomRatePage({ onClose, onSave }: AddCustomRateProp
                 flex: 1,
                 backgroundColor: "rgba(0,0,0,0.4)",
                 justifyContent: "center",
-                alignItems: "center",
+                alignItems: "center"
               }}
             >
               <View
@@ -161,8 +157,7 @@ export default function AddCustomRatePage({ onClose, onSave }: AddCustomRateProp
                   width: "80%",
                   backgroundColor: "white",
                   borderRadius: 16,
-                  paddingVertical: 16,
-                  paddingHorizontal: 12,
+                  padding: 18
                 }}
               >
                 <Text
@@ -170,7 +165,7 @@ export default function AddCustomRatePage({ onClose, onSave }: AddCustomRateProp
                     fontSize: 16,
                     fontWeight: "700",
                     textAlign: "center",
-                    marginBottom: 12,
+                    marginBottom: 12
                   }}
                 >
                   Select Year
@@ -183,13 +178,10 @@ export default function AddCustomRatePage({ onClose, onSave }: AddCustomRateProp
                   renderItem={({ item }) => (
                     <Pressable
                       onPress={() => {
-                        setYear(item);
-                        setYearPickerVisible(false);
+                        setYear(item)
+                        setYearPickerVisible(false)
                       }}
-                      style={{
-                        paddingVertical: 10,
-                        paddingHorizontal: 12,
-                      }}
+                      style={{ paddingVertical: 10 }}
                     >
                       <Text style={{ fontSize: 16 }}>{item}</Text>
                     </Pressable>
@@ -198,12 +190,7 @@ export default function AddCustomRatePage({ onClose, onSave }: AddCustomRateProp
 
                 <Pressable
                   onPress={() => setYearPickerVisible(false)}
-                  style={{
-                    marginTop: 12,
-                    alignSelf: "center",
-                    paddingVertical: 8,
-                    paddingHorizontal: 18,
-                  }}
+                  style={{ marginTop: 10, alignSelf: "center" }}
                 >
                   <Text style={{ fontSize: 16, color: "#555" }}>Close</Text>
                 </Pressable>
@@ -215,51 +202,26 @@ export default function AddCustomRatePage({ onClose, onSave }: AddCustomRateProp
             <Text style={rateStyles.sectionLabel}>Categories and costs</Text>
           </View>
 
-          {!isAddingCategory && (
-            <Pressable
-              onPress={() => {
-                setIsAddingCategory(true);
-                setErrors("");
-              }}
-              style={rateStyles.addRow}
-            >
-              <View style={rateStyles.addIconCircle}>
-                <Text style={rateStyles.addIconText}>+</Text>
-              </View>
-              <Text style={rateStyles.addText}>Add a category</Text>
+          <View style={rateStyles.addRow}>
+            <TextInput
+              style={rateStyles.categoryInput}
+              placeholder="Category name"
+              placeholderTextColor="#9CA3AF"
+              value={newCategoryName}
+              onChangeText={setNewCategoryName}
+            />
+
+            <CurrencyInput
+              label=""
+              value={newCategoryRate}
+              onChangeText={setNewCategoryRate}
+              style={{ width: 90 }}
+            />
+
+            <Pressable onPress={addCategory}>
+              <Text style={{ fontSize: 20, color: "green", marginLeft: 12 }}>✓</Text>
             </Pressable>
-          )}
-
-          {isAddingCategory && (
-            <View>
-              <View style={rateStyles.divider} />
-              <View style={rateStyles.rateRow}>
-                <Pressable onPress={() => setIsAddingCategory(false)}>
-                  <View style={[rateStyles.minusIcon, { backgroundColor: "#555" }]} />
-                </Pressable>
-
-                <TextInput
-                  style={rateStyles.categoryInput}
-                  placeholder="Enter category name"
-                  placeholderTextColor="#9CA3AF"
-                  value={newCategoryName}
-                  onChangeText={(text) => {
-                    setNewCategoryName(text);
-                    setErrors("");
-                  }}
-                  onSubmitEditing={commitNewCategory}
-                  returnKeyType="done"
-                />
-
-                <CurrencyInput
-                  label=""
-                  value={newCategoryRate}
-                  onChangeText={(text) => setNewCategoryRate(text)}
-                  style={{ width: 90 }}
-                />
-              </View>
-            </View>
-          )}
+          </View>
 
           <View style={rateStyles.divider} />
 
@@ -269,7 +231,6 @@ export default function AddCustomRatePage({ onClose, onSave }: AddCustomRateProp
                 <Pressable onPress={() => deleteCategory(c.id)}>
                   <View style={rateStyles.minusIcon} />
                 </Pressable>
-
                 <Text style={rateStyles.rateRowText}>{c.name}</Text>
 
                 <CurrencyInput
@@ -290,5 +251,5 @@ export default function AddCustomRatePage({ onClose, onSave }: AddCustomRateProp
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
-  );
+  )
 }
