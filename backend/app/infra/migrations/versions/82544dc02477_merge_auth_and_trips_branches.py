@@ -1,29 +1,25 @@
-"""seed_default_irs_rates
+"""merge auth and trips branches
 
-Revision ID: 6e54ed232b7d
-Revises: 1eb993c8e081
-Create Date: 2025-11-10 14:02:56.683318
+Revision ID: 82544dc02477
+Revises: 20240913_02, 9e1d0d1b78c5
+Create Date: 2025-11-13 23:35:45.946544
 
 """
 from typing import Sequence, Union
-import uuid
-from datetime import datetime
 
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import UUID
 
 
 # revision identifiers, used by Alembic.
-revision: str = '6e54ed232b7d'
-down_revision: Union[str, Sequence[str], None] = '1eb993c8e081'
+revision: str = '82544dc02477'
+down_revision: Union[str, Sequence[str], None] = ('20240913_02', '9e1d0d1b78c5')
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
     """Upgrade schema."""
-    # Seeding moved to separate migration
     pass
 
 

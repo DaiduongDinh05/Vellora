@@ -14,8 +14,11 @@ class RateCustomizationRepo:
 
         return rate_customization
     
-    async def get(self, customization_id: UUID) -> RateCustomization:
-        return await self.db.scalar(select(RateCustomization).where(RateCustomization.id == customization_id))
+    async def get(self, customization_id: UUID, user_id: UUID = None) -> RateCustomization:
+        query = select(RateCustomization).where(RateCustomization.id == customization_id)
+        if user_id is not None:
+            query = query.where(RateCustomization.user_id == user_id)
+        return await self.db.scalar(query)
     
     async def delete(self, customization : RateCustomization) -> None:
         await self.db.delete(customization)
@@ -28,3 +31,11 @@ class RateCustomizationRepo:
         )
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
+    
+    async def get_user_customizations(self, user_id: UUID):
+        result = await self.db.execute(
+            select(RateCustomization)
+            .where(RateCustomization.user_id == user_id)
+            .order_by(RateCustomization.created_at.desc())
+        )
+        return result.scalars().all()

@@ -4,7 +4,7 @@ from app.modules.trips.repository import TripRepo
 from app.modules.trips.schemas import CreateTripDTO, EditTripDTO, EndTripDTO, ManualCreateTripDTO
 from app.modules.trips.utils.crypto import encrypt_address, encrypt_geometry
 from app.modules.trips.models import Trip, TripStatus
-from app.modules.trips.exceptions import InvalidTripDataError, TripNotFoundError, TripPersistenceError
+from app.modules.trips.exceptions import InvalidTripDataError, TripNotFoundError, TripPersistenceError, TripAlreadyActiveError
 from app.modules.rate_categories.repository import RateCategoryRepo
 from app.modules.rate_customizations.repository import RateCustomizationRepo
 from app.modules.rate_customizations.exceptions import RateCustomizationNotFoundError
@@ -20,14 +20,19 @@ class TripsService:
         self.customization_repo = customization_repo
         self.expense_service = expense_service
 
-    async def start_trip(self, data: CreateTripDTO):
+    async def start_trip(self, user_id: UUID, data: CreateTripDTO):
 
         if not data.start_address.strip():
             raise InvalidTripDataError("Start address is required")
         
-        customization = await self.customization_repo.get(data.rate_customization_id)
+        # Check if user already has an active trip
+        active_trip = await self.repo.get_active_trip(user_id)
+        if active_trip:
+            raise TripAlreadyActiveError("You already have an active trip")
+        
+        customization = await self.customization_repo.get(data.rate_customization_id, user_id)
         if not customization:
-            raise RateCustomizationNotFoundError("Rate customization not found")
+            raise RateCustomizationNotFoundError("Rate customization not found or not owned by user")
         
         category = await self.category_repo.get(data.rate_category_id)
         if not category:
@@ -37,15 +42,12 @@ class TripsService:
             raise InvalidRateCategoryDataError("Category does not belong to this customization")
         
         reimbursement_rate = category.cost_per_mile
-        
-        #for when users is implemented
-        # if user has active trip
-        #     raise TripAlreadyActiveError("You already have an active trip")
 
         try:
             encrypted_address = encrypt_address(data.start_address)
 
             trip = Trip(
+                user_id=user_id,
                 start_address_encrypted = encrypted_address,
                 purpose = data.purpose,
                 vehicle = data.vehicle,
@@ -59,7 +61,7 @@ class TripsService:
         except Exception as e:
             raise TripPersistenceError(f"Unexpected error occurred while saving trip: {e}") from e
     
-    async def manual_create_trip(self, data: ManualCreateTripDTO):
+    async def manual_create_trip(self, user_id: UUID, data: ManualCreateTripDTO):
         if not data.start_address.strip():
             raise InvalidTripDataError("Start address is required")
         
@@ -92,6 +94,7 @@ class TripsService:
             mileage_total = data.miles * reimbursement_rate
 
             trip = Trip(
+                user_id=user_id,
                 status=TripStatus.completed,
                 start_address_encrypted=encrypted_start_address,
                 end_address_encrypted=encrypted_end_address,
@@ -112,27 +115,27 @@ class TripsService:
             
             if data.expenses and self.expense_service:
                 for expense_data in data.expenses:
-                    await self.expense_service.create_expense(saved_trip.id, expense_data)
+                    await self.expense_service.create_expense(user_id, saved_trip.id, expense_data)
                     
             return saved_trip
 
         except Exception as e:
             raise TripPersistenceError(f"Unexpected error occurred while saving manual trip: {e}") from e
     
-    async def get_trip_by_id(self, trip_id: UUID):
-        trip = await self.repo.get(trip_id)
+    async def get_trip_by_id(self, user_id: UUID, trip_id: UUID):
+        trip = await self.repo.get(trip_id, user_id)
 
         if trip:
             return trip
         
-        raise TripNotFoundError("Trip doesn't exist")
+        raise TripNotFoundError("Trip doesn't exist or not owned by user")
     
-    async def end_trip(self, trip_id: UUID ,data: EndTripDTO):
+    async def end_trip(self, user_id: UUID, trip_id: UUID, data: EndTripDTO):
         if not data.end_address.strip():
             raise InvalidTripDataError("End address is required")
         
         #check if trip exists first
-        trip = await self.get_trip_by_id(trip_id)
+        trip = await self.get_trip_by_id(user_id, trip_id)
       
         if trip.status == TripStatus.completed:
             raise InvalidTripDataError("Trip already ended")
@@ -164,9 +167,9 @@ class TripsService:
             raise TripPersistenceError(f"Unexpected error occurred while ending trip: {e}") from e
 
         
-    async def edit_trip(self, trip_id: UUID, data: EditTripDTO):
+    async def edit_trip(self, user_id: UUID, trip_id: UUID, data: EditTripDTO):
         #check if trip exists first
-        trip = await self.get_trip_by_id(trip_id)
+        trip = await self.get_trip_by_id(user_id, trip_id)
         
         try:
 
@@ -204,9 +207,9 @@ class TripsService:
             await self.repo.db.rollback()
             raise TripPersistenceError(f"Unexpected error occurred while editing trip: {e}") from e
 
-    async def cancel_trip(self, trip_id: UUID):
+    async def cancel_trip(self, user_id: UUID, trip_id: UUID):
 
-        trip = await self.get_trip_by_id(trip_id)
+        trip = await self.get_trip_by_id(user_id, trip_id)
 
         if trip.status != TripStatus.active:
             raise InvalidTripDataError("Only active trips can be cancelled")

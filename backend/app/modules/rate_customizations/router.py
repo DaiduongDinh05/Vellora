@@ -6,35 +6,62 @@ from app.container import get_db
 from app.modules.rate_customizations.repository import RateCustomizationRepo
 from app.modules.rate_customizations.schemas import CreateRateCustomizationDTO, EditRateCustomizationDTO, RateCustomizationResponseDTO
 from app.core.error_handler import error_handler
+from app.core.dependencies import get_current_user
+from app.modules.users.models import User
 
 
 
-router = APIRouter(prefix="/rate_customizations", tags=["Rate Customizations"]) #will insert userid once implemented as this should live under users
+router = APIRouter(prefix="/rate-customizations", tags=["Rate Customizations"])
 
 def get_rate_customizations_service(db: AsyncSession = Depends(get_db)):
     return RateCustomizationsService(RateCustomizationRepo(db))
 
-#will add user id once it is created
 @router.post("/", response_model=RateCustomizationResponseDTO)
 @error_handler
-async def create_rate_customization(body: CreateRateCustomizationDTO, svc = Depends(get_rate_customizations_service)):
-    rate_customization = await svc.create_rate_customization(body)
+async def create_rate_customization(
+    body: CreateRateCustomizationDTO, 
+    svc = Depends(get_rate_customizations_service),
+    current_user: User = Depends(get_current_user)
+):
+    rate_customization = await svc.create_rate_customization(current_user.id, body)
     return rate_customization
 
 @router.get("/{customization_id}", response_model=RateCustomizationResponseDTO)
 @error_handler
-async def get_customization(customization_id: UUID, svc = Depends(get_rate_customizations_service)):
-    rate_customization = await svc.get_customization(customization_id)
+async def get_customization(
+    customization_id: UUID, 
+    svc = Depends(get_rate_customizations_service),
+    current_user: User = Depends(get_current_user)
+):
+    rate_customization = await svc.get_customization(current_user.id, customization_id)
     return rate_customization
 
 @router.patch("/{customization_id}", response_model=RateCustomizationResponseDTO)
 @error_handler
-async def edit_customization(body: EditRateCustomizationDTO, customization_id: UUID, svc = Depends(get_rate_customizations_service)):
-    rate_customization = await svc.edit_customization(customization_id, body)
+async def edit_customization(
+    customization_id: UUID, 
+    body: EditRateCustomizationDTO, 
+    svc = Depends(get_rate_customizations_service),
+    current_user: User = Depends(get_current_user)
+):
+    rate_customization = await svc.edit_customization(current_user.id, customization_id, body)
     return rate_customization
 
 @router.delete("/{customization_id}")
 @error_handler
-async def delete_customization(customization_id: UUID, svc = Depends(get_rate_customizations_service)):
-    await svc.delete_customization(customization_id)
+async def delete_customization(
+    customization_id: UUID, 
+    svc = Depends(get_rate_customizations_service),
+    current_user: User = Depends(get_current_user)
+):
+    await svc.delete_customization(current_user.id, customization_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+@router.get("/", response_model=list[RateCustomizationResponseDTO])
+@error_handler
+async def get_user_customizations(
+    svc = Depends(get_rate_customizations_service),
+    current_user: User = Depends(get_current_user)
+):
+    customizations = await svc.get_user_customizations(current_user.id)
+    return customizations

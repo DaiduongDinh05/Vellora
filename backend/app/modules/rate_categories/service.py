@@ -14,12 +14,12 @@ class RateCategoriesService:
         self.category_repo = category_repo
         self.customization_repo = customization_repo
 
-    async def create_rate_category(self, customization_id: UUID,  data: CreateRateCategoryDTO):
+    async def create_rate_category(self, user_id: UUID, customization_id: UUID, data: CreateRateCategoryDTO):
 
-        rate_customization = await self.customization_repo.get(customization_id)
+        rate_customization = await self.customization_repo.get(customization_id, user_id)
 
         if not rate_customization:
-            raise RateCustomizationNotFoundError("Customization not found.")
+            raise RateCustomizationNotFoundError("Customization not found or not owned by user.")
 
         if not data.name.strip():
             raise InvalidRateCategoryDataError("Name is required")
@@ -45,19 +45,23 @@ class RateCategoriesService:
         except Exception as e:
             raise RateCategoryPersistenceError("Unexpected error occurred while saving rate category") from e
         
-    async def get_category(self, category_id : UUID):
+    async def get_category(self, user_id: UUID, category_id: UUID):
         rate_category = await self.category_repo.get(category_id)
 
         if not rate_category:
-            raise RateCategoryNotFoundError("category not found.")
+            raise RateCategoryNotFoundError("Category not found.")
+        
+        rate_customization = await self.customization_repo.get(rate_category.rate_customization_id, user_id)
+        if not rate_customization:
+            raise RateCategoryNotFoundError("Category not found or not owned by user.")
         
         return rate_category
     
-    async def get_categories_by_customization(self, customization_id: UUID):
-        rate_customization = await self.customization_repo.get(customization_id)
+    async def get_categories_by_customization(self, user_id: UUID, customization_id: UUID):
+        rate_customization = await self.customization_repo.get(customization_id, user_id)
 
         if not rate_customization:
-            raise RateCustomizationNotFoundError("Customization not found.")
+            raise RateCustomizationNotFoundError("Customization not found or not owned by user.")
 
         try:
             categories = await self.category_repo.get_by_customization_id(customization_id)
@@ -65,8 +69,8 @@ class RateCategoriesService:
         except Exception as e:
             raise RateCategoryPersistenceError("Unexpected error occurred while fetching categories") from e
     
-    async def edit_category(self, category_id : UUID, data: EditRateCategoryDTO):
-        rate_category = await self.get_category(category_id)
+    async def edit_category(self, user_id: UUID, category_id: UUID, data: EditRateCategoryDTO):
+        rate_category = await self.get_category(user_id, category_id)
 
         if data.name is not None:
             if not data.name.strip():
@@ -91,6 +95,6 @@ class RateCategoriesService:
         except Exception as e:
             raise RateCategoryPersistenceError("Unexpected error occurred while updating rate category") from e
     
-    async def delete_category(self, category_id: UUID):
-        rate_category = await self.get_category(category_id)
+    async def delete_category(self, user_id: UUID, category_id: UUID):
+        rate_category = await self.get_category(user_id, category_id)
         return await self.category_repo.delete(rate_category)

@@ -25,6 +25,10 @@ from app.modules.rate_categories.exceptions import InvalidRateCategoryDataError,
 class TestTripsServiceStartTrip:
 
     @pytest.fixture
+    def user_id(self):
+        return uuid4()
+
+    @pytest.fixture
     def trip_repo(self):
         return AsyncMock(spec=TripRepo)
 
@@ -69,7 +73,7 @@ class TestTripsServiceStartTrip:
     @pytest.mark.asyncio
     async def test_start_trip_success(
         self, service, trip_repo, category_repo, customization_repo, 
-        mock_customization, mock_category, mock_trip
+        mock_customization, mock_category, mock_trip, user_id
     ):
         mock_category.rate_customization_id = mock_customization.id
         dto = CreateTripDTO(
@@ -81,18 +85,22 @@ class TestTripsServiceStartTrip:
         )
         customization_repo.get.return_value = mock_customization
         category_repo.get.return_value = mock_category
+        trip_repo.get_active_trip.return_value = None
         trip_repo.save.return_value = mock_trip
 
         with patch('app.modules.trips.service.encrypt_address', return_value="encrypted") as mock_encrypt:
             with patch('app.modules.trips.service.Trip', return_value=mock_trip):
-                result = await service.start_trip(dto)
+                result = await service.start_trip(user_id, dto)
 
         assert result == mock_trip
         mock_encrypt.assert_called_once_with("123 Main St")
         trip_repo.save.assert_called_once()
+        customization_repo.get.assert_called_once_with(mock_customization.id, user_id)
+        category_repo.get.assert_called_once_with(mock_category.id)
+        trip_repo.get_active_trip.assert_called_once_with(user_id)
 
     @pytest.mark.asyncio
-    async def test_start_trip_empty_address(self, service):
+    async def test_start_trip_empty_address(self, service, user_id):
         dto = CreateTripDTO(
             start_address="   ",
             purpose="Business",
@@ -102,12 +110,12 @@ class TestTripsServiceStartTrip:
         )
 
         with pytest.raises(InvalidTripDataError) as exc_info:
-            await service.start_trip(dto)
+            await service.start_trip(user_id, dto)
         assert "Start address is required" in str(exc_info.value)
 
     @pytest.mark.asyncio
     async def test_start_trip_customization_not_found(
-        self, service, customization_repo
+        self, service, customization_repo, trip_repo, user_id
     ):
         dto = CreateTripDTO(
             start_address="123 Main St",
@@ -115,15 +123,14 @@ class TestTripsServiceStartTrip:
             vehicle="Nissan Altima",
             rate_customization_id=uuid4(),
             rate_category_id=uuid4()
-        )
+        )         
         customization_repo.get.return_value = None
+        trip_repo.get_active_trip.return_value = None
 
         with pytest.raises(RateCustomizationNotFoundError):
-            await service.start_trip(dto)
-
-    @pytest.mark.asyncio
+            await service.start_trip(user_id, dto)    @pytest.mark.asyncio
     async def test_start_trip_category_not_found(
-        self, service, customization_repo, category_repo, mock_customization
+        self, service, customization_repo, category_repo, trip_repo, mock_customization, user_id
     ):
         dto = CreateTripDTO(
             start_address="123 Main St",
@@ -134,14 +141,15 @@ class TestTripsServiceStartTrip:
         )
         customization_repo.get.return_value = mock_customization
         category_repo.get.return_value = None
+        trip_repo.get_active_trip.return_value = None
 
         with pytest.raises(RateCategoryNotFoundError):
-            await service.start_trip(dto)
+            await service.start_trip(user_id, dto)
 
     @pytest.mark.asyncio
     async def test_start_trip_category_mismatch(
-        self, service, customization_repo, category_repo, 
-        mock_customization, mock_category
+        self, service, customization_repo, category_repo, trip_repo,
+        mock_customization, mock_category, user_id
     ):
         different_customization_id = uuid4()
         mock_category.rate_customization_id = different_customization_id
@@ -154,13 +162,18 @@ class TestTripsServiceStartTrip:
         )
         customization_repo.get.return_value = mock_customization
         category_repo.get.return_value = mock_category
+        trip_repo.get_active_trip.return_value = None
 
         with pytest.raises(InvalidRateCategoryDataError) as exc_info:
-            await service.start_trip(dto)
+            await service.start_trip(user_id, dto)
         assert "does not belong to this customization" in str(exc_info.value)
 
 
 class TestTripsServiceManualCreateTrip:
+
+    @pytest.fixture
+    def user_id(self):
+        return uuid4()
 
     @pytest.fixture
     def trip_repo(self):
@@ -206,7 +219,7 @@ class TestTripsServiceManualCreateTrip:
     @pytest.mark.asyncio
     async def test_manual_create_trip_success(
         self, service, trip_repo, category_repo, customization_repo, 
-        mock_customization, mock_category, mock_trip
+        mock_customization, mock_category, mock_trip, user_id
     ):
         started_time = datetime.now(timezone.utc)
         ended_time = started_time + timedelta(hours=2)
@@ -232,7 +245,7 @@ class TestTripsServiceManualCreateTrip:
         with patch('app.modules.trips.service.encrypt_address', return_value="encrypted") as mock_encrypt_addr:
             with patch('app.modules.trips.service.encrypt_geometry', return_value="encrypted_geom") as mock_encrypt_geom:
                 with patch('app.modules.trips.service.Trip', return_value=mock_trip):
-                    result = await service.manual_create_trip(dto)
+                    result = await service.manual_create_trip(user_id, dto)
 
         assert result == mock_trip
         assert mock_encrypt_addr.call_count == 2  # start and end address
@@ -240,7 +253,7 @@ class TestTripsServiceManualCreateTrip:
         trip_repo.save.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_manual_create_trip_empty_start_address(self, service):
+    async def test_manual_create_trip_empty_start_address(self, service, user_id):
         started_time = datetime.now(timezone.utc)
         ended_time = started_time + timedelta(hours=1)
         
@@ -255,11 +268,11 @@ class TestTripsServiceManualCreateTrip:
         )
 
         with pytest.raises(InvalidTripDataError) as exc_info:
-            await service.manual_create_trip(dto)
+            await service.manual_create_trip(user_id, dto)
         assert "Start address is required" in str(exc_info.value)
 
     @pytest.mark.asyncio
-    async def test_manual_create_trip_empty_end_address(self, service):
+    async def test_manual_create_trip_empty_end_address(self, service, user_id):
         started_time = datetime.now(timezone.utc)
         ended_time = started_time + timedelta(hours=1)
         
@@ -274,11 +287,11 @@ class TestTripsServiceManualCreateTrip:
         )
 
         with pytest.raises(InvalidTripDataError) as exc_info:
-            await service.manual_create_trip(dto)
+            await service.manual_create_trip(user_id, dto)
         assert "End address is required" in str(exc_info.value)
 
     @pytest.mark.asyncio
-    async def test_manual_create_trip_customization_not_found(self, service, customization_repo):
+    async def test_manual_create_trip_customization_not_found(self, service, customization_repo, user_id):
         started_time = datetime.now(timezone.utc)
         ended_time = started_time + timedelta(hours=1)
         
@@ -294,11 +307,11 @@ class TestTripsServiceManualCreateTrip:
         customization_repo.get.return_value = None
 
         with pytest.raises(RateCustomizationNotFoundError):
-            await service.manual_create_trip(dto)
+            await service.manual_create_trip(user_id, dto)
 
     @pytest.mark.asyncio
     async def test_manual_create_trip_category_not_found(
-        self, service, customization_repo, category_repo, mock_customization
+        self, service, customization_repo, category_repo, mock_customization, user_id
     ):
         started_time = datetime.now(timezone.utc)
         ended_time = started_time + timedelta(hours=1)
@@ -316,12 +329,12 @@ class TestTripsServiceManualCreateTrip:
         category_repo.get.return_value = None
 
         with pytest.raises(RateCategoryNotFoundError):
-            await service.manual_create_trip(dto)
+            await service.manual_create_trip(user_id, dto)
 
     @pytest.mark.asyncio
     async def test_manual_create_trip_category_mismatch(
         self, service, customization_repo, category_repo, 
-        mock_customization, mock_category
+        mock_customization, mock_category, user_id
     ):
         started_time = datetime.now(timezone.utc)
         ended_time = started_time + timedelta(hours=1)
@@ -341,11 +354,11 @@ class TestTripsServiceManualCreateTrip:
         category_repo.get.return_value = mock_category
 
         with pytest.raises(InvalidRateCategoryDataError) as exc_info:
-            await service.manual_create_trip(dto)
+            await service.manual_create_trip(user_id, dto)
         assert "does not belong to this customization" in str(exc_info.value)
 
     @pytest.mark.asyncio
-    async def test_manual_create_trip_negative_miles(self, service):
+    async def test_manual_create_trip_negative_miles(self, service, user_id):
         started_time = datetime.now(timezone.utc)
         ended_time = started_time + timedelta(hours=1)
         
@@ -360,11 +373,11 @@ class TestTripsServiceManualCreateTrip:
         )
 
         with pytest.raises(InvalidTripDataError) as exc_info:
-            await service.manual_create_trip(dto)
+            await service.manual_create_trip(user_id, dto)
         assert "Miles must be greater than 0" in str(exc_info.value)
 
     @pytest.mark.asyncio
-    async def test_manual_create_trip_zero_miles(self, service):
+    async def test_manual_create_trip_zero_miles(self, service, user_id):
         started_time = datetime.now(timezone.utc)
         ended_time = started_time + timedelta(hours=1)
         
@@ -379,11 +392,11 @@ class TestTripsServiceManualCreateTrip:
         )
 
         with pytest.raises(InvalidTripDataError) as exc_info:
-            await service.manual_create_trip(dto)
+            await service.manual_create_trip(user_id, dto)
         assert "Miles must be greater than 0" in str(exc_info.value)
 
     @pytest.mark.asyncio
-    async def test_manual_create_trip_invalid_time_order(self, service):
+    async def test_manual_create_trip_invalid_time_order(self, service, user_id):
         started_time = datetime.now(timezone.utc)
         ended_time = started_time - timedelta(hours=1) 
         
@@ -398,11 +411,11 @@ class TestTripsServiceManualCreateTrip:
         )
 
         with pytest.raises(InvalidTripDataError) as exc_info:
-            await service.manual_create_trip(dto)
+            await service.manual_create_trip(user_id, dto)
         assert "End time must be after start time" in str(exc_info.value)
 
     @pytest.mark.asyncio
-    async def test_manual_create_trip_same_start_end_time(self, service):
+    async def test_manual_create_trip_same_start_end_time(self, service, user_id):
         start_end_time = datetime.now(timezone.utc)
         
         dto = ManualCreateTripDTO(
@@ -416,13 +429,13 @@ class TestTripsServiceManualCreateTrip:
         )
 
         with pytest.raises(InvalidTripDataError) as exc_info:
-            await service.manual_create_trip(dto)
+            await service.manual_create_trip(user_id, dto)
         assert "End time must be after start time" in str(exc_info.value)
 
     @pytest.mark.asyncio
     async def test_manual_create_trip_with_expenses(
         self, service, trip_repo, category_repo, customization_repo, expense_repo,
-        mock_customization, mock_category, mock_trip
+        mock_customization, mock_category, mock_trip, user_id
     ):
         started_time = datetime.now(timezone.utc)
         ended_time = started_time + timedelta(hours=2)
@@ -456,13 +469,17 @@ class TestTripsServiceManualCreateTrip:
         with patch('app.modules.trips.service.encrypt_address', return_value="encrypted"):
             with patch('app.modules.trips.service.encrypt_geometry', return_value="encrypted_geom"):
                 with patch('app.modules.trips.service.Trip', return_value=mock_trip):
-                    result = await service.manual_create_trip(dto)
+                    result = await service.manual_create_trip(user_id, dto)
 
         assert result == mock_trip
         assert service.expense_service.create_expense.call_count == 2  
 
 
 class TestTripsServiceGetTripById:
+
+    @pytest.fixture
+    def user_id(self):
+        return uuid4()
 
     @pytest.fixture
     def trip_repo(self):
@@ -481,26 +498,30 @@ class TestTripsServiceGetTripById:
         return trip
 
     @pytest.mark.asyncio
-    async def test_get_trip_by_id_success(self, service, trip_repo, mock_trip):
+    async def test_get_trip_by_id_success(self, service, trip_repo, mock_trip, user_id):
         trip_id = uuid4()
         trip_repo.get.return_value = mock_trip
 
-        result = await service.get_trip_by_id(trip_id)
+        result = await service.get_trip_by_id(user_id, trip_id)
 
         assert result == mock_trip
-        trip_repo.get.assert_called_once_with(trip_id)
+        trip_repo.get.assert_called_once_with(trip_id, user_id)
 
     @pytest.mark.asyncio
-    async def test_get_trip_by_id_not_found(self, service, trip_repo):
+    async def test_get_trip_by_id_not_found(self, service, trip_repo, user_id):
         trip_id = uuid4()
         trip_repo.get.return_value = None
 
         with pytest.raises(TripNotFoundError) as exc_info:
-            await service.get_trip_by_id(trip_id)
+            await service.get_trip_by_id(user_id, trip_id)
         assert "doesn't exist" in str(exc_info.value)
 
 
 class TestTripsServiceEndTrip:
+
+    @pytest.fixture
+    def user_id(self):
+        return uuid4()
 
     @pytest.fixture
     def trip_repo(self):
@@ -523,14 +544,14 @@ class TestTripsServiceEndTrip:
         return trip
 
     @pytest.mark.asyncio
-    async def test_end_trip_success(self, service, trip_repo, mock_trip):
+    async def test_end_trip_success(self, service, trip_repo, mock_trip, user_id):
         trip_id = uuid4()
         dto = EndTripDTO(end_address="456 Oak Ave", geometry='{"type":"LineString","coordinates":[[-122.4194,37.7749],[-122.4094,37.7849]]}', distance_meters=81320.0)
         trip_repo.get.return_value = mock_trip
         trip_repo.save.return_value = mock_trip
 
         with patch('app.modules.trips.service.encrypt_address', return_value="encrypted"):
-            result = await service.end_trip(trip_id, dto)
+            result = await service.end_trip(user_id, trip_id, dto)
 
         assert result == mock_trip
         assert mock_trip.miles == 50.53
@@ -539,35 +560,35 @@ class TestTripsServiceEndTrip:
         trip_repo.save.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_end_trip_empty_address(self, service, trip_repo, mock_trip):
+    async def test_end_trip_empty_address(self, service, trip_repo, mock_trip, user_id):
         trip_id = uuid4()
         dto = EndTripDTO(end_address="   ", geometry='{"type":"Point","coordinates":[-122.4194,37.7749]}', distance_meters=81320.0)
         trip_repo.get.return_value = mock_trip
 
         with pytest.raises(InvalidTripDataError) as exc_info:
-            await service.end_trip(trip_id, dto)
+            await service.end_trip(user_id, trip_id, dto)
         assert "End address is required" in str(exc_info.value)
 
     @pytest.mark.asyncio
-    async def test_end_trip_already_completed(self, service, trip_repo, mock_trip):
+    async def test_end_trip_already_completed(self, service, trip_repo, mock_trip, user_id):
         trip_id = uuid4()
         dto = EndTripDTO(end_address="456 Oak Ave", geometry='{"type":"Polygon","coordinates":[[[-122.4,37.8],[-122.4,37.7],[-122.3,37.7],[-122.3,37.8],[-122.4,37.8]]]}', distance_meters=81320.0)
         mock_trip.status = TripStatus.completed
         trip_repo.get.return_value = mock_trip
 
         with pytest.raises(InvalidTripDataError) as exc_info:
-            await service.end_trip(trip_id, dto)
+            await service.end_trip(user_id, trip_id, dto)
         assert "already ended" in str(exc_info.value)
 
     @pytest.mark.asyncio
-    async def test_end_trip_cancelled(self, service, trip_repo, mock_trip):
+    async def test_end_trip_cancelled(self, service, trip_repo, mock_trip, user_id):
         trip_id = uuid4()
         dto = EndTripDTO(end_address="456 Oak Ave", geometry='{"type":"MultiPoint","coordinates":[[-122.4194,37.7749],[-122.4094,37.7849]]}', distance_meters=81320.0)
         mock_trip.status = TripStatus.cancelled
         trip_repo.get.return_value = mock_trip
 
         with pytest.raises(InvalidTripDataError) as exc_info:
-            await service.end_trip(trip_id, dto)
+            await service.end_trip(user_id, trip_id, dto)
         assert "Cannot end a cancelled trip" in str(exc_info.value)
 
     @pytest.mark.asyncio
@@ -579,6 +600,10 @@ class TestTripsServiceEndTrip:
 
 
 class TestTripsServiceEditTrip:
+
+    @pytest.fixture
+    def user_id(self):
+        return uuid4()
 
     @pytest.fixture
     def trip_repo(self):
@@ -615,26 +640,26 @@ class TestTripsServiceEditTrip:
         return trip
 
     @pytest.mark.asyncio
-    async def test_edit_trip_purpose_only(self, service, trip_repo, mock_trip):
+    async def test_edit_trip_purpose_only(self, service, trip_repo, mock_trip, user_id):
         trip_id = uuid4()
         dto = EditTripDTO(purpose="Updated purpose")
         trip_repo.get.return_value = mock_trip
         trip_repo.save.return_value = mock_trip
 
-        result = await service.edit_trip(trip_id, dto)
+        result = await service.edit_trip(user_id, trip_id, dto)
 
         assert result == mock_trip
         assert mock_trip.purpose == "Updated purpose"
         trip_repo.save.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_edit_trip_vehicle_only(self, service, trip_repo, mock_trip):
+    async def test_edit_trip_vehicle_only(self, service, trip_repo, mock_trip, user_id):
         trip_id = uuid4()
         dto = EditTripDTO(vehicle="Tesla Model 3")
         trip_repo.get.return_value = mock_trip
         trip_repo.save.return_value = mock_trip
 
-        result = await service.edit_trip(trip_id, dto)
+        result = await service.edit_trip(user_id, trip_id, dto)
 
         assert result == mock_trip
         assert mock_trip.vehicle == "Tesla Model 3"
@@ -642,7 +667,7 @@ class TestTripsServiceEditTrip:
 
     @pytest.mark.asyncio
     async def test_edit_trip_customization_only(
-        self, service, trip_repo, customization_repo, mock_trip
+        self, service, trip_repo, customization_repo, mock_trip, user_id
     ):
         trip_id = uuid4()
         new_customization_id = uuid4()
@@ -653,7 +678,7 @@ class TestTripsServiceEditTrip:
         customization_repo.get.return_value = mock_customization
         trip_repo.save.return_value = mock_trip
 
-        result = await service.edit_trip(trip_id, dto)
+        result = await service.edit_trip(user_id, trip_id, dto)
 
         assert result == mock_trip
         assert mock_trip.rate_customization_id == new_customization_id
@@ -661,7 +686,7 @@ class TestTripsServiceEditTrip:
 
     @pytest.mark.asyncio
     async def test_edit_trip_category_only(
-        self, service, trip_repo, category_repo, mock_trip
+        self, service, trip_repo, category_repo, mock_trip, user_id
     ):
         trip_id = uuid4()
         new_category_id = uuid4()
@@ -674,7 +699,7 @@ class TestTripsServiceEditTrip:
         category_repo.get.return_value = mock_category
         trip_repo.save.return_value = mock_trip
 
-        result = await service.edit_trip(trip_id, dto)
+        result = await service.edit_trip(user_id, trip_id, dto)
 
         assert result == mock_trip
         assert mock_trip.rate_category_id == new_category_id
@@ -683,7 +708,7 @@ class TestTripsServiceEditTrip:
 
     @pytest.mark.asyncio
     async def test_edit_trip_customization_and_category(
-        self, service, trip_repo, category_repo, customization_repo, mock_trip
+        self, service, trip_repo, category_repo, customization_repo, mock_trip, user_id
     ):
         trip_id = uuid4()
         new_customization_id = uuid4()
@@ -703,7 +728,7 @@ class TestTripsServiceEditTrip:
         category_repo.get.return_value = mock_category
         trip_repo.save.return_value = mock_trip
 
-        result = await service.edit_trip(trip_id, dto)
+        result = await service.edit_trip(user_id, trip_id, dto)
 
         assert result == mock_trip
         assert mock_trip.rate_customization_id == new_customization_id
@@ -712,7 +737,7 @@ class TestTripsServiceEditTrip:
 
     @pytest.mark.asyncio
     async def test_edit_trip_category_mismatch(
-        self, service, trip_repo, category_repo, mock_trip
+        self, service, trip_repo, category_repo, mock_trip, user_id
     ):
         trip_id = uuid4()
         new_category_id = uuid4()
@@ -724,12 +749,12 @@ class TestTripsServiceEditTrip:
         category_repo.get.return_value = mock_category
 
         with pytest.raises(TripPersistenceError) as exc_info:
-            await service.edit_trip(trip_id, dto)
+            await service.edit_trip(user_id, trip_id, dto)
         assert "does not belong to this customization" in str(exc_info.value)
 
     @pytest.mark.asyncio
     async def test_edit_trip_customization_not_found(
-        self, service, trip_repo, customization_repo, mock_trip
+        self, service, trip_repo, customization_repo, mock_trip, user_id
     ):
         trip_id = uuid4()
         dto = EditTripDTO(rate_customization_id=uuid4())
@@ -737,11 +762,11 @@ class TestTripsServiceEditTrip:
         customization_repo.get.return_value = None
 
         with pytest.raises(TripPersistenceError):
-            await service.edit_trip(trip_id, dto)
+            await service.edit_trip(user_id, trip_id, dto)
 
     @pytest.mark.asyncio
     async def test_edit_trip_category_not_found(
-        self, service, trip_repo, category_repo, mock_trip
+        self, service, trip_repo, category_repo, mock_trip, user_id
     ):
         trip_id = uuid4()
         dto = EditTripDTO(rate_category_id=uuid4())
@@ -749,10 +774,14 @@ class TestTripsServiceEditTrip:
         category_repo.get.return_value = None
 
         with pytest.raises(TripPersistenceError):
-            await service.edit_trip(trip_id, dto)
+            await service.edit_trip(user_id, trip_id, dto)
 
 
 class TestTripsServiceCancelTrip:
+
+    @pytest.fixture
+    def user_id(self):
+        return uuid4()
 
     @pytest.fixture
     def trip_repo(self):
@@ -771,12 +800,12 @@ class TestTripsServiceCancelTrip:
         return trip
 
     @pytest.mark.asyncio
-    async def test_cancel_trip_success(self, service, trip_repo, mock_trip):
+    async def test_cancel_trip_success(self, service, trip_repo, mock_trip, user_id):
         trip_id = uuid4()
         trip_repo.get.return_value = mock_trip
         trip_repo.save.return_value = mock_trip
 
-        result = await service.cancel_trip(trip_id)
+        result = await service.cancel_trip(user_id, trip_id)
 
         assert result == mock_trip
         assert mock_trip.status == TripStatus.cancelled
@@ -784,21 +813,21 @@ class TestTripsServiceCancelTrip:
         trip_repo.save.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_cancel_trip_already_completed(self, service, trip_repo, mock_trip):
+    async def test_cancel_trip_already_completed(self, service, trip_repo, mock_trip, user_id):
         trip_id = uuid4()
         mock_trip.status = TripStatus.completed
         trip_repo.get.return_value = mock_trip
 
         with pytest.raises(InvalidTripDataError) as exc_info:
-            await service.cancel_trip(trip_id)
+            await service.cancel_trip(user_id, trip_id)
         assert "Only active trips can be cancelled" in str(exc_info.value)
 
     @pytest.mark.asyncio
-    async def test_cancel_trip_already_cancelled(self, service, trip_repo, mock_trip):
+    async def test_cancel_trip_already_cancelled(self, service, trip_repo, mock_trip, user_id):
         trip_id = uuid4()
         mock_trip.status = TripStatus.cancelled
         trip_repo.get.return_value = mock_trip
 
         with pytest.raises(InvalidTripDataError) as exc_info:
-            await service.cancel_trip(trip_id)
+            await service.cancel_trip(user_id, trip_id)
         assert "Only active trips can be cancelled" in str(exc_info.value)
