@@ -1,13 +1,15 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 from app.modules.trips.service import TripsService
 from app.modules.trips.repository import TripRepo
 from app.modules.rate_categories.repository import RateCategoryRepo
 from app.modules.rate_customizations.repository import RateCustomizationRepo
-from app.modules.trips.schemas import CreateTripDTO, EditTripDTO, EndTripDTO
+from app.modules.expenses.repository import ExpenseRepo
+from app.modules.expenses.service import ExpensesService
+from app.modules.trips.schemas import CreateTripDTO, EditTripDTO, EndTripDTO, ManualCreateTripDTO
 from app.modules.trips.models import Trip, TripStatus
 from app.modules.rate_categories.models import RateCategory
 from app.modules.rate_customizations.models import RateCustomization
@@ -35,8 +37,12 @@ class TestTripsServiceStartTrip:
         return AsyncMock(spec=RateCustomizationRepo)
 
     @pytest.fixture
-    def service(self, trip_repo, category_repo, customization_repo):
-        return TripsService(trip_repo, category_repo, customization_repo)
+    def expense_repo(self):
+        return AsyncMock(spec=ExpenseRepo)
+
+    @pytest.fixture
+    def service(self, trip_repo, category_repo, customization_repo, expense_repo):
+        return TripsService(trip_repo, category_repo, customization_repo, expense_repo)
 
     @pytest.fixture
     def mock_customization(self):
@@ -154,6 +160,308 @@ class TestTripsServiceStartTrip:
         assert "does not belong to this customization" in str(exc_info.value)
 
 
+class TestTripsServiceManualCreateTrip:
+
+    @pytest.fixture
+    def trip_repo(self):
+        return AsyncMock(spec=TripRepo)
+
+    @pytest.fixture
+    def category_repo(self):
+        return AsyncMock(spec=RateCategoryRepo)
+
+    @pytest.fixture
+    def customization_repo(self):
+        return AsyncMock(spec=RateCustomizationRepo)
+
+    @pytest.fixture
+    def expense_repo(self):
+        return AsyncMock(spec=ExpenseRepo)
+
+    @pytest.fixture
+    def service(self, trip_repo, category_repo, customization_repo, expense_repo):
+        return TripsService(trip_repo, category_repo, customization_repo, expense_repo)
+
+    @pytest.fixture
+    def mock_customization(self):
+        customization = MagicMock(spec=RateCustomization)
+        customization.id = uuid4()
+        return customization
+
+    @pytest.fixture
+    def mock_category(self):
+        category = MagicMock(spec=RateCategory)
+        category.id = uuid4()
+        category.cost_per_mile = 0.65
+        category.rate_customization_id = uuid4()
+        return category
+
+    @pytest.fixture
+    def mock_trip(self):
+        trip = MagicMock(spec=Trip)
+        trip.id = uuid4()
+        trip.status = TripStatus.completed
+        return trip
+
+    @pytest.mark.asyncio
+    async def test_manual_create_trip_success(
+        self, service, trip_repo, category_repo, customization_repo, 
+        mock_customization, mock_category, mock_trip
+    ):
+        started_time = datetime.now(timezone.utc)
+        ended_time = started_time + timedelta(hours=2)
+        
+        mock_category.rate_customization_id = mock_customization.id
+        dto = ManualCreateTripDTO(
+            start_address="123 Main St",
+            end_address="456 Oak Ave",
+            purpose="Business meeting",
+            vehicle="Honda Civic",
+            miles=25.5,
+            geometry='{"type":"LineString"}',
+            started_at=started_time,
+            ended_at=ended_time,
+            rate_customization_id=mock_customization.id,
+            rate_category_id=mock_category.id
+        )
+        
+        customization_repo.get.return_value = mock_customization
+        category_repo.get.return_value = mock_category
+        trip_repo.save.return_value = mock_trip
+
+        with patch('app.modules.trips.service.encrypt_address', return_value="encrypted") as mock_encrypt_addr:
+            with patch('app.modules.trips.service.encrypt_geometry', return_value="encrypted_geom") as mock_encrypt_geom:
+                with patch('app.modules.trips.service.Trip', return_value=mock_trip):
+                    result = await service.manual_create_trip(dto)
+
+        assert result == mock_trip
+        assert mock_encrypt_addr.call_count == 2  # start and end address
+        mock_encrypt_geom.assert_called_once()
+        trip_repo.save.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_manual_create_trip_empty_start_address(self, service):
+        started_time = datetime.now(timezone.utc)
+        ended_time = started_time + timedelta(hours=1)
+        
+        dto = ManualCreateTripDTO(
+            start_address="   ",
+            end_address="456 Oak Ave",
+            miles=10.0,
+            started_at=started_time,
+            ended_at=ended_time,
+            rate_customization_id=uuid4(),
+            rate_category_id=uuid4()
+        )
+
+        with pytest.raises(InvalidTripDataError) as exc_info:
+            await service.manual_create_trip(dto)
+        assert "Start address is required" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_manual_create_trip_empty_end_address(self, service):
+        started_time = datetime.now(timezone.utc)
+        ended_time = started_time + timedelta(hours=1)
+        
+        dto = ManualCreateTripDTO(
+            start_address="123 Main St",
+            end_address="   ",
+            miles=10.0,
+            started_at=started_time,
+            ended_at=ended_time,
+            rate_customization_id=uuid4(),
+            rate_category_id=uuid4()
+        )
+
+        with pytest.raises(InvalidTripDataError) as exc_info:
+            await service.manual_create_trip(dto)
+        assert "End address is required" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_manual_create_trip_customization_not_found(self, service, customization_repo):
+        started_time = datetime.now(timezone.utc)
+        ended_time = started_time + timedelta(hours=1)
+        
+        dto = ManualCreateTripDTO(
+            start_address="123 Main St",
+            end_address="456 Oak Ave",
+            miles=10.0,
+            started_at=started_time,
+            ended_at=ended_time,
+            rate_customization_id=uuid4(),
+            rate_category_id=uuid4()
+        )
+        customization_repo.get.return_value = None
+
+        with pytest.raises(RateCustomizationNotFoundError):
+            await service.manual_create_trip(dto)
+
+    @pytest.mark.asyncio
+    async def test_manual_create_trip_category_not_found(
+        self, service, customization_repo, category_repo, mock_customization
+    ):
+        started_time = datetime.now(timezone.utc)
+        ended_time = started_time + timedelta(hours=1)
+        
+        dto = ManualCreateTripDTO(
+            start_address="123 Main St",
+            end_address="456 Oak Ave",
+            miles=10.0,
+            started_at=started_time,
+            ended_at=ended_time,
+            rate_customization_id=mock_customization.id,
+            rate_category_id=uuid4()
+        )
+        customization_repo.get.return_value = mock_customization
+        category_repo.get.return_value = None
+
+        with pytest.raises(RateCategoryNotFoundError):
+            await service.manual_create_trip(dto)
+
+    @pytest.mark.asyncio
+    async def test_manual_create_trip_category_mismatch(
+        self, service, customization_repo, category_repo, 
+        mock_customization, mock_category
+    ):
+        started_time = datetime.now(timezone.utc)
+        ended_time = started_time + timedelta(hours=1)
+        
+        different_customization_id = uuid4()
+        mock_category.rate_customization_id = different_customization_id
+        dto = ManualCreateTripDTO(
+            start_address="123 Main St",
+            end_address="456 Oak Ave",
+            miles=10.0,
+            started_at=started_time,
+            ended_at=ended_time,
+            rate_customization_id=mock_customization.id,
+            rate_category_id=mock_category.id
+        )
+        customization_repo.get.return_value = mock_customization
+        category_repo.get.return_value = mock_category
+
+        with pytest.raises(InvalidRateCategoryDataError) as exc_info:
+            await service.manual_create_trip(dto)
+        assert "does not belong to this customization" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_manual_create_trip_negative_miles(self, service):
+        started_time = datetime.now(timezone.utc)
+        ended_time = started_time + timedelta(hours=1)
+        
+        dto = ManualCreateTripDTO(
+            start_address="123 Main St",
+            end_address="456 Oak Ave",
+            miles=-5.0,
+            started_at=started_time,
+            ended_at=ended_time,
+            rate_customization_id=uuid4(),
+            rate_category_id=uuid4()
+        )
+
+        with pytest.raises(InvalidTripDataError) as exc_info:
+            await service.manual_create_trip(dto)
+        assert "Miles must be greater than 0" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_manual_create_trip_zero_miles(self, service):
+        started_time = datetime.now(timezone.utc)
+        ended_time = started_time + timedelta(hours=1)
+        
+        dto = ManualCreateTripDTO(
+            start_address="123 Main St",
+            end_address="456 Oak Ave",
+            miles=0.0,
+            started_at=started_time,
+            ended_at=ended_time,
+            rate_customization_id=uuid4(),
+            rate_category_id=uuid4()
+        )
+
+        with pytest.raises(InvalidTripDataError) as exc_info:
+            await service.manual_create_trip(dto)
+        assert "Miles must be greater than 0" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_manual_create_trip_invalid_time_order(self, service):
+        started_time = datetime.now(timezone.utc)
+        ended_time = started_time - timedelta(hours=1) 
+        
+        dto = ManualCreateTripDTO(
+            start_address="123 Main St",
+            end_address="456 Oak Ave",
+            miles=10.0,
+            started_at=started_time,
+            ended_at=ended_time,
+            rate_customization_id=uuid4(),
+            rate_category_id=uuid4()
+        )
+
+        with pytest.raises(InvalidTripDataError) as exc_info:
+            await service.manual_create_trip(dto)
+        assert "End time must be after start time" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_manual_create_trip_same_start_end_time(self, service):
+        start_end_time = datetime.now(timezone.utc)
+        
+        dto = ManualCreateTripDTO(
+            start_address="123 Main St",
+            end_address="456 Oak Ave",
+            miles=10.0,
+            started_at=start_end_time,
+            ended_at=start_end_time,
+            rate_customization_id=uuid4(),
+            rate_category_id=uuid4()
+        )
+
+        with pytest.raises(InvalidTripDataError) as exc_info:
+            await service.manual_create_trip(dto)
+        assert "End time must be after start time" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_manual_create_trip_with_expenses(
+        self, service, trip_repo, category_repo, customization_repo, expense_repo,
+        mock_customization, mock_category, mock_trip
+    ):
+        started_time = datetime.now(timezone.utc)
+        ended_time = started_time + timedelta(hours=2)
+        
+        mock_category.rate_customization_id = mock_customization.id
+        expense_data = [
+            {"type": "Parking", "amount": 15.50},
+            {"type": "Toll", "amount": 5.75}
+        ]
+        
+        dto = ManualCreateTripDTO(
+            start_address="123 Main St",
+            end_address="456 Oak Ave",
+            purpose="Business meeting",
+            vehicle="Honda Civic",
+            miles=25.5,
+            geometry='{"type":"LineString"}',
+            started_at=started_time,
+            ended_at=ended_time,
+            rate_customization_id=mock_customization.id,
+            rate_category_id=mock_category.id,
+            expenses=expense_data
+        )
+        
+        customization_repo.get.return_value = mock_customization
+        category_repo.get.return_value = mock_category
+        trip_repo.save.return_value = mock_trip
+
+        service.expense_service.create_expense = AsyncMock()
+
+        with patch('app.modules.trips.service.encrypt_address', return_value="encrypted"):
+            with patch('app.modules.trips.service.encrypt_geometry', return_value="encrypted_geom"):
+                with patch('app.modules.trips.service.Trip', return_value=mock_trip):
+                    result = await service.manual_create_trip(dto)
+
+        assert result == mock_trip
+        assert service.expense_service.create_expense.call_count == 2  
+
+
 class TestTripsServiceGetTripById:
 
     @pytest.fixture
@@ -162,7 +470,7 @@ class TestTripsServiceGetTripById:
 
     @pytest.fixture
     def service(self, trip_repo):
-        return TripsService(trip_repo, AsyncMock(), AsyncMock())
+        return TripsService(trip_repo, AsyncMock(), AsyncMock(), AsyncMock())
 
     @pytest.fixture
     def mock_trip(self):
@@ -203,7 +511,7 @@ class TestTripsServiceEndTrip:
 
     @pytest.fixture
     def service(self, trip_repo):
-        return TripsService(trip_repo, AsyncMock(), AsyncMock())
+        return TripsService(trip_repo, AsyncMock(), AsyncMock(), AsyncMock())
 
     @pytest.fixture
     def mock_trip(self):
@@ -265,7 +573,6 @@ class TestTripsServiceEndTrip:
     @pytest.mark.asyncio
     async def test_end_trip_negative_miles(self, service, trip_repo, mock_trip):
         trip_id = uuid4()
-        # Negative distance should be caught by Pydantic validator
         with pytest.raises(ValueError) as exc_info:
             dto = EndTripDTO(end_address="456 Oak Ave", geometry='{"type":"Point","coordinates":[-122.4194,37.7749]}', distance_meters=-10.5)
         assert "Distance must be non-negative" in str(exc_info.value)
@@ -289,8 +596,12 @@ class TestTripsServiceEditTrip:
         return AsyncMock(spec=RateCustomizationRepo)
 
     @pytest.fixture
-    def service(self, trip_repo, category_repo, customization_repo):
-        return TripsService(trip_repo, category_repo, customization_repo)
+    def expense_repo(self):
+        return AsyncMock(spec=ExpenseRepo)
+
+    @pytest.fixture
+    def service(self, trip_repo, category_repo, customization_repo, expense_repo):
+        return TripsService(trip_repo, category_repo, customization_repo, expense_repo)
 
     @pytest.fixture
     def mock_trip(self):
@@ -449,7 +760,7 @@ class TestTripsServiceCancelTrip:
 
     @pytest.fixture
     def service(self, trip_repo):
-        return TripsService(trip_repo, AsyncMock(), AsyncMock())
+        return TripsService(trip_repo, AsyncMock(), AsyncMock(), AsyncMock())
 
     @pytest.fixture
     def mock_trip(self):

@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from uuid import UUID
 from app.modules.trips.repository import TripRepo
-from app.modules.trips.schemas import CreateTripDTO, EditTripDTO, EndTripDTO
+from app.modules.trips.schemas import CreateTripDTO, EditTripDTO, EndTripDTO, ManualCreateTripDTO
 from app.modules.trips.utils.crypto import encrypt_address, encrypt_geometry
 from app.modules.trips.models import Trip, TripStatus
 from app.modules.trips.exceptions import InvalidTripDataError, TripNotFoundError, TripPersistenceError
@@ -9,13 +9,16 @@ from app.modules.rate_categories.repository import RateCategoryRepo
 from app.modules.rate_customizations.repository import RateCustomizationRepo
 from app.modules.rate_customizations.exceptions import RateCustomizationNotFoundError
 from app.modules.rate_categories.exceptions import InvalidRateCategoryDataError, RateCategoryNotFoundError
+from app.modules.expenses.models import Expense
+from app.modules.expenses.repository import ExpenseRepo
 
 
 class TripsService:
-    def __init__(self, repo: TripRepo, category_repo: RateCategoryRepo, customization_repo: RateCustomizationRepo):
+    def __init__(self, repo: TripRepo, category_repo: RateCategoryRepo, customization_repo: RateCustomizationRepo, expense_service=None):
         self.repo = repo
         self.category_repo = category_repo
         self.customization_repo = customization_repo
+        self.expense_service = expense_service
 
     async def start_trip(self, data: CreateTripDTO):
 
@@ -55,6 +58,66 @@ class TripsService:
 
         except Exception as e:
             raise TripPersistenceError(f"Unexpected error occurred while saving trip: {e}") from e
+    
+    async def manual_create_trip(self, data: ManualCreateTripDTO):
+        if not data.start_address.strip():
+            raise InvalidTripDataError("Start address is required")
+        
+        if not data.end_address.strip():
+            raise InvalidTripDataError("End address is required")
+        
+        if data.miles <= 0:
+            raise InvalidTripDataError("Miles must be greater than 0")
+        
+        if data.ended_at <= data.started_at:
+            raise InvalidTripDataError("End time must be after start time")
+        
+        customization = await self.customization_repo.get(data.rate_customization_id)
+        if not customization:
+            raise RateCustomizationNotFoundError("Rate customization not found")
+        
+        category = await self.category_repo.get(data.rate_category_id)
+        if not category:
+            raise RateCategoryNotFoundError("Rate category not found")
+
+        if category.rate_customization_id != customization.id:
+            raise InvalidRateCategoryDataError("Category does not belong to this customization")
+        
+        try:
+            encrypted_start_address = encrypt_address(data.start_address)
+            encrypted_end_address = encrypt_address(data.end_address)
+            encrypted_geometry = encrypt_geometry(data.geometry) if data.geometry else None
+            
+            reimbursement_rate = category.cost_per_mile
+            mileage_total = data.miles * reimbursement_rate
+
+            trip = Trip(
+                status=TripStatus.completed,
+                start_address_encrypted=encrypted_start_address,
+                end_address_encrypted=encrypted_end_address,
+                purpose=data.purpose,
+                vehicle=data.vehicle,
+                miles=data.miles,
+                geometry_encrypted=encrypted_geometry,
+                reimbursement_rate=reimbursement_rate,
+                mileage_reimbursement_total=mileage_total,
+                expense_reimbursement_total=0.0, 
+                started_at=data.started_at,
+                ended_at=data.ended_at,
+                rate_customization_id=data.rate_customization_id,
+                rate_category_id=data.rate_category_id,
+            )
+            
+            saved_trip = await self.repo.save(trip)
+            
+            if data.expenses and self.expense_service:
+                for expense_data in data.expenses:
+                    await self.expense_service.create_expense(saved_trip.id, expense_data)
+                    
+            return saved_trip
+
+        except Exception as e:
+            raise TripPersistenceError(f"Unexpected error occurred while saving manual trip: {e}") from e
     
     async def get_trip_by_id(self, trip_id: UUID):
         trip = await self.repo.get(trip_id)

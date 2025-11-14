@@ -1,12 +1,13 @@
 import pytest
 from uuid import uuid4
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pydantic import ValidationError
 
 from app.modules.trips.schemas import (
     CreateTripDTO,
     EditTripDTO,
     EndTripDTO,
+    ManualCreateTripDTO,
     TripResponseDTO,
     ExpenseResponseDTO
 )
@@ -121,6 +122,87 @@ class TestEditTripDTO:
         assert dto.purpose is None
         assert dto.rate_customization_id is None
         assert dto.rate_category_id is None
+
+
+class TestManualCreateTripDTO:
+
+    def test_manual_create_trip_dto_valid(self):
+        started_time = datetime.now(timezone.utc)
+        ended_time = started_time + timedelta(hours=2)
+        customization_id = uuid4()
+        category_id = uuid4()
+
+        dto = ManualCreateTripDTO(
+            start_address="123 Main St",
+            end_address="456 Oak Ave",
+            purpose="Client meeting",
+            vehicle="Honda Civic",
+            miles=25.5,
+            geometry='{"type":"LineString","coordinates":[[-122.4194,37.7749],[-122.4094,37.7849]]}',
+            started_at=started_time,
+            ended_at=ended_time,
+            rate_customization_id=customization_id,
+            rate_category_id=category_id
+        )
+
+        assert dto.start_address == "123 Main St"
+        assert dto.end_address == "456 Oak Ave"
+        assert dto.purpose == "Client meeting"
+        assert dto.vehicle == "Honda Civic"
+        assert dto.miles == 25.5
+        assert dto.started_at == started_time
+        assert dto.ended_at == ended_time
+        assert dto.rate_customization_id == customization_id
+        assert dto.rate_category_id == category_id
+
+    def test_manual_create_trip_dto_optional_fields(self):
+        started_time = datetime.now(timezone.utc)
+        ended_time = started_time + timedelta(hours=1)
+
+        dto = ManualCreateTripDTO(
+            start_address="123 Main St",
+            end_address="456 Oak Ave",
+            miles=10.0,
+            started_at=started_time,
+            ended_at=ended_time,
+            rate_customization_id=uuid4(),
+            rate_category_id=uuid4()
+        )
+
+        assert dto.purpose is None
+        assert dto.vehicle is None
+        assert dto.geometry is None
+
+    def test_manual_create_trip_dto_with_expenses(self):
+        started_time = datetime.now(timezone.utc)
+        ended_time = started_time + timedelta(hours=1)
+        
+        dto = ManualCreateTripDTO(
+            start_address="123 Main St",
+            end_address="456 Oak Ave",
+            miles=10.5,
+            started_at=started_time,
+            ended_at=ended_time,
+            rate_customization_id=uuid4(),
+            rate_category_id=uuid4(),
+            expenses=[
+                {"type": "Parking", "amount": 15.50},
+                {"type": "Toll", "amount": 5.75}
+            ]
+        )
+        
+        assert len(dto.expenses) == 2
+        assert dto.expenses[0].type == "Parking"
+        assert dto.expenses[0].amount == 15.50
+        assert dto.expenses[1].type == "Toll"
+        assert dto.expenses[1].amount == 5.75
+
+    def test_manual_create_trip_dto_missing_required_fields(self):
+        with pytest.raises(ValidationError):
+            ManualCreateTripDTO(
+                start_address="123 Main St",
+                # Missing end_address, miles, times, etc.
+            )
 
 
 class TestExpenseResponseDTO:

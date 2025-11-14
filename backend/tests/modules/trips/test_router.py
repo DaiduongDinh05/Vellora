@@ -1,11 +1,12 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
+from datetime import datetime, timezone, timedelta
 from fastapi import HTTPException
 
 from app.modules.trips.router import get_trips_service
 from app.modules.trips.service import TripsService
-from app.modules.trips.schemas import CreateTripDTO, EditTripDTO, EndTripDTO
+from app.modules.trips.schemas import CreateTripDTO, EditTripDTO, EndTripDTO, ManualCreateTripDTO
 from app.modules.trips.models import Trip, TripStatus
 from app.modules.trips.exceptions import (
     InvalidTripDataError,
@@ -106,6 +107,102 @@ class TestStartTripEndpoint:
 
         with pytest.raises(HTTPException) as exc_info:
             await start_trip(body, mock_service)
+        
+        assert exc_info.value.status_code == 404
+
+
+class TestManualCreateTripEndpoint:
+
+    @pytest.fixture
+    def mock_service(self):
+        return AsyncMock(spec=TripsService)
+
+    @pytest.fixture
+    def mock_trip(self):
+        trip = MagicMock(spec=Trip)
+        trip.id = uuid4()
+        trip.status = TripStatus.completed
+        trip.start_address_encrypted = "encrypted"
+        trip.end_address_encrypted = "encrypted"
+        trip.purpose = "Business"
+        trip.vehicle = "Honda Civic"
+        trip.miles = 25.5
+        trip.reimbursement_rate = 0.65
+        trip.rate_customization_id = uuid4()
+        trip.rate_category_id = uuid4()
+        trip.expenses = []
+        return trip
+
+    @pytest.mark.asyncio
+    async def test_manual_create_trip_success(self, mock_service, mock_trip):
+        from app.modules.trips.router import manual_create_trip
+        
+        started_time = datetime.now(timezone.utc)
+        ended_time = started_time + timedelta(hours=2)
+        
+        body = ManualCreateTripDTO(
+            start_address="123 Main St",
+            end_address="456 Oak Ave",
+            purpose="Business meeting",
+            vehicle="Honda Civic",
+            miles=25.5,
+            started_at=started_time,
+            ended_at=ended_time,
+            rate_customization_id=uuid4(),
+            rate_category_id=uuid4()
+        )
+        mock_service.manual_create_trip.return_value = mock_trip
+
+        with patch('app.modules.trips.router.TripResponseDTO.model_validate') as mock_validate:
+            mock_validate.return_value = MagicMock()
+            result = await manual_create_trip(body, mock_service)
+
+        mock_service.manual_create_trip.assert_called_once_with(body)
+        mock_validate.assert_called_once_with(mock_trip)
+
+    @pytest.mark.asyncio
+    async def test_manual_create_trip_invalid_data(self, mock_service):
+        from app.modules.trips.router import manual_create_trip
+        
+        started_time = datetime.now(timezone.utc)
+        ended_time = started_time + timedelta(hours=1)
+        
+        body = ManualCreateTripDTO(
+            start_address="",
+            end_address="456 Oak Ave",
+            miles=10.0,
+            started_at=started_time,
+            ended_at=ended_time,
+            rate_customization_id=uuid4(),
+            rate_category_id=uuid4()
+        )
+        mock_service.manual_create_trip.side_effect = InvalidTripDataError("Start address is required")
+
+        with pytest.raises(HTTPException) as exc_info:
+            await manual_create_trip(body, mock_service)
+        
+        assert exc_info.value.status_code == 400
+
+    @pytest.mark.asyncio
+    async def test_manual_create_trip_customization_not_found(self, mock_service):
+        from app.modules.trips.router import manual_create_trip
+        
+        started_time = datetime.now(timezone.utc)
+        ended_time = started_time + timedelta(hours=1)
+        
+        body = ManualCreateTripDTO(
+            start_address="123 Main St",
+            end_address="456 Oak Ave",
+            miles=10.0,
+            started_at=started_time,
+            ended_at=ended_time,
+            rate_customization_id=uuid4(),
+            rate_category_id=uuid4()
+        )
+        mock_service.manual_create_trip.side_effect = RateCustomizationNotFoundError("Not found")
+
+        with pytest.raises(HTTPException) as exc_info:
+            await manual_create_trip(body, mock_service)
         
         assert exc_info.value.status_code == 404
 

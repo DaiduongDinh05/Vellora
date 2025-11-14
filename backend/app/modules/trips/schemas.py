@@ -4,6 +4,7 @@ from uuid import UUID
 from app.modules.trips.models import Trip, TripStatus
 from app.modules.trips.utils.crypto import decrypt_address, decrypt_geometry
 from app.modules.trips.utils.distance import meters_to_miles
+from app.modules.expenses.schemas import CreateExpenseDTO
 from pydantic import BaseModel, Field, field_validator
 
 class CreateTripDTO(BaseModel):
@@ -34,6 +35,19 @@ class EditTripDTO(BaseModel):
     vehicle: str | None = None
     rate_customization_id: UUID | None = None
     rate_category_id: UUID | None = None
+
+class ManualCreateTripDTO(BaseModel):
+    start_address: str
+    end_address: str
+    purpose: str | None = None
+    vehicle: str | None = None
+    miles: float
+    geometry: str | None = None
+    started_at: datetime.datetime
+    ended_at: datetime.datetime
+    rate_customization_id: UUID
+    rate_category_id: UUID
+    expenses: List[CreateExpenseDTO] | None = None 
 
 class ExpenseResponseDTO(BaseModel):
     id: str
