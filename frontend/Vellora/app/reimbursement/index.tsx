@@ -1,12 +1,12 @@
-import ReimbursementRateListPage from "./components/ReimbursementRateListPage";
 import { router } from "expo-router";
+import ReimbursementRateListPage from "../components/ReimbursementRateListPage";
 
-export default function Index() {
+export default function Page() {
   return (
     <ReimbursementRateListPage
       onCreateCustom={() => router.push("/reimbursement/add")}
       onOpenIRS={() => router.push("/reimbursement/irs")}
-      onOpenCustomRate={() => router.push("/reimbursement/custom-1")}
+      onOpenCustomRate={(id) => router.push(`/reimbursement/${id}`)}
     />
   );
 }
