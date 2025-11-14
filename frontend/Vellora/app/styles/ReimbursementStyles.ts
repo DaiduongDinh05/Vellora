@@ -181,4 +181,24 @@ export const rateStyles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
   },
+  listItem: {
+  fontSize: 16,
+  paddingVertical: 12,
+  paddingHorizontal: 8,
+  borderBottomWidth: 1,
+  borderBottomColor: "#e5e5e5"
+},
+addCustom: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#4CAF50",
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+  },
+  backArrow: {
+  fontSize: 22,
+  fontWeight: "600",
+  color: "#4F46E5",
+  paddingRight: 12,
+},
 });
