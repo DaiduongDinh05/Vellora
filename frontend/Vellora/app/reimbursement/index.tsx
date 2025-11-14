@@ -1,35 +1,44 @@
-import { useLocalSearchParams } from "expo-router";
+import { useState, useEffect } from "react";
+import { useLocalSearchParams, router } from "expo-router";
 import ReimbursementRateListPage from "../components/ReimbursementRateListPage";
-import { router } from "expo-router";
-import { useState } from "react";
+
+type Category = { id: string; name: string; rate: string };
+
+type CustomRate = {
+  id: string;
+  name: string;
+  description: string;
+  year: string;
+  categories: Category[];
+};
 
 export default function Index() {
   const params = useLocalSearchParams();
-  const [customRates, setCustomRates] = useState<any[]>([]);
+  const [customRates, setCustomRates] = useState<CustomRate[]>([]);
 
-  if (params.newRate) {
-    try {
-      const parsed = JSON.parse(String(params.newRate));
-      if (!customRates.find((r) => r.id === parsed.id)) {
-        setCustomRates((prev) => [...prev, parsed]);
-      }
-    } catch (e) {}
-  }
+  useEffect(() => {
+    if (params.newRate && typeof params.newRate === "string") {
+      try {
+        const parsed: CustomRate = JSON.parse(params.newRate);
+        setCustomRates((prev) => {
+          if (prev.some((r) => r.id === parsed.id)) return prev;
+          return [...prev, parsed];
+        });
+      } catch {}
+    }
+  }, [params.newRate]);
 
   return (
     <ReimbursementRateListPage
       rates={customRates}
       onCreateCustom={() => router.push("/reimbursement/add")}
       onOpenIRS={() => router.push("/reimbursement/irs")}
-      onOpenCustomRate={(id) => {
-        const found = customRates.find((r) => r.id === id);
-        if (found) {
-          router.push({
-            pathname: "/reimbursement/details",
-            params: { data: JSON.stringify(found) },
-          });
-        }
-      }}
+      onOpenCustomRate={(id) =>
+        router.push({
+          pathname: "/reimbursement/details",
+          params: { id },
+        })
+      }
     />
   );
 }
