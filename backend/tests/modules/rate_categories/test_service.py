@@ -55,6 +55,7 @@ class TestRateCategoriesServiceCreate:
     ):
         customization_id = uuid4()
         dto = CreateRateCategoryDTO(name="Standard", cost_per_mile=0.65)
+        customization_repo.is_irs_customization.return_value = False 
         customization_repo.get.return_value = mock_customization
         category_repo.get_by_customization_and_name.return_value = None
         category_repo.save.return_value = mock_category
@@ -72,6 +73,7 @@ class TestRateCategoriesServiceCreate:
     ):
         customization_id = uuid4()
         dto = CreateRateCategoryDTO(name="Standard", cost_per_mile=0.65)
+        customization_repo.is_irs_customization.return_value = False 
         customization_repo.get.return_value = None
 
         with pytest.raises(RateCustomizationNotFoundError):
@@ -83,11 +85,25 @@ class TestRateCategoriesServiceCreate:
     ):
         customization_id = uuid4()
         dto = CreateRateCategoryDTO(name="Standard", cost_per_mile=0.65)
+        customization_repo.is_irs_customization.return_value = False 
         customization_repo.get.return_value = mock_customization
         category_repo.get_by_customization_and_name.return_value = mock_category
 
         with pytest.raises(DuplicateRateCategoryError):
             await service.create_rate_category(user_id, customization_id, dto)
+
+    @pytest.mark.asyncio
+    async def test_create_category_irs_blocked(
+        self, service, customization_repo, user_id
+    ):
+        customization_id = uuid4()
+        dto = CreateRateCategoryDTO(name="Standard", cost_per_mile=0.65)
+        customization_repo.is_irs_customization.return_value = True  
+
+        with pytest.raises(InvalidRateCategoryDataError) as exc_info:
+            await service.create_rate_category(user_id, customization_id, dto)
+        
+        assert "Cannot add categories to IRS standard rates" in str(exc_info.value)
 
 
 class TestRateCategoriesServiceGet:
@@ -209,10 +225,11 @@ class TestRateCategoriesServiceEdit:
 
     @pytest.mark.asyncio
     async def test_edit_category_success(
-        self, service, category_repo, mock_category, user_id
+        self, service, category_repo, customization_repo, mock_category, user_id
     ):
         category_id = uuid4()
         dto = EditRateCategoryDTO(name="Premium", cost_per_mile=0.85)
+        customization_repo.is_irs_customization.return_value = False 
         category_repo.get.return_value = mock_category
         category_repo.get_by_customization_and_name.return_value = None
         category_repo.save.return_value = mock_category
@@ -235,13 +252,14 @@ class TestRateCategoriesServiceEdit:
 
     @pytest.mark.asyncio
     async def test_edit_category_duplicate_name(
-        self, service, category_repo, mock_category, user_id
+        self, service, category_repo, customization_repo, mock_category, user_id
     ):
         category_id = uuid4()
         dto = EditRateCategoryDTO(name="Premium")
         other_category = MagicMock(spec=RateCategory)
         other_category.id = uuid4()
         
+        customization_repo.is_irs_customization.return_value = False  
         category_repo.get_by_customization_and_name.return_value = other_category
 
         with patch.object(service, 'get_category', return_value=mock_category):
@@ -249,9 +267,10 @@ class TestRateCategoriesServiceEdit:
                 await service.edit_category(user_id, category_id, dto)
 
     @pytest.mark.asyncio
-    async def test_edit_category_no_changes(self, service, category_repo, mock_category, user_id):
+    async def test_edit_category_no_changes(self, service, category_repo, customization_repo, mock_category, user_id):
         category_id = uuid4()
         dto = EditRateCategoryDTO()
+        customization_repo.is_irs_customization.return_value = False  
         category_repo.save.return_value = mock_category
 
         with patch.object(service, 'get_category', return_value=mock_category) as mock_get:
@@ -260,6 +279,20 @@ class TestRateCategoriesServiceEdit:
         assert result == mock_category
         mock_get.assert_called_once_with(user_id, category_id)
         category_repo.save.assert_called()
+
+    @pytest.mark.asyncio
+    async def test_edit_category_irs_blocked(
+        self, service, customization_repo, mock_category, user_id
+    ):
+        category_id = uuid4()
+        dto = EditRateCategoryDTO(name="Premium", cost_per_mile=0.85)
+        customization_repo.is_irs_customization.return_value = True 
+
+        with patch.object(service, 'get_category', return_value=mock_category):
+            with pytest.raises(InvalidRateCategoryDataError) as exc_info:
+                await service.edit_category(user_id, category_id, dto)
+        
+        assert "Cannot modify IRS standard rate categories" in str(exc_info.value)
 
 
 class TestRateCategoriesServiceDelete:
@@ -289,9 +322,10 @@ class TestRateCategoriesServiceDelete:
 
     @pytest.mark.asyncio
     async def test_delete_category_success(
-        self, service, category_repo, mock_category, user_id
+        self, service, category_repo, customization_repo, mock_category, user_id
     ):
         category_id = uuid4()
+        customization_repo.is_irs_customization.return_value = False 
         category_repo.delete.return_value = None
 
         with patch.object(service, 'get_category', return_value=mock_category) as mock_get:
@@ -307,3 +341,16 @@ class TestRateCategoriesServiceDelete:
         with patch.object(service, 'get_category', side_effect=RateCategoryNotFoundError("Category not found")):
             with pytest.raises(RateCategoryNotFoundError):
                 await service.delete_category(user_id, category_id)
+
+    @pytest.mark.asyncio
+    async def test_delete_category_irs_blocked(
+        self, service, customization_repo, mock_category, user_id
+    ):
+        category_id = uuid4()
+        customization_repo.is_irs_customization.return_value = True  
+
+        with patch.object(service, 'get_category', return_value=mock_category):
+            with pytest.raises(InvalidRateCategoryDataError) as exc_info:
+                await service.delete_category(user_id, category_id)
+        
+        assert "Cannot delete IRS standard rate categories" in str(exc_info.value)

@@ -136,6 +136,7 @@ class TestRateCustomizationsServiceEdit:
             description="Updated Description",
             year=2025
         )
+        mock_repo.is_irs_customization.return_value = False  
         mock_repo.save.return_value = mock_customization
         mock_repo.get_by_user_and_name.return_value = None
 
@@ -153,6 +154,7 @@ class TestRateCustomizationsServiceEdit:
         service = RateCustomizationsService(mock_repo)
         customization_id = uuid4()
         dto = EditRateCustomizationDTO(name="Updated Name")
+        mock_repo.is_irs_customization.return_value = False 
         mock_repo.save.return_value = mock_customization
         mock_repo.get_by_user_and_name.return_value = None
 
@@ -178,17 +180,31 @@ class TestRateCustomizationsServiceEdit:
         service = RateCustomizationsService(mock_repo)
         customization_id = uuid4()
         dto = EditRateCustomizationDTO(name="   ")
+        mock_repo.is_irs_customization.return_value = False  
 
         with patch.object(service, 'get_customization', return_value=mock_customization):
             with pytest.raises(InvalidRateCustomizationDataError) as exc_info:
                 await service.edit_customization(user_id, customization_id, dto)
         assert "name cannot be empty" in str(exc_info.value)
 
+    @pytest.mark.asyncio  
+    async def test_edit_customization_empty_name_irs_blocked(self, mock_repo, mock_customization, user_id):
+        service = RateCustomizationsService(mock_repo)
+        customization_id = uuid4()
+        dto = EditRateCustomizationDTO(name="   ")
+        mock_repo.is_irs_customization.return_value = True  
+
+        with patch.object(service, 'get_customization', return_value=mock_customization):
+            with pytest.raises(InvalidRateCustomizationDataError) as exc_info:
+                await service.edit_customization(user_id, customization_id, dto)
+        assert "IRS standard rates cannot be modified" in str(exc_info.value)
+
     @pytest.mark.asyncio
     async def test_edit_customization_invalid_year(self, mock_repo, mock_customization, user_id):
         service = RateCustomizationsService(mock_repo)
         customization_id = uuid4()
         dto = EditRateCustomizationDTO(year=0)
+        mock_repo.is_irs_customization.return_value = False  
 
         with patch.object(service, 'get_customization', return_value=mock_customization):
             with pytest.raises(InvalidRateCustomizationDataError) as exc_info:
@@ -196,10 +212,23 @@ class TestRateCustomizationsServiceEdit:
         assert "Year is required" in str(exc_info.value)
 
     @pytest.mark.asyncio
+    async def test_edit_customization_invalid_year_irs_blocked(self, mock_repo, mock_customization, user_id):
+        service = RateCustomizationsService(mock_repo)
+        customization_id = uuid4()
+        dto = EditRateCustomizationDTO(year=0)
+        mock_repo.is_irs_customization.return_value = True  
+
+        with patch.object(service, 'get_customization', return_value=mock_customization):
+            with pytest.raises(InvalidRateCustomizationDataError) as exc_info:
+                await service.edit_customization(user_id, customization_id, dto)
+        assert "IRS standard rates cannot be modified" in str(exc_info.value)
+
+    @pytest.mark.asyncio
     async def test_edit_customization_strips_name(self, mock_repo, mock_customization, user_id):
         service = RateCustomizationsService(mock_repo)
         customization_id = uuid4()
         dto = EditRateCustomizationDTO(name="  Updated Name  ")
+        mock_repo.is_irs_customization.return_value = False 
         mock_repo.save.return_value = mock_customization
         mock_repo.get_by_user_and_name.return_value = None
 
@@ -207,6 +236,19 @@ class TestRateCustomizationsServiceEdit:
             result = await service.edit_customization(user_id, customization_id, dto)
 
         assert mock_customization.name == "Updated Name"
+
+    @pytest.mark.asyncio
+    async def test_edit_customization_irs_blocked(self, mock_repo, mock_customization, user_id):
+        service = RateCustomizationsService(mock_repo)
+        customization_id = uuid4()
+        dto = EditRateCustomizationDTO(name="Updated Name")
+        mock_repo.is_irs_customization.return_value = True 
+
+        with patch.object(service, 'get_customization', return_value=mock_customization):
+            with pytest.raises(InvalidRateCustomizationDataError) as exc_info:
+                await service.edit_customization(user_id, customization_id, dto)
+        
+        assert "IRS standard rates cannot be modified" in str(exc_info.value)
 
 
 class TestRateCustomizationsServiceDelete:
@@ -224,6 +266,7 @@ class TestRateCustomizationsServiceDelete:
         service = RateCustomizationsService(mock_repo)
         customization_id = uuid4()
         mock_customization = MagicMock(spec=RateCustomization)
+        mock_repo.is_irs_customization.return_value = False 
         mock_repo.delete.return_value = None
 
         with patch.object(service, 'get_customization', return_value=mock_customization) as mock_get:
@@ -241,3 +284,16 @@ class TestRateCustomizationsServiceDelete:
         with patch.object(service, 'get_customization', side_effect=RateCustomizationNotFoundError("Customization not found")):
             with pytest.raises(RateCustomizationNotFoundError):
                 await service.delete_customization(user_id, customization_id)
+
+    @pytest.mark.asyncio
+    async def test_delete_customization_irs_blocked(self, mock_repo, user_id):
+        service = RateCustomizationsService(mock_repo)
+        customization_id = uuid4()
+        mock_customization = MagicMock(spec=RateCustomization)
+        mock_repo.is_irs_customization.return_value = True  
+
+        with patch.object(service, 'get_customization', return_value=mock_customization):
+            with pytest.raises(InvalidRateCustomizationDataError) as exc_info:
+                await service.delete_customization(user_id, customization_id)
+        
+        assert "IRS standard rates cannot be deleted" in str(exc_info.value)
