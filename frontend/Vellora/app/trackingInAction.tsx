@@ -24,13 +24,6 @@ const TrackingInAction = () => {
         setDisplayDistance(parseFloat(miles));
     }, [totalTripDistance]);
 
-    useEffect(() => {
-        if(!isTracking && isStopping) {
-            router.push({pathname: '/trackingFinished', params: {distance: displayDistance.toString(),}});
-            setIsStopping(false);
-        }
-    }, [isTracking, isStopping]);
-
 
     // end trip event handler. TO BE ADJUSTED
     const handleEndTrip = async () => {
@@ -39,12 +32,28 @@ const TrackingInAction = () => {
         console.log('ENDING');
         setIsStopping(true);
         
-        await stopTracking();
+        const tripData = await stopTracking();
 
-        if (errorMessage && isTracking) {
-            alert(errorMessage);
-            setIsStopping(false);
+        if (tripData.distance > 0) {
+            const miles = (tripData.distance / 1609.34).toFixed(2);
+
+            router.push({
+                pathname: '/trackingFinished',
+                params: {
+                    distance: miles,
+                    geometry: JSON.stringify(tripData.geometry)
+                }
+            });
+        } else{
+            router.push({
+                pathname: '/trackingFinished',
+                params: {
+                    distance: '0',
+                    geometry:''
+                }
+            });
         }
+        setIsStopping(false);
 
     };
     
