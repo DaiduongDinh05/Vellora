@@ -17,6 +17,9 @@ let lastCheckTime = 0;
 let recentLocations: Location.LocationObject[] = [];
 const MAPBOX_KEY = process.env.EXPO_PUBLIC_API_KEY_MAPBOX_PUBLIC_ACCESS_TOKEN;
 
+// flag to track if we should auto-stop because of inactivity (shared between task and hook)
+let shouldAutoStop = false;
+
 // define the trip data return type for type safety
 interface TripData {
     distance: number;           // trip distance in meters
@@ -57,13 +60,14 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
                     console.log(`Stationary count: ${stationaryCount}`);
 
                     if (stationaryCount >= STATIONARY_THRESHOLD) {
-                        // stopTracking(); 
+                        shouldAutoStop = true; // set flag to trigger stop in the hook
                         console.log("Location tracking stopped. User appears to be stationary.");
                     }
                 }
               } else {
                 stationaryCount = 0;            // reset count if movement detected
-                // console.log("User seems to still be moving.");
+                console.log("User seems to still be moving.");
+                shouldAutoStop = false;         // reset auto-stop flag
               }
             }
 
@@ -213,6 +217,7 @@ export const useLocationTracking = () => {
                 coordinates = '';
                 stationaryCount = 0;
                 recentLocations = [];
+                shouldAutoStop = false;
 
                 return tripData;
             }
@@ -226,6 +231,24 @@ export const useLocationTracking = () => {
         }
     };
 
+    // effect that monitors shouldAutoStop flag and automatically stops tracking when user is stationary
+    useEffect(() => {
+        if (!isTracking) return;
+
+        const checkAutoStop = () => {
+            if (shouldAutoStop && isTracking) {
+                console.log('Auto-stop triggered: user is stationary');
+                stopTracking();
+            }
+        };
+
+        // check for auto-stop FLAG every 10 seconds 
+        const interval = setInterval(checkAutoStop, 10000);
+
+        return () => clearInterval(interval);
+    }, [isTracking]);
+
+    
     // unmount cleanup
     useEffect(() => {
         return () => {
