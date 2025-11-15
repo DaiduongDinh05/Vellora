@@ -50,7 +50,7 @@ const TrackingFinished = () => {
         setTripDistance(routeDistance);
     }
   }, [routeDistance]);
-
+  
   useEffect(() => {
     if (rate && tripDistance) {
         let rateValue = parseFloat(rate.replace('$', ''));
@@ -97,7 +97,7 @@ const TrackingFinished = () => {
     >
         {/* GEOMETRY PATH */}
         <View style={{ height: 300, width: '100%', borderRadius: 16, overflow: 'hidden' }}>
-            <GeometryMap /> 
+            <GeometryMap geometry={tripGeometry}/> 
 
         </View>
         <Text className='text-3xl text-primaryPurple font-bold pt-6 pl-6'>You arrived!</Text>
