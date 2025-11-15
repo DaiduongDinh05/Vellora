@@ -9,6 +9,9 @@ import EditableNumericDisplay from './components/EditableNumericDisplay';
 import Button from './components/Button';
 import { vehicleItems, typeItems, rateItems } from '../app/constants/dropdownOptions';
 import GeometryMap from './components/GeometryMap';
+
+const MAPBOX_KEY = process.env.EXPO_PUBLIC_API_KEY_MAPBOX_PUBLIC_ACCESS_TOKEN;
+
 const TrackingFinished = () => {
 
   // state variables
@@ -21,9 +24,10 @@ const TrackingFinished = () => {
   const [gas, setGas] = useState<string>('0.00');
   const [tripValue, setTripValue] = useState('0.00');
   const [tripDistance, setTripDistance] = useState('0');
-  const [startAddress, setStartAddress] = useState<string>('123 Start Street, Denton TX');
-  const [endAddress, setEndAddress] = useState<string>('123 End Street, Denton TX');
+  const [startAddress, setStartAddress] = useState<string>('Loading address...');
+  const [endAddress, setEndAddress] = useState<string>('Loading address...');
   const [tripGeometry, setTripGeometry] = useState<object | null>(null);
+  const[isLoadingAddresses, setIsLoadingAddresses] = useState(false);
 
   // get trip data from navigation params
   const params = useLocalSearchParams();
@@ -33,12 +37,69 @@ const TrackingFinished = () => {
   // initialize router hook for navigation
   const router = useRouter();
 
+  const findGeocode = async (longitude: number, latitude: number): Promise<string> => {
+    try {
+        const response = await fetch(
+            `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${MAPBOX_KEY}`
+        );
+
+        if (!response.ok) {
+            throw new Error(`Geocoding failed: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.features && data.features.length > 0) {
+            return data.features[0].place_name;
+        } else {
+            return 'Address not found';
+        }
+    } catch (error) {
+        console.error('Error geocoding: ', error);
+        return 'Unable to get address';
+    }
+  };
+
+  const getAddressFromGeometry = async (geometry: any) => {
+    if (!geometry || !geometry.coordinates || !Array.isArray(geometry.coordinates)) {
+        console.log('No valid geometry found');
+        return;
+    }
+
+    setIsLoadingAddresses(true);
+
+    try {
+        const coordinates = geometry.coordinates;
+
+        if (coordinates.length > 0) {
+            const startPoint = coordinates[0];
+            const startAddress = await findGeocode(startPoint[0], startPoint[1]);
+            setStartAddress(startAddress);
+
+            const endPoint = coordinates[coordinates.length - 1];
+            const endAddress = await findGeocode(endPoint[0], endPoint[1]);
+            setEndAddress(endAddress);
+
+            console.log('Start address: ', startAddress);
+            console.log('End address: ', endAddress);
+        }
+    } catch (error) {
+        console.error('Error updating addresses: ', error);
+        setStartAddress('Error loading address');
+        setEndAddress('Error loading address');
+    } finally {
+        setIsLoadingAddresses(false);
+    }
+  };
+
   useEffect(() => {
     if (routeGeometry) {
         try {
             const parsedGeometry = JSON.parse(routeGeometry);
             setTripGeometry(parsedGeometry);
             console.log('Parsed trip geometry: ', parsedGeometry);
+
+            getAddressFromGeometry(parsedGeometry);
         } catch (error) {
             console.error('Error parsing geometry: ', error);
         }
@@ -103,6 +164,20 @@ const TrackingFinished = () => {
         <Text className='text-3xl text-primaryPurple font-bold pt-6 pl-6'>You arrived!</Text>
         <Text className='text-xl text-black p-6'>Make sure to update trip details:</Text>
 
+        <View className="p-6">
+            {isLoadingAddresses ? (
+            <Text className='text-xl text-gray-500'>Loading addresses...</Text>
+            ) : (
+            <View>
+                <Text className='text-xl text-black mb-2'>
+                <Text className='font-semibold'>From:</Text> {startAddress}
+                </Text>
+                <Text className='text-xl text-black'>
+                <Text className='font-semibold'>To:</Text> {endAddress}
+                </Text>
+            </View>
+            )}
+        </View>
         <TripDetailsForm 
 
             // state variables
