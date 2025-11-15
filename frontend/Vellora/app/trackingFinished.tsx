@@ -164,20 +164,6 @@ const TrackingFinished = () => {
         <Text className='text-3xl text-primaryPurple font-bold pt-6 pl-6'>You arrived!</Text>
         <Text className='text-xl text-black p-6'>Make sure to update trip details:</Text>
 
-        <View className="p-6">
-            {isLoadingAddresses ? (
-            <Text className='text-xl text-gray-500'>Loading addresses...</Text>
-            ) : (
-            <View>
-                <Text className='text-xl text-black mb-2'>
-                <Text className='font-semibold'>From:</Text> {startAddress}
-                </Text>
-                <Text className='text-xl text-black'>
-                <Text className='font-semibold'>To:</Text> {endAddress}
-                </Text>
-            </View>
-            )}
-        </View>
         <TripDetailsForm 
 
             // state variables

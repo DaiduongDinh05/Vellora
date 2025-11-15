@@ -70,17 +70,6 @@ const TrackingInAction = () => {
 
             <Text className="text-3xl text-primaryPurple font-bold p-6">Live tracking your trip...</Text>
 
-
-            {/* TEST: show tracking activity */}
-            <View className='px-6 pb-4'>
-                {isTracking ? (
-                    <Text className='text-green-500 text-center text-lg font-semibold'>tracking active</Text>
-                ) : (
-                    <Text className='text-green-500 text-center text-lg font-semibold'>tracking INACTIVE</Text>
-
-                )}
-
-            </View>
             {/* Display the car gif */}
             <View style={{justifyContent: 'center', alignItems: 'center'}}>
                 <Image source={require('./assets/car.gif')} style={{width: 200, height: 200}}/>
