@@ -12,9 +12,11 @@ MapboxGL.setAccessToken(`${MAPBOX_KEY}`);
 
 const GeometryMap: React.FC<GeometryMapProps> = ({ geometry }) => {
 
+    // dynamically receive geometry
     const shape = geometry;
     const shapeWithCoords = shape as any;
 
+    // calculate the center coordinate
     const getCenterCoordinate = (): number[] => {
         if (shapeWithCoords?.coordinates && Array.isArray(shapeWithCoords.coordinates)) {
             const coordinates = shapeWithCoords.coordinates;
@@ -57,6 +59,7 @@ const GeometryMap: React.FC<GeometryMapProps> = ({ geometry }) => {
                     />
                 </MapboxGL.ShapeSource>
 
+                {/* Start and end point markers on the geometry line. Green - start. Red - end */}
                 {hasValidCoordinates && (
                     <>
                         {/* Start point marker */}

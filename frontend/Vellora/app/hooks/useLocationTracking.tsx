@@ -1,12 +1,8 @@
-import React from 'react'
-import {  View, Text, Button  } from "react-native";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 import Mapbox from '@rnmapbox/maps';
 import { fetch } from 'expo/fetch';
-import GeometryMap from '../components/GeometryMap';
-
 
 // Constants
 const LOCATION_TASK_NAME = 'background_location_tracking';
@@ -23,8 +19,8 @@ const MAPBOX_KEY = process.env.EXPO_PUBLIC_API_KEY_MAPBOX_PUBLIC_ACCESS_TOKEN;
 
 // define the trip data return type for type safety
 interface TripData {
-    distance: number;
-    geometry: object | null;
+    distance: number;           // trip distance in meters
+    geometry: object | null;    // geojson geometry of the route
 }
 
 Mapbox.setAccessToken(`${MAPBOX_KEY}`);
@@ -61,7 +57,7 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
                     console.log(`Stationary count: ${stationaryCount}`);
 
                     if (stationaryCount >= STATIONARY_THRESHOLD) {
-                        // stopTracking();
+                        // stopTracking(); 
                         console.log("Location tracking stopped. User appears to be stationary.");
                     }
                 }
@@ -115,7 +111,10 @@ async function getPermissions(setErrorMessage: (msg: string | null) => void): Pr
     }
 }
 
-async function getTripDistance(coordinates: string | null): Promise<TripData> {
+
+async function getTripDistance(coordinates: string | null): Promise<TripData> {     // returns an object containing distance and geometry
+    
+    // return empty data if no coordinates provided
     if (coordinates === null) {
         return { distance: 0, geometry: null }; 
     }
@@ -124,20 +123,20 @@ async function getTripDistance(coordinates: string | null): Promise<TripData> {
         let response = await fetch(`https://api.mapbox.com/matching/v5/${PROFILE}/${coordinates}?geometries=geojson&access_token=${MAPBOX_KEY}`, 
             { method: 'GET' });
         
+        // check if response was successful
         if (!response.ok) {
             throw new Error(`HTTP error. Status: ${response.status}`);
         }
 
+        // parse the JSON response from mapbox
         let tripData = await response.json();
+
+        // extract distance and geometry from the first matching route
         let distance = tripData.matchings?.[0]?.distance || 0;
         let geometry = tripData.matchings?.[0]?.geometry || null;
 
         return { distance, geometry };
-        // .then(response => response.json())
-        // .then(tripData => {
-        //     totalTripDistance += tripData.matchings?.[0]?.distance;
-        //     tripGeoJSON = tripData.matchings?.[0].geometry;
-        // })
+ 
     } catch(error) {
             console.error('Error getting trip distance: ', error);
             return { distance: 0, geometry: null};
@@ -180,8 +179,8 @@ export const useLocationTracking = () => {
 
     const stopTracking = async (): Promise<TripData> => {
         try {
-            // If location updates were never started, skip stopping to avoid errors
             console.log('Stopping tracking...');
+            // If location updates were never started, skip stopping to avoid errors
             const started = await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK_NAME);
             if (!started) {
                 console.log('stopTracking: location updates not started, nothing to stop.');
@@ -195,14 +194,22 @@ export const useLocationTracking = () => {
             // remove trailing semicolon before using coordinates if needed
             if (coordinates.endsWith(';')) coordinates = coordinates.slice(0, -1);
 
+            // process collected coordinates if provided
             if (coordinates) {
+
+                // get final trip data 
                 const tripData = await getTripDistance(coordinates);
+
+                // update states with trip results
                 setTotalTripDistance(tripData?.distance);
                 setTripGeoJSON(tripData?.geometry);
 
                 console.log('Total Trip Distance:', tripData?.distance);
                 console.log('geometry: ', tripData?.geometry);
 
+                // CALL API TO STORE HERE
+
+                // reset variables
                 coordinates = '';
                 stationaryCount = 0;
                 recentLocations = [];
@@ -210,7 +217,7 @@ export const useLocationTracking = () => {
                 return tripData;
             }
 
-            return { distance: 0, geometry: null };
+            return { distance: 0, geometry: null };     // return empty data if no coordinates collected
 
         } catch (error) {
             console.error('Error to stop tracking: ', error);
@@ -219,6 +226,7 @@ export const useLocationTracking = () => {
         }
     };
 
+    // unmount cleanup
     useEffect(() => {
         return () => {
             if (isTracking) {
@@ -228,11 +236,11 @@ export const useLocationTracking = () => {
     }, []);
 
     return {
-        isTracking,
-        errorMessage,
-        totalTripDistance,
-        tripGeoJSON,
-        startTracking,
-        stopTracking,
+        isTracking,         // current tracking status
+        errorMessage,       // any error messages
+        totalTripDistance,  // distance
+        tripGeoJSON,        // geometry of the route
+        startTracking,      // function to start tracking
+        stopTracking,       // function to stop tracking
     };
 };

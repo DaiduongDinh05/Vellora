@@ -15,28 +15,35 @@ const TrackingInAction = () => {
     const [isStopping, setIsStopping] = useState(false);
     const [displayDistance, setDisplayDistance] = useState(0);
 
+    // navigation router
     const router = useRouter();
 
-    const { stopTracking, isTracking, totalTripDistance, errorMessage } = useLocationTracking();
+    // receive values from tracking logic
+    const { stopTracking, totalTripDistance } = useLocationTracking();
 
+    // convert meters to miles. updates whenever totaltripDistance changes
     useEffect(() => {
         const miles = (totalTripDistance / 1609.34).toFixed(2);
         setDisplayDistance(parseFloat(miles));
     }, [totalTripDistance]);
 
 
-    // end trip event handler. TO BE ADJUSTED
+    // end trip event handler
     const handleEndTrip = async () => {
 
-        // TRACKING END LOGIC TO BE IMPLEMENTED
         console.log('ENDING');
+
+        // set loading step to prevent multiple stops
         setIsStopping(true);
         
+        // stop the location tracking and get final trip data
         const tripData = await stopTracking();
 
+        // check if distance collected is valid
         if (tripData.distance > 0) {
             const miles = (tripData.distance / 1609.34).toFixed(2);
 
+            // navigate to finished screen and pass down the parameters
             router.push({
                 pathname: '/trackingFinished',
                 params: {
@@ -45,6 +52,7 @@ const TrackingInAction = () => {
                 }
             });
         } else{
+            // no valid trip data collected. Default to zero
             router.push({
                 pathname: '/trackingFinished',
                 params: {

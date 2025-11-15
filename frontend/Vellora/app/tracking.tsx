@@ -1,6 +1,5 @@
 import { View, Text } from 'react-native'
 import React, { useState, useEffect } from 'react'
-// import MapView from 'react-native-maps';
 import { useRouter } from 'expo-router';
 import Mapbox from '@rnmapbox/maps';
 
@@ -29,6 +28,7 @@ const Tracking = () => {
   // initialize router hook for navigation
   const router = useRouter();
 
+  // receive values from tracking logic
   const { startTracking, errorMessage, isTracking } = useLocationTracking();
 
   useEffect(() => {
@@ -38,9 +38,10 @@ const Tracking = () => {
     }
   }, [isTracking, isStarting]);
 
-  // start trip event handler. TO BE ADJUSTED
+  // start trip event handler
   const handleStartTrip = async () => {
 
+    // require input
     if (!vehicle || !type || !rate) {
       alert('Please fill in all required trip details');
       return;
@@ -51,6 +52,7 @@ const Tracking = () => {
 
     const success = await startTracking();
 
+    // check if tracking start unsuccessfu;
     if(!success) {
       setIsStarting(false);
       alert(errorMessage || 'Failed to start tracking:(');
