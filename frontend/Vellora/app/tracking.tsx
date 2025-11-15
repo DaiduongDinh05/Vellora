@@ -1,5 +1,5 @@
 import { View, Text } from 'react-native'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 // import MapView from 'react-native-maps';
 import { useRouter } from 'expo-router';
 import Mapbox from '@rnmapbox/maps';
@@ -10,6 +10,7 @@ import TripDetailsForm from './components/TripDetailsForm';
 import Button from './components/Button';
 import { vehicleItems, typeItems, rateItems } from '../app/constants/dropdownOptions';
 import UserLocationMap from './components/UserLocationMap';
+import { useLocationTracking } from './hooks/useLocationTracking';
 
 const MAPBOX_KEY = process.env.EXPO_PUBLIC_API_KEY_MAPBOX_PUBLIC_ACCESS_TOKEN;
 Mapbox.setAccessToken(`${MAPBOX_KEY}`);
@@ -23,16 +24,37 @@ const Tracking = () => {
   const [rate, setRate] = useState<string | null>(null);
   const [parking, setParking] = useState<string>('');
   const [gas, setGas] = useState<string>('');
+  const [isStarting, setIsStarting] = useState(false);
 
   // initialize router hook for navigation
   const router = useRouter();
 
-  // start trip event handler. TO BE ADJUSTED
-  const handleStartTrip = () => {
+  const { startTracking, errorMessage, isTracking } = useLocationTracking();
 
-    // TRACKING START LOGIC TO BE IMPLEMENTED
-    console.log('Starting trip...');
-    router.push('/trackingInAction');
+  useEffect(() => {
+    if (isTracking && isStarting) {
+      router.push('/trackingInAction');
+      setIsStarting(false);
+    }
+  }, [isTracking, isStarting]);
+
+  // start trip event handler. TO BE ADJUSTED
+  const handleStartTrip = async () => {
+
+    if (!vehicle || !type || !rate) {
+      alert('Please fill in all required trip details');
+      return;
+    }
+
+    console.log('STARTING...');
+    setIsStarting(true);
+
+    const success = await startTracking();
+
+    if(!success) {
+      setIsStarting(false);
+      alert(errorMessage || 'Failed to start tracking:(');
+    }
 
   };
 

@@ -1,24 +1,50 @@
 import { Image, Text, View } from 'react-native'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter } from 'expo-router';
 import ScreenLayout from './components/ScreenLayout';
 import NoteInput from './components/NoteInput';
 import CurrencyInput from './components/CurrencyInput';
 import Button from './components/Button';
+import { useLocationTracking } from './hooks/useLocationTracking';
 
 const TrackingInAction = () => {
     // state variables
     const [notes, setNotes] = useState('');
     const [parking, setParking] = useState<string>('');
     const [gas, setGas] = useState<string>('');
+    const [isStopping, setIsStopping] = useState(false);
+    const [displayDistance, setDisplayDistance] = useState(0);
+
     const router = useRouter();
 
+    const { stopTracking, isTracking, totalTripDistance, errorMessage } = useLocationTracking();
+
+    useEffect(() => {
+        const miles = (totalTripDistance / 1609.34).toFixed(2);
+        setDisplayDistance(parseFloat(miles));
+    }, [totalTripDistance]);
+
+    useEffect(() => {
+        if(!isTracking && isStopping) {
+            router.push({pathname: '/trackingFinished', params: {distance: displayDistance.toString(),}});
+            setIsStopping(false);
+        }
+    }, [isTracking, isStopping]);
+
+
     // end trip event handler. TO BE ADJUSTED
-    const handleEndTrip = () => {
+    const handleEndTrip = async () => {
 
         // TRACKING END LOGIC TO BE IMPLEMENTED
-        console.log('Starting trip...');
-        router.push('/trackingFinished');
+        console.log('ENDING');
+        setIsStopping(true);
+        
+        await stopTracking();
+
+        if (errorMessage && isTracking) {
+            alert(errorMessage);
+            setIsStopping(false);
+        }
 
     };
     
@@ -35,6 +61,17 @@ const TrackingInAction = () => {
 
             <Text className="text-3xl text-primaryPurple font-bold p-6">Live tracking your trip...</Text>
 
+
+            {/* TEST: show tracking activity */}
+            <View className='px-6 pb-4'>
+                {isTracking ? (
+                    <Text className='text-green-500 text-center text-lg font-semibold'>tracking active</Text>
+                ) : (
+                    <Text className='text-green-500 text-center text-lg font-semibold'>tracking INACTIVE</Text>
+
+                )}
+
+            </View>
             {/* Display the car gif */}
             <View style={{justifyContent: 'center', alignItems: 'center'}}>
                 <Image source={require('./assets/car.gif')} style={{width: 200, height: 200}}/>
@@ -56,7 +93,7 @@ const TrackingInAction = () => {
                         Distance: {' '}
 
                         {/* Distance value. TO BE CHANGED TO REAL TIME COLLECTED AMOUNT */}
-                        <Text className='font-bold'>0 mi</Text>
+                        <Text className='font-bold'>{displayDistance} mi</Text>
                     </Text>
                 </View>
 

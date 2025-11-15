@@ -9,6 +9,7 @@ import EditableNumericDisplay from './components/EditableNumericDisplay';
 import Button from './components/Button';
 import { vehicleItems, typeItems, rateItems } from '../app/constants/dropdownOptions';
 import GeometryMap from './components/GeometryMap';
+
 const TrackingFinished = () => {
 
   // state variables
