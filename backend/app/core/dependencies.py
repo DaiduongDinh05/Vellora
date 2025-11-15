@@ -2,12 +2,12 @@ from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.infra.db import get_db
+from app.container import get_db
 from app.modules.auth.oauth_service import OAuthService
 from app.modules.auth.service import AuthService
 from app.modules.users.models import User
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", scheme_name="JWT")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token", scheme_name="JWT")
 
 
 async def get_auth_service(session: AsyncSession = Depends(get_db)) -> AuthService:

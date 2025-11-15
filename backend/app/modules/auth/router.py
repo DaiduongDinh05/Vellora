@@ -9,6 +9,7 @@ from .schemas import (
     AuthResponse,
     LogoutRequest,
     OAuthAuthorizeResponse,
+    OAuthTokenResponse,
     RefreshRequest,
     RefreshResponse,
     RegisterRequest,
@@ -23,6 +24,18 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 @router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
 async def register(payload: RegisterRequest, auth_service: AuthService = Depends(get_auth_service)) -> AuthResponse:
     return await auth_service.register(payload)
+
+
+@router.post("/token", response_model=OAuthTokenResponse)
+async def issue_token(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    auth_service: AuthService = Depends(get_auth_service),
+) -> OAuthTokenResponse:
+    auth_response = await auth_service.login(email=form_data.username, password=form_data.password)
+    return OAuthTokenResponse(
+        access_token=auth_response.tokens.access_token,
+        token_type=auth_response.tokens.token_type,
+    )
 
 
 @router.post("/login", response_model=AuthResponse)

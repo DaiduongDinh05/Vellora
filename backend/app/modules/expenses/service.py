@@ -23,11 +23,11 @@ class ExpensesService:
         trip.expense_reimbursement_total = total
         await self.trip_repo.save(trip)
 
-    async def create_expense(self, trip_id: UUID, data: CreateExpenseDTO):
+    async def create_expense(self, user_id: UUID, trip_id: UUID, data: CreateExpenseDTO):
 
-        trip = await self.trip_repo.get(trip_id)
+        trip = await self.trip_repo.get(trip_id, user_id)
         if not trip:
-            raise TripNotFoundError("Trip not found")
+            raise TripNotFoundError("Trip not found or not owned by user")
 
         if not data.type.strip():
             raise InvalidExpenseDataError("Type is required")
@@ -37,12 +37,13 @@ class ExpensesService:
         
         cleaned_type = data.type.strip().capitalize()
 
-        existing = await self.expense_repo.get_by_trip_and_type(trip_id, cleaned_type)
+        existing = await self.expense_repo.get_by_trip_and_type(trip_id, cleaned_type, user_id)
         if existing:
             raise DuplicateExpenseError("An expense with this type already exists for the trip")
 
         try:
             expense = Expense(
+                user_id=user_id,
                 trip_id = trip_id,
                 type = cleaned_type,
                 amount = data.amount
@@ -57,24 +58,24 @@ class ExpensesService:
             raise ExpensePersistenceError("Unexpected error occurred while saving expense") from e
 
     
-    async def get_expenses_for_trip(self, trip_id: UUID):
+    async def get_expenses_for_trip(self, user_id: UUID, trip_id: UUID):
         
-        trip = await self.trip_repo.get(trip_id)
+        trip = await self.trip_repo.get(trip_id, user_id)
         if not trip:
-            raise TripNotFoundError("Trip not found")
+            raise TripNotFoundError("Trip not found or not owned by user")
 
-        return await self.expense_repo.get_expenses_by_trip_id(trip_id)
+        return await self.expense_repo.get_expenses_by_trip_id(trip_id, user_id)
 
-    async def get_expense(self, expense_id: UUID):
-        expense = await self.expense_repo.get_expense(expense_id)
+    async def get_expense(self, user_id: UUID, expense_id: UUID):
+        expense = await self.expense_repo.get_expense(expense_id, user_id)
 
         if not expense:
-            raise ExpenseNotFoundError("Expense not found")
+            raise ExpenseNotFoundError("Expense not found or not owned by user")
         
         return expense
     
-    async def edit_expense(self, expense_id: UUID, data: EditExpenseDTO):
-        expense = await self.get_expense(expense_id)
+    async def edit_expense(self, user_id: UUID, expense_id: UUID, data: EditExpenseDTO):
+        expense = await self.get_expense(user_id, expense_id)
 
         if data.type is not None:
             if not data.type.strip():
@@ -96,8 +97,8 @@ class ExpensesService:
         await self._update_trip_total(expense.trip_id)
         return saved_expense
         
-    async def delete_expense(self, expense_id: UUID):
-        expense = await self.get_expense(expense_id)
+    async def delete_expense(self, user_id: UUID, expense_id: UUID):
+        expense = await self.get_expense(user_id, expense_id)
         trip_id = expense.trip_id
         await self.expense_repo.delete_expense(expense)
         await self._update_trip_total(trip_id)

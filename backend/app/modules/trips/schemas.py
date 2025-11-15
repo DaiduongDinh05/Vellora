@@ -2,18 +2,30 @@ import datetime
 from typing import List
 from uuid import UUID
 from app.modules.trips.models import Trip, TripStatus
-from app.modules.trips.utils.crypto import decrypt_address
+from app.modules.trips.utils.crypto import decrypt_address, decrypt_geometry
 from app.modules.trips.utils.distance import meters_to_miles
-from pydantic import BaseModel, Field, field_validator
+from app.modules.expenses.schemas import CreateExpenseDTO
+from pydantic import BaseModel, Field, field_validator, ValidationError
 
 class CreateTripDTO(BaseModel):
     start_address: str
     purpose: str | None = None
+    vehicle: str | None = None
     rate_customization_id: UUID
     rate_category_id: UUID
+    
+    @field_validator('rate_customization_id', 'rate_category_id')
+    @classmethod
+    def validate_uuids(cls, v):
+        if isinstance(v, str):
+            v = v.strip()
+            if len(v) > 36:
+                v = v[:36]
+        return v
 
 class EndTripDTO(BaseModel):
     end_address: str
+    geometry: str
     distance_meters: float
     
     @field_validator('distance_meters')
@@ -29,8 +41,30 @@ class EndTripDTO(BaseModel):
 
 class EditTripDTO(BaseModel):
     purpose: str | None = None
+    vehicle: str | None = None
+    miles: float | None = None
     rate_customization_id: UUID | None = None
     rate_category_id: UUID | None = None
+    
+    @field_validator('miles')
+    @classmethod
+    def validate_miles(cls, v: float | None) -> float | None:
+        if v is not None and v < 0:
+            raise ValueError("Miles must be non-negative")
+        return v
+
+class ManualCreateTripDTO(BaseModel):
+    start_address: str
+    end_address: str
+    purpose: str | None = None
+    vehicle: str | None = None
+    miles: float
+    geometry: str | None = None
+    started_at: datetime.datetime
+    ended_at: datetime.datetime
+    rate_customization_id: UUID
+    rate_category_id: UUID
+    expenses: List[CreateExpenseDTO] | None = None 
 
 class ExpenseResponseDTO(BaseModel):
     id: str
@@ -43,7 +77,9 @@ class TripResponseDTO(BaseModel):
     status: TripStatus
     start_address: str
     end_address: str | None = None
+    geometry: str | None = None
     purpose: str | None = None
+    vehicle: str | None = None
     miles: float | None = None
     reimbursement_rate: float | None = None
     mileage_reimbursement_total: float | None = None
@@ -66,8 +102,10 @@ class TripResponseDTO(BaseModel):
             "start_address": decrypt_address(trip.start_address_encrypted),
             "end_address": decrypt_address(trip.end_address_encrypted) if trip.end_address_encrypted else None,
             "purpose": trip.purpose,
+            "vehicle": trip.vehicle,
             "miles": trip.miles,
             "reimbursement_rate": trip.reimbursement_rate,
+            "geometry": decrypt_geometry(trip.geometry_encrypted) if trip.geometry_encrypted else None,
             "mileage_reimbursement_total": trip.mileage_reimbursement_total,
             "expense_reimbursement_total": trip.expense_reimbursement_total,
             "total_reimbursement": (trip.mileage_reimbursement_total or 0) + (trip.expense_reimbursement_total or 0),

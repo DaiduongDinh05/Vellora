@@ -45,3 +45,8 @@ class OAuthAuthorizeResponse(BaseModel):
     authorization_url: AnyUrl
     state: str
     redirect_uri: AnyUrl
+
+
+class OAuthTokenResponse(BaseModel):
+    access_token: str
+    token_type: Literal["bearer"] = "bearer"
