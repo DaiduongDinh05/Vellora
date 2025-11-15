@@ -1,6 +1,6 @@
 import { View, Text } from 'react-native'
-import React, { useState } from 'react'
-import { useRouter } from 'expo-router';
+import React, { useState, useEffect } from 'react'
+import { useRouter, useLocalSearchParams } from 'expo-router';
 
 // Import reusable components
 import ScreenLayout from './components/ScreenLayout';
@@ -9,7 +9,6 @@ import EditableNumericDisplay from './components/EditableNumericDisplay';
 import Button from './components/Button';
 import { vehicleItems, typeItems, rateItems } from '../app/constants/dropdownOptions';
 import GeometryMap from './components/GeometryMap';
-
 const TrackingFinished = () => {
 
   // state variables
@@ -24,9 +23,42 @@ const TrackingFinished = () => {
   const [tripDistance, setTripDistance] = useState('0');
   const [startAddress, setStartAddress] = useState<string>('123 Start Street, Denton TX');
   const [endAddress, setEndAddress] = useState<string>('123 End Street, Denton TX');
+  const [tripGeometry, setTripGeometry] = useState<object | null>(null);
+
+  // get trip data from navigation params
+  const params = useLocalSearchParams();
+  const routeDistance = params.distance as string;
+  const routeGeometry = params.geometry as string;
 
   // initialize router hook for navigation
   const router = useRouter();
+
+  useEffect(() => {
+    if (routeGeometry) {
+        try {
+            const parsedGeometry = JSON.parse(routeGeometry);
+            setTripGeometry(parsedGeometry);
+            console.log('Parsed trip geometry: ', parsedGeometry);
+        } catch (error) {
+            console.error('Error parsing geometry: ', error);
+        }
+    }
+  }, [routeGeometry]);
+
+  useEffect(() => {
+    if (routeDistance) {
+        setTripDistance(routeDistance);
+    }
+  }, [routeDistance]);
+
+  useEffect(() => {
+    if (rate && tripDistance) {
+        let rateValue = parseFloat(rate.replace('$', ''));
+        let distanceValue = parseFloat(tripDistance);
+        const calculatedValue = (rateValue * distanceValue).toFixed(2);
+        setTripValue(calculatedValue);
+    }
+  }, [rate, tripDistance]);
 
   // end end trip event handler. TO BE ADJUSTED
   const handleSaveTrip = () => {
