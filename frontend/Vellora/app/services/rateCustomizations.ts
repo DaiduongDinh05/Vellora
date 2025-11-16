@@ -106,7 +106,7 @@ export async function getRateCustomization(
 	try {
 		const categories = await getRateCategories(id, authToken);
 		return { ...customization, categories };
-	} catch {
+	} catch (err) {
 		return { ...customization, categories: [] };
 	}
 }
@@ -166,10 +166,11 @@ export async function deleteRateCustomization(
 	const response = await fetch(`${API_BASE_URL}/rate-customizations/${id}`, {
 		method: "DELETE",
 		headers: {
-			"Content-Type": "application/json",
 			Authorization: `Bearer ${authToken}`,
 		},
 	});
+
+	if (response.status === 204) return;
 
 	if (!response.ok) {
 		await handleResponse(response);
@@ -186,7 +187,7 @@ export async function getRateCategories(
 	}
 
 	const response = await fetch(
-		`${API_BASE_URL}/rate-customizations/${customizationId}/categories`,
+		`${API_BASE_URL}/rate-customizations/${customizationId}/categories/`,
 		{
 			method: "GET",
 			headers: {

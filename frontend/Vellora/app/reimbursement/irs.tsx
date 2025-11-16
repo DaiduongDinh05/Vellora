@@ -3,11 +3,9 @@ import { router } from "expo-router";
 import { rateStyles } from "../styles/ReimbursementStyles";
 
 const irsRates = [
-	{ name: "Business", rate: "0.70" },
-	{ name: "Charity", rate: "0.14" },
-	{ name: "Medical moving", rate: "0.21" },
-	{ name: "Military moving", rate: "0.21" },
-	{ name: "Personal", rate: "0.00" },
+	{ name: "Business use", rate: "0.70" },
+	{ name: "Medical or military moving", rate: "0.21" },
+	{ name: "Charity use", rate: "0.14" },
 ];
 
 export default function Page() {

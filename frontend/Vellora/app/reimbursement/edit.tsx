@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
 	View,
 	Text,
@@ -12,20 +12,26 @@ import {
 	ActivityIndicator,
 } from "react-native";
 import { rateStyles } from "../styles/ReimbursementStyles";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import CurrencyInput from "../components/CurrencyInput";
 import {
-	createRateCustomization,
+	getRateCustomization,
+	updateRateCustomization,
 	createRateCategory,
+	updateRateCategory,
+	deleteRateCategory,
 } from "../services/rateCustomizations";
 
 type Category = {
 	id: string;
 	name: string;
 	rate: string;
+	isNew?: boolean;
 };
 
-export default function AddCustomRatePage() {
+export default function EditCustomRatePage() {
+	const params = useLocalSearchParams();
+	const id = params?.id ? String(params.id) : null;
 	const [name, setName] = useState("");
 	const [description, setDescription] = useState("");
 	const [year, setYear] = useState("");
@@ -36,12 +42,45 @@ export default function AddCustomRatePage() {
 	const [newCategoryRate, setNewCategoryRate] = useState("0.00");
 	const [errors, setErrors] = useState("");
 	const [saving, setSaving] = useState(false);
+	const [loading, setLoading] = useState(true);
+	const [deletedCategoryIds, setDeletedCategoryIds] = useState<string[]>([]);
 
 	const currentYear = new Date().getFullYear();
 	const years = Array.from(
 		{ length: currentYear - 1999 + 2 },
 		(_, i) => `${2000 + i}`
 	);
+
+	useEffect(() => {
+		if (!id) {
+			setErrors("No rate ID provided");
+			setLoading(false);
+			return;
+		}
+
+		const fetchRate = async () => {
+			try {
+				const customization = await getRateCustomization(id);
+				setName(customization.name);
+				setDescription(customization.description || "");
+				setYear(customization.year.toString());
+				setCategories(
+					(customization.categories || []).map((cat) => ({
+						id: cat.id,
+						name: cat.name,
+						rate: cat.cost_per_mile.toFixed(2),
+						isNew: false,
+					}))
+				);
+			} catch (err) {
+				setErrors(err instanceof Error ? err.message : "Failed to load rate");
+			} finally {
+				setLoading(false);
+			}
+		};
+
+		fetchRate();
+	}, [id]);
 
 	const validateBeforeSave = () => {
 		if (!name.trim()) return setErrors("Name is required.");
@@ -60,9 +99,10 @@ export default function AddCustomRatePage() {
 		const trimmed = newCategoryName.trim();
 		if (!trimmed) return;
 		const next: Category = {
-			id: `${Date.now()}`,
+			id: `new_${Date.now()}`,
 			name: trimmed,
 			rate: newCategoryRate || "0.00",
+			isNew: true,
 		};
 		setCategories((prev) => [...prev, next]);
 		setNewCategoryName("");
@@ -71,45 +111,76 @@ export default function AddCustomRatePage() {
 		setErrors("");
 	};
 
-	const deleteCategory = (id: string) => {
-		setCategories((prev) => prev.filter((c) => c.id !== id));
+	const deleteCategory = (categoryId: string) => {
+		setCategories((prev) => prev.filter((c) => c.id !== categoryId));
 	};
 
-	const updateCategoryRate = (id: string, val: string) => {
+	const handleDeleteCategory = (categoryId: string) => {
+		const category = categories.find((c) => c.id === categoryId);
+		if (category && !category.isNew) {
+			setDeletedCategoryIds((prev) => [...prev, categoryId]);
+		}
+		deleteCategory(categoryId);
+	};
+
+	const updateCategoryRate = (categoryId: string, val: string) => {
 		setCategories((prev) =>
-			prev.map((c) => (c.id === id ? { ...c, rate: val } : c))
+			prev.map((c) => (c.id === categoryId ? { ...c, rate: val } : c))
+		);
+	};
+
+	const updateCategoryName = (categoryId: string, val: string) => {
+		setCategories((prev) =>
+			prev.map((c) => (c.id === categoryId ? { ...c, name: val } : c))
 		);
 	};
 
 	const saveRate = async () => {
-		if (!validateBeforeSave()) return;
+		if (!validateBeforeSave() || !id) return;
 
 		setSaving(true);
 		setErrors("");
 
 		try {
-			const customization = await createRateCustomization({
+			await updateRateCustomization(id, {
 				name: name.trim(),
 				description: description.trim() || null,
 				year: parseInt(year, 10),
 			});
 
-			if (categories.length > 0) {
-				await Promise.all(
-					categories.map((cat) => {
-						const cleanedRate = cat.rate.replace(/[^0-9.-]/g, "");
-						const costPerMile = parseFloat(cleanedRate);
-						if (isNaN(costPerMile) || costPerMile < 0) {
-							throw new Error(
-								`Invalid rate for category "${cat.name}": must be a non-negative number`
-							);
-						}
-						return createRateCategory(customization.id, {
-							name: cat.name.trim(),
-							cost_per_mile: costPerMile,
-						});
-					})
-				);
+			for (const deletedId of deletedCategoryIds) {
+				await deleteRateCategory(id, deletedId);
+			}
+
+			const existingCategories = categories.filter((c) => !c.isNew);
+			const newCategories = categories.filter((c) => c.isNew);
+
+			for (const cat of existingCategories) {
+				const cleanedRate = cat.rate.replace(/[^0-9.-]/g, "");
+				const costPerMile = parseFloat(cleanedRate);
+				if (isNaN(costPerMile) || costPerMile < 0) {
+					throw new Error(
+						`Invalid rate for category "${cat.name}": must be a non-negative number`
+					);
+				}
+				await updateRateCategory(id, cat.id, {
+					name: cat.name.trim(),
+					cost_per_mile: costPerMile,
+				});
+			}
+
+			for (const cat of newCategories) {
+				const cleanedRate = cat.rate.replace(/[^0-9.-]/g, "");
+				const costPerMile = parseFloat(cleanedRate);
+				if (isNaN(costPerMile) || costPerMile < 0) {
+					throw new Error(
+						`Invalid rate for category "${cat.name}": must be a non-negative number`
+					);
+				}
+				await createRateCategory(id, {
+					name: cat.name.trim(),
+					cost_per_mile: costPerMile,
+				});
 			}
 
 			router.replace("/reimbursement");
@@ -124,6 +195,18 @@ export default function AddCustomRatePage() {
 		}
 	};
 
+	if (loading) {
+		return (
+			<SafeAreaView style={rateStyles.safe}>
+				<View
+					style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+					<ActivityIndicator size="large" color="#3F46D6" />
+					<Text style={{ marginTop: 10 }}>Loading rate...</Text>
+				</View>
+			</SafeAreaView>
+		);
+	}
+
 	return (
 		<SafeAreaView style={rateStyles.safe}>
 			<KeyboardAvoidingView
@@ -136,7 +219,7 @@ export default function AddCustomRatePage() {
 							style={rateStyles.closeCircle}>
 							<Text style={rateStyles.closeText}>×</Text>
 						</Pressable>
-						<Text style={rateStyles.formTitle}>Add custom rate</Text>
+						<Text style={rateStyles.formTitle}>Edit custom rate</Text>
 					</View>
 
 					{errors ? (
@@ -253,10 +336,14 @@ export default function AddCustomRatePage() {
 
 					{categories.map((c) => (
 						<View key={c.id} style={rateStyles.rateRow}>
-							<Pressable onPress={() => deleteCategory(c.id)}>
+							<Pressable onPress={() => handleDeleteCategory(c.id)}>
 								<View style={rateStyles.minusIcon} />
 							</Pressable>
-							<Text style={rateStyles.rateRowText}>{c.name}</Text>
+							<TextInput
+								style={[rateStyles.rateRowText, { flex: 1 }]}
+								value={c.name}
+								onChangeText={(v) => updateCategoryName(c.id, v)}
+							/>
 							<CurrencyInput
 								label=""
 								value={c.rate}

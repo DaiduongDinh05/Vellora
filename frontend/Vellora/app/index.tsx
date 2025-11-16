@@ -27,7 +27,7 @@ export default function Index() {
 						fontSize: 18,
 						fontWeight: "600",
 					}}>
-					Go to Login Page
+					Login
 				</Text>
 			</Pressable>
 
@@ -46,7 +46,7 @@ export default function Index() {
 						fontSize: 18,
 						fontWeight: "600",
 					}}>
-					Go to Reimbursement
+					Reimbursement (Login Required / Here for testing)
 				</Text>
 			</Pressable>
 		</SafeAreaView>

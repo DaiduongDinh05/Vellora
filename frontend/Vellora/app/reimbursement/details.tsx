@@ -91,6 +91,16 @@ export default function CustomRateDetailsPage() {
 						<Text style={rateStyles.backArrow}>{"<"}</Text>
 					</Pressable>
 					<Text style={rateStyles.headerTitle}>{rate.name}</Text>
+					<Pressable
+						onPress={() =>
+							router.push({
+								pathname: "/reimbursement/edit",
+								params: { id: rate.id },
+							} as any)
+						}
+						style={{ padding: 8 }}>
+						<Text style={{ color: "#3F46D6", fontSize: 14 }}>Edit</Text>
+					</Pressable>
 				</View>
 
 				{rate.description ? (
@@ -103,17 +113,23 @@ export default function CustomRateDetailsPage() {
 					</View>
 					<View style={rateStyles.divider} />
 
-					{rate.categories.map((c: any, idx: number) => (
-						<View key={c.id}>
-							<View style={rateStyles.rateRow}>
-								<Text style={rateStyles.rateRowText}>{c.name}</Text>
-								<Text style={rateStyles.rateRowPrice}>${c.rate}</Text>
+					{rate.categories && rate.categories.length > 0 ? (
+						rate.categories.map((c: any, idx: number) => (
+							<View key={c.id}>
+								<View style={rateStyles.rateRow}>
+									<Text style={rateStyles.rateRowText}>{c.name}</Text>
+									<Text style={rateStyles.rateRowPrice}>${c.rate}</Text>
+								</View>
+								{idx < rate.categories.length - 1 && (
+									<View style={rateStyles.divider} />
+								)}
 							</View>
-							{idx < rate.categories.length - 1 && (
-								<View style={rateStyles.divider} />
-							)}
+						))
+					) : (
+						<View style={rateStyles.rateRow}>
+							<Text style={rateStyles.rateRowText}>No categories found</Text>
 						</View>
-					))}
+					)}
 				</View>
 			</View>
 		</SafeAreaView>
