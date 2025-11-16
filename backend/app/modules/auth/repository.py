@@ -81,6 +81,20 @@ class OAuthStateRepository:
         await self.session.flush()
         return oauth_state
 
+    async def get_by_provider_state(self, provider: str, state_value: str) -> Optional[OAuthState]:
+        stmt = select(OAuthState).where(
+            OAuthState.provider == provider,
+            OAuthState.state == state_value,
+        )
+        result = await self.session.execute(stmt)
+        oauth_state = result.scalar_one_or_none()
+        if oauth_state is None:
+            return None
+        now = datetime.now(timezone.utc)
+        if _ensure_timezone(oauth_state.expires_at) <= now:
+            return None
+        return oauth_state
+
     async def consume(self, provider: str, state_value: str) -> Optional[OAuthState]:
         stmt = select(OAuthState).where(
             OAuthState.provider == provider,
