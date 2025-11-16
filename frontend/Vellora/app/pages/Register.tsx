@@ -12,6 +12,7 @@ import {
 import { styles } from "../styles/RegisterStyles";
 import { router } from "expo-router";
 import { register } from "../services/auth";
+import { tokenStorage } from "../services/tokenStorage";
 
 export default function RegisterPage() {
 	const [first, setFirst] = useState("");
@@ -66,13 +67,14 @@ export default function RegisterPage() {
 				full_name: fullName || undefined,
 			});
 
+			tokenStorage.setToken(response.tokens.access_token);
+
 			setMessage(
 				`Account created successfully! Welcome ${
 					response.user.full_name ?? response.user.email
 				}!`
 			);
 
-			// Navigate to login page after a short delay
 			setTimeout(() => {
 				router.push("/login" as any);
 			}, 1500);

@@ -2,52 +2,66 @@ import { View, Text, Pressable, SafeAreaView } from "react-native";
 import { rateStyles } from "../styles/ReimbursementStyles";
 
 type IRSPageProps = {
-  onBack?: () => void;
+	onBack?: () => void;
 };
 
 const irsRates = [
-  { label: "Business", value: "$0.70" },
-  { label: "Charity", value: "$0.14" },
-  { label: "Medical moving", value: "$0.21" },
-  { label: "Military moving", value: "$0.21" },
-  { label: "Personal", value: "$0.00" },
+	{ name: "Business", rate: "0.70" },
+	{ name: "Charity", rate: "0.14" },
+	{ name: "Medical moving", rate: "0.21" },
+	{ name: "Military moving", rate: "0.21" },
+	{ name: "Personal", rate: "0.00" },
 ];
 
 export default function ViewIRSRatePage({ onBack }: IRSPageProps) {
-  return (
-    <SafeAreaView style={rateStyles.safe}>
-      <View style={rateStyles.screenContainer}>
-        <View style={rateStyles.headerRow}>
-          <Pressable
-            onPress={onBack}
-            style={rateStyles.headerBackHitbox}
-          >
-            <Text style={rateStyles.headerBackText}>{"<"}</Text>
-          </Pressable>
-          <Text style={rateStyles.headerTitle}>IRS Standard Mileage Rate</Text>
-        </View>
+	return (
+		<SafeAreaView style={rateStyles.safe}>
+			<View style={rateStyles.screenContainer}>
+				<View style={rateStyles.headerRow}>
+					<Pressable onPress={onBack}>
+						<Text style={rateStyles.backArrow}>{"<"}</Text>
+					</Pressable>
+					<Text style={rateStyles.headerTitle}>IRS Standard Mileage Rate</Text>
+				</View>
 
-        <Text style={rateStyles.paragraph}>
-          Below is the IRS set standard mileage rate for US
-        </Text>
+				<Text style={[rateStyles.paragraph, { marginTop: 12 }]}>
+					Below is the IRS set standard mileage rate for US
+				</Text>
 
-        <View style={rateStyles.card}>
-          <View style={rateStyles.cardSectionHeader}>
-            <Text style={rateStyles.sectionLabel}>RATES</Text>
-          </View>
-          <View style={rateStyles.divider} />
+				<Text
+					style={{
+						marginTop: 30,
+						marginBottom: 8,
+						fontSize: 14,
+						fontWeight: "700",
+						color: "#4F46E5",
+					}}>
+					RATES
+				</Text>
 
-          {irsRates.map((r, idx) => (
-            <View key={r.label}>
-              <View style={rateStyles.rateRow}>
-                <Text style={rateStyles.rateRowText}>{r.label}</Text>
-                <Text style={rateStyles.rateRowPrice}>{r.value}</Text>
-              </View>
-              {idx < irsRates.length - 1 && <View style={rateStyles.divider} />}
-            </View>
-          ))}
-        </View>
-      </View>
-    </SafeAreaView>
-  );
+				<View
+					style={{
+						backgroundColor: "white",
+						borderRadius: 12,
+						overflow: "hidden",
+					}}>
+					{irsRates.map((c, i) => (
+						<View
+							key={c.name}
+							style={{
+								flexDirection: "row",
+								justifyContent: "space-between",
+								paddingVertical: 14,
+								paddingHorizontal: 18,
+								borderBottomWidth: i < irsRates.length - 1 ? 1 : 0,
+								borderColor: "#E5E7EB",
+							}}>
+							<Text style={{ fontSize: 16 }}>{c.name}</Text>
+							<Text style={{ fontSize: 16 }}>${c.rate}</Text>
+						</View>
+					))}
+				</View>
+			</View>
+		</SafeAreaView>
+	);
 }

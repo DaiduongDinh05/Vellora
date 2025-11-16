@@ -1,44 +1,135 @@
 import { useState, useEffect } from "react";
 import { useLocalSearchParams, router } from "expo-router";
+import { View, Text, ActivityIndicator } from "react-native";
 import ReimbursementRateListPage from "../components/ReimbursementRateListPage";
+import {
+	getRateCustomizations,
+	RateCustomization,
+} from "../services/rateCustomizations";
+import { tokenStorage } from "../services/tokenStorage";
 
-type Category = { id: string; name: string; rate: string };
-
-type CustomRate = {
-  id: string;
-  name: string;
-  description: string;
-  year: string;
-  categories: Category[];
-};
+function mapToCustomRate(customization: RateCustomization) {
+	return {
+		id: customization.id,
+		name: customization.name,
+		description: customization.description || "",
+		year: customization.year.toString(),
+		categories: (customization.categories || []).map((cat) => ({
+			id: cat.id,
+			name: cat.name,
+			rate: cat.cost_per_mile.toFixed(2),
+		})),
+	};
+}
 
 export default function Index() {
-  const params = useLocalSearchParams();
-  const [customRates, setCustomRates] = useState<CustomRate[]>([]);
+	const params = useLocalSearchParams();
+	const [customRates, setCustomRates] = useState<any[]>([]);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
+	const [redirecting, setRedirecting] = useState(false);
 
-  useEffect(() => {
-    if (params.newRate && typeof params.newRate === "string") {
-      try {
-        const parsed: CustomRate = JSON.parse(params.newRate);
-        setCustomRates((prev) => {
-          if (prev.some((r) => r.id === parsed.id)) return prev;
-          return [...prev, parsed];
-        });
-      } catch {}
-    }
-  }, [params.newRate]);
+	const fetchRates = async () => {
+		const token = tokenStorage.getToken();
+		if (!token) {
+			if (!redirecting) {
+				setRedirecting(true);
+				router.replace({
+					pathname: "/login",
+					params: { redirect: "/reimbursement" },
+				} as any);
+			}
+			return;
+		}
 
-  return (
-    <ReimbursementRateListPage
-      rates={customRates}
-      onCreateCustom={() => router.push("/reimbursement/add")}
-      onOpenIRS={() => router.push("/reimbursement/irs")}
-      onOpenCustomRate={(id) =>
-        router.push({
-          pathname: "/reimbursement/details",
-          params: { id },
-        })
-      }
-    />
-  );
+		setLoading(true);
+		setError(null);
+		setRedirecting(false);
+		try {
+			const rates = await getRateCustomizations();
+			const mappedRates = rates.map(mapToCustomRate);
+			setCustomRates(mappedRates);
+		} catch (err) {
+			const isAuthError =
+				err instanceof Error &&
+				(err.message.includes("Authentication required") ||
+					err.message.includes("Unauthorized") ||
+					(err as any).status === 401);
+
+			if (isAuthError && !redirecting) {
+				setRedirecting(true);
+				tokenStorage.clearToken();
+				router.replace({
+					pathname: "/login",
+					params: { redirect: "/reimbursement" },
+				} as any);
+				return;
+			}
+			setError(err instanceof Error ? err.message : "Failed to load rates");
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			fetchRates();
+		}, 500);
+		return () => clearTimeout(timer);
+	}, []);
+
+	useEffect(() => {
+		if (params.newRate && typeof params.newRate === "string") {
+			try {
+				const parsed = JSON.parse(params.newRate);
+				setCustomRates((prev) => {
+					if (prev.some((r) => r.id === parsed.id)) return prev;
+					return [...prev, parsed];
+				});
+				fetchRates();
+			} catch {}
+		}
+	}, [params.newRate]);
+
+	if (loading) {
+		return (
+			<View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+				<ActivityIndicator size="large" color="#3F46D6" />
+				<Text style={{ marginTop: 10 }}>Loading rates...</Text>
+			</View>
+		);
+	}
+
+	if (error) {
+		return (
+			<View
+				style={{
+					flex: 1,
+					justifyContent: "center",
+					alignItems: "center",
+					padding: 20,
+				}}>
+				<Text style={{ color: "red", marginBottom: 10 }}>{error}</Text>
+				<Text
+					onPress={fetchRates}
+					style={{ color: "#3F46D6", textDecorationLine: "underline" }}>
+					Retry
+				</Text>
+			</View>
+		);
+	}
+
+	return (
+		<ReimbursementRateListPage
+			rates={customRates}
+			onCreateCustom={() => router.push("/reimbursement/add")}
+			onOpenIRS={() => router.push("/reimbursement/irs")}
+			onOpenCustomRate={(id) =>
+				router.push({
+					pathname: "/reimbursement/details",
+					params: { id },
+				})
+			}
+		/>
+	);
 }

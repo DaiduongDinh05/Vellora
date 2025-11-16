@@ -12,9 +12,11 @@ import {
 } from "react-native";
 import { styles } from "../styles/LoginStyles";
 import { getProviderAuthorizeUrl, login } from "../services/auth";
-import { router } from "expo-router";
+import { tokenStorage } from "../services/tokenStorage";
+import { router, useLocalSearchParams } from "expo-router";
 
 export default function LoginPage() {
+	const params = useLocalSearchParams();
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [loading, setLoading] = useState(false);
@@ -34,16 +36,24 @@ export default function LoginPage() {
 		try {
 			const response = await login(email.trim(), password);
 
+			tokenStorage.setToken(response.tokens.access_token);
+
 			setMessage(
 				`Welcome ${
 					response.user.full_name ?? response.user.email
-				}! Redirecting...`
+				}! Login successful.`
 			);
 
-			// Navigate to home page after a short delay
-			setTimeout(() => {
-				router.push("/(tabs)" as any);
-			}, 1000);
+			const redirect = params.redirect as string;
+			if (redirect) {
+				setTimeout(() => {
+					router.replace(redirect as any);
+				}, 1000);
+			} else {
+				setTimeout(() => {
+					router.replace("/(tabs)" as any);
+				}, 1000);
+			}
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Something went wrong.");
 		} finally {
