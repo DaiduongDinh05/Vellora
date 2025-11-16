@@ -152,7 +152,7 @@ export default function LoginPage() {
 				</View>
 
 				<Text style={styles.footerText}>
-					Don't have an account?{" "}
+					Don&apos;t have an account?{" "}
 					<Text
 						style={styles.link}
 						onPress={() => router.push("/pages/Register")}>
