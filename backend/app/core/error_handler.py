@@ -16,6 +16,9 @@ def error_handler(func):
         try:
             return await func(*args, **kwargs)
         
+        except HTTPException:
+            raise
+        
         #trips
         except InvalidTripDataError as e:
             raise HTTPException(status_code=400, detail=str(e))

@@ -1,12 +1,13 @@
 import pytest
 from uuid import uuid4
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pydantic import ValidationError
 
 from app.modules.trips.schemas import (
     CreateTripDTO,
     EditTripDTO,
     EndTripDTO,
+    ManualCreateTripDTO,
     TripResponseDTO,
     ExpenseResponseDTO
 )
@@ -22,12 +23,14 @@ class TestCreateTripDTO:
         dto = CreateTripDTO(
             start_address="123 Main St",
             purpose="Business meeting",
+            vehicle="Toyota Camry",
             rate_customization_id=customization_id,
             rate_category_id=category_id
         )
 
         assert dto.start_address == "123 Main St"
         assert dto.purpose == "Business meeting"
+        assert dto.vehicle == "Toyota Camry"
         assert dto.rate_customization_id == customization_id
         assert dto.rate_category_id == category_id
 
@@ -47,6 +50,7 @@ class TestCreateTripDTO:
 
         assert dto.start_address == "123 Main St"
         assert dto.purpose is None
+        assert dto.vehicle is None
 
 
 class TestEndTripDTO:
@@ -54,10 +58,12 @@ class TestEndTripDTO:
     def test_end_trip_dto_valid(self):
         dto = EndTripDTO(
             end_address="456 Oak Ave",
+            geometry='{"type":"LineString","coordinates":[[-122.4194,37.7749],[-122.4094,37.7849]]}',
             distance_meters=81320.0
         )
 
         assert dto.end_address == "456 Oak Ave"
+        assert dto.geometry == '{"type":"LineString","coordinates":[[-122.4194,37.7749],[-122.4094,37.7849]]}'
         assert dto.distance_meters == 81320.0
         assert dto.miles == 50.53
 
@@ -82,11 +88,13 @@ class TestEditTripDTO:
 
         dto = EditTripDTO(
             purpose="Updated purpose",
+            vehicle="Honda Civic",
             rate_customization_id=customization_id,
             rate_category_id=category_id
         )
 
         assert dto.purpose == "Updated purpose"
+        assert dto.vehicle == "Honda Civic"
         assert dto.rate_customization_id == customization_id
         assert dto.rate_category_id == category_id
 
@@ -94,8 +102,12 @@ class TestEditTripDTO:
         dto1 = EditTripDTO(purpose="Updated")
         dto2 = EditTripDTO(rate_customization_id=uuid4())
         dto3 = EditTripDTO(rate_category_id=uuid4())
+        dto4 = EditTripDTO(vehicle="Ford F150")
 
         assert dto1.purpose == "Updated"
+        assert dto1.vehicle is None
+        assert dto4.vehicle == "Ford F150"
+        assert dto4.purpose is None
         assert dto1.rate_customization_id is None
         assert dto1.rate_category_id is None
 
@@ -110,6 +122,87 @@ class TestEditTripDTO:
         assert dto.purpose is None
         assert dto.rate_customization_id is None
         assert dto.rate_category_id is None
+
+
+class TestManualCreateTripDTO:
+
+    def test_manual_create_trip_dto_valid(self):
+        started_time = datetime.now(timezone.utc)
+        ended_time = started_time + timedelta(hours=2)
+        customization_id = uuid4()
+        category_id = uuid4()
+
+        dto = ManualCreateTripDTO(
+            start_address="123 Main St",
+            end_address="456 Oak Ave",
+            purpose="Client meeting",
+            vehicle="Honda Civic",
+            miles=25.5,
+            geometry='{"type":"LineString","coordinates":[[-122.4194,37.7749],[-122.4094,37.7849]]}',
+            started_at=started_time,
+            ended_at=ended_time,
+            rate_customization_id=customization_id,
+            rate_category_id=category_id
+        )
+
+        assert dto.start_address == "123 Main St"
+        assert dto.end_address == "456 Oak Ave"
+        assert dto.purpose == "Client meeting"
+        assert dto.vehicle == "Honda Civic"
+        assert dto.miles == 25.5
+        assert dto.started_at == started_time
+        assert dto.ended_at == ended_time
+        assert dto.rate_customization_id == customization_id
+        assert dto.rate_category_id == category_id
+
+    def test_manual_create_trip_dto_optional_fields(self):
+        started_time = datetime.now(timezone.utc)
+        ended_time = started_time + timedelta(hours=1)
+
+        dto = ManualCreateTripDTO(
+            start_address="123 Main St",
+            end_address="456 Oak Ave",
+            miles=10.0,
+            started_at=started_time,
+            ended_at=ended_time,
+            rate_customization_id=uuid4(),
+            rate_category_id=uuid4()
+        )
+
+        assert dto.purpose is None
+        assert dto.vehicle is None
+        assert dto.geometry is None
+
+    def test_manual_create_trip_dto_with_expenses(self):
+        started_time = datetime.now(timezone.utc)
+        ended_time = started_time + timedelta(hours=1)
+        
+        dto = ManualCreateTripDTO(
+            start_address="123 Main St",
+            end_address="456 Oak Ave",
+            miles=10.5,
+            started_at=started_time,
+            ended_at=ended_time,
+            rate_customization_id=uuid4(),
+            rate_category_id=uuid4(),
+            expenses=[
+                {"type": "Parking", "amount": 15.50},
+                {"type": "Toll", "amount": 5.75}
+            ]
+        )
+        
+        assert len(dto.expenses) == 2
+        assert dto.expenses[0].type == "Parking"
+        assert dto.expenses[0].amount == 15.50
+        assert dto.expenses[1].type == "Toll"
+        assert dto.expenses[1].amount == 5.75
+
+    def test_manual_create_trip_dto_missing_required_fields(self):
+        with pytest.raises(ValidationError):
+            ManualCreateTripDTO(
+                start_address="123 Main St",
+                # Missing end_address, miles, times, etc.
+            )
 
 
 class TestExpenseResponseDTO:
@@ -168,6 +261,7 @@ class TestTripResponseDTO:
         mock_trip.start_address_encrypted = "encrypted_start"
         mock_trip.end_address_encrypted = None
         mock_trip.purpose = "Business"
+        mock_trip.vehicle = "Honda Civic"
         mock_trip.miles = None
         mock_trip.reimbursement_rate = 0.65
         mock_trip.mileage_reimbursement_total = None
@@ -177,6 +271,7 @@ class TestTripResponseDTO:
         mock_trip.updated_at = datetime.now(timezone.utc)
         mock_trip.rate_customization_id = uuid4()
         mock_trip.rate_category_id = uuid4()
+        mock_trip.geometry_encrypted = None
         mock_trip.expenses = []
 
         with patch('app.modules.trips.schemas.decrypt_address', return_value="123 Main St"):
@@ -210,6 +305,7 @@ class TestTripResponseDTO:
         mock_trip.start_address_encrypted = "encrypted_start"
         mock_trip.end_address_encrypted = "encrypted_end"
         mock_trip.purpose = "Business"
+        mock_trip.vehicle = "Toyota Prius"
         mock_trip.miles = 50.0
         mock_trip.reimbursement_rate = 0.65
         mock_trip.mileage_reimbursement_total = 32.50
@@ -219,6 +315,7 @@ class TestTripResponseDTO:
         mock_trip.updated_at = datetime.now(timezone.utc)
         mock_trip.rate_customization_id = uuid4()
         mock_trip.rate_category_id = uuid4()
+        mock_trip.geometry_encrypted = None
         mock_trip.expenses = [mock_expense1, mock_expense2]
 
         with patch('app.modules.trips.schemas.decrypt_address', side_effect=["123 Main St", "456 Oak Ave"]):

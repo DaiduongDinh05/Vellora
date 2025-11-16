@@ -6,17 +6,15 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from app.core.base import Base
 
+from dotenv import load_dotenv
+load_dotenv()
+
+from app.modules.users import models
+from app.modules.auth import models
 from app.modules.trips import models
 from app.modules.expenses import models
 from app.modules.rate_customizations import models
 from app.modules.rate_categories import models
-
-for module in [
-    "app.modules.users.models",
-    "app.modules.auth.models",
-    
-]:
-    importlib.import_module(module)
 
 config = context.config
 if config.config_file_name is not None:
