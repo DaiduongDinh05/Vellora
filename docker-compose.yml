@@ -25,6 +25,8 @@ services:
         POSTGRES_DB: Vellora
       ports:
         - "5432:5432"
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
   backend:
     networks:
         - vellora_network
@@ -36,13 +38,23 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/app
-    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    depends_on:
+      - postgres
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - FERNET_KEY=${FERNET_KEY}
+      - OAUTH_PROVIDERS__GOOGLE__CLIENT_ID=${OAUTH_PROVIDERS__GOOGLE__CLIENT_ID}
+      - OAUTH_PROVIDERS__GOOGLE__CLIENT_SECRET=${OAUTH_PROVIDERS__GOOGLE__CLIENT_SECRET}
+      - OAUTH_PROVIDERS__GOOGLE__REDIRECT_URI=${OAUTH_PROVIDERS__GOOGLE__REDIRECT_URI}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - OAUTH_PROVIDERS__GOOGLE__SCOPES=${OAUTH_PROVIDERS__GOOGLE__SCOPES}
+      - OAUTH_STATE_TTL_SECONDS=${OAUTH_STATE_TTL_SECONDS}
 
   frontend:
     networks:
         - vellora_network
     build:
-      context: ./frontend     # Points to the frontend folder
+      context: ./frontend/Vellora     # Points to the frontend folder
       dockerfile: Dockerfile   
     container_name: vellora_frontend_service
     ports:
@@ -50,9 +62,14 @@ services:
       - "19000:19000"
       - "19001:19001"
       - "19002:19002"
+    depends_on:
+      - backend
     command: ["npx", "expo", "start", "--tunnel"]
     stdin_open: true
-    tty: true 
+    tty: true
+
+volumes:
+  postgres_data:
 
 networks:
   vellora_network:

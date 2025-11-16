@@ -6,11 +6,11 @@ ENV REACT_NATIVE_PACKAGER_HOSTNAME=host.docker.internal
 # Use npm consistently (or switch to yarn fully)
 RUN npm i --unsafe-perm -g npm@latest
 
-WORKDIR /frontend
-COPY package.json package-lock.json /frontend/
+WORKDIR /app
+COPY package.json package-lock.json /app/
 RUN npm ci
 
-COPY . /frontend/
+COPY . /app/
 
 # Expose what Expo actually uses by default
 EXPOSE 8081 19000 19001 19002
