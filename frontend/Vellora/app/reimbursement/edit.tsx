@@ -183,7 +183,7 @@ export default function EditCustomRatePage() {
 				});
 			}
 
-			router.replace("/reimbursement");
+			router.replace("/(tabs)/stats");
 		} catch (err) {
 			setErrors(
 				err instanceof Error

@@ -21,7 +21,12 @@ export default function OAuthCallback() {
 
 				tokenStorage.setToken(accessToken);
 
-				router.replace("/(tabs)");
+				const redirect = params.redirect as string;
+				if (redirect) {
+					router.replace(redirect as any);
+				} else {
+					router.replace("/(tabs)");
+				}
 			} catch (err) {
 				setError(err instanceof Error ? err.message : "Authentication failed.");
 				setLoading(false);
