@@ -7,6 +7,7 @@ type CurrencyInputProps = {
     value: string;
     onChangeText: (text: string) => void;
     className?: string;
+    style?: any;
 }
 const CurrencyInput: React.FC<CurrencyInputProps> = ({
     label,
