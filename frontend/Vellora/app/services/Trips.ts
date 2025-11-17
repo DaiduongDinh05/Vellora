@@ -1,5 +1,4 @@
 import { API_BASE_URL } from "../constants/api";
-import { tokenStorage } from "./tokenStorage";
 import { ApiError, handleResponse, checkToken } from "./helpers";
 import { fetch } from 'expo/fetch';
 
@@ -22,13 +21,13 @@ export type Trip = {
     userId: string;
     status: TripStatus;
     startAddress: string;
-    endAddress: string;
+    endAddress?: string;
     purpose?: string;
-    reimbursementRate: number;
-    miles: number;
+    reimbursementRate?: number | null;
+    miles?: number | null;
     geometry?: object | null;
-    mileageReimbursementTotal: number;
-    expenseReimbursementTotal: number;
+    mileageReimbursementTotal?: number | null;
+    expenseReimbursementTotal?: number | null;
     startAt: Date;
     endAt?: Date | undefined;
     updatedAt: Date;
@@ -53,10 +52,10 @@ export type createManualTripPayload = {
     startedAt: Date;
     endedAt: Date;
     miles: number;
-    geometry: object | null;
+    geometry?: object | null;
     rateCustomizationId: string;
     rateCategoryId: string;
-    expenses: Expense[];
+    expenses?: Expense[];
 }
 
 
@@ -85,6 +84,36 @@ export async function getTrip(id: string, token?: string): Promise<Trip> {
             "Content-Type": "application/json",
             Authorization: `Bearer ${authToken}`
         }
+    });
+
+    return handleResponse<Trip>(response);
+}
+
+export async function createTrip(payload: createTripPayload, token?: string): Promise<Trip> {
+    const authToken = await checkToken();
+
+    const response = await fetch(`${API_BASE_URL}/trips`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`
+        },
+        body: JSON.stringify(payload),
+    });
+
+    return handleResponse<Trip>(response);
+}
+
+export async function createManualTrip(payload: createManualTripPayload, token?: string): Promise<Trip> {
+    const authToken = await checkToken();
+
+    const response = await fetch(`${API_BASE_URL}/trips/manual`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`
+        },
+        body: JSON.stringify(payload),
     });
 
     return handleResponse<Trip>(response);
