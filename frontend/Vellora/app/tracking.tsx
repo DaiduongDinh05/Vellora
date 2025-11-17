@@ -7,10 +7,10 @@ import Mapbox from '@rnmapbox/maps';
 import ScreenLayout from './components/ScreenLayout';
 import TripDetailsForm from './components/TripDetailsForm';
 import Button from './components/Button';
-import { vehicleItems, typeItems } from '../app/constants/dropdownOptions';
+import { vehicleItems } from '../app/constants/dropdownOptions';
 import UserLocationMap from './components/UserLocationMap';
 import { useLocationTracking } from './hooks/useLocationTracking';
-import { useRates } from './hooks/useRateOptions';
+import { useRateOptions } from './hooks/useRateOptions';
 
 const MAPBOX_KEY = process.env.EXPO_PUBLIC_API_KEY_MAPBOX_PUBLIC_ACCESS_TOKEN;
 Mapbox.setAccessToken(`${MAPBOX_KEY}`);
@@ -33,7 +33,16 @@ const Tracking = () => {
   const { startTracking, errorMessage, isTracking } = useLocationTracking();
 
   // fetch rates
-  const { rateItems, loading, error } = useRates();
+  const { rateItems, categoryItems, loading, error, updateSelectedRate, selectedRate } = useRateOptions();
+
+  // handle rate selection
+  const handleRateChange = (selectedRateId: string | null) => {
+    console.log('Rate changed to: ', selectedRate);
+    setRate(selectedRateId);
+    setType(null);      // reset category when rate changes
+    updateSelectedRate(selectedRateId);
+  };
+
 
   useEffect(() => {
     if (isTracking && isStarting) {
@@ -42,7 +51,7 @@ const Tracking = () => {
     }
   }, [isTracking, isStarting]);
 
-    // Show loading state
+  // show loading state
   if (loading) {
     return (
         <Text className="text-3xl text-primaryPurple font-bold p-6">Loading rates...</Text>
@@ -98,7 +107,6 @@ const Tracking = () => {
     >
       <Text className="text-3xl text-primaryPurple font-bold p-6">Live Track Current Trip</Text>
 
-      {/* Temporary map display. TO BE CHANGED TO AN IMPLEMENTATION WITH CURRENT LOCATION VIA MAPBOX */}
       <View style={{ height: 300, width: '100%', borderRadius: 16, overflow: 'hidden' }}>
         <UserLocationMap />
       </View>
@@ -127,13 +135,13 @@ const Tracking = () => {
         notes={notes} setNotes={setNotes}
         vehicle={vehicle} setVehicle={setVehicle}
         type={type} setType={setType}
-        rate={rate} setRate={setRate}
+        rate={rate} setRate={handleRateChange}
         parking={parking} setParking={setParking}
         gas={gas} setGas={setGas}
 
         // mock data arrays
         vehicleItems={vehicleItems}
-        typeItems={typeItems}
+        typeItems={categoryItems}
         rateItems={rateItems}
       
       />
