@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Request, status
+from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm
 
 from app.core.dependencies import get_auth_service, get_current_user, get_oauth_service
@@ -72,14 +73,61 @@ async def authorize_provider(
     return await oauth_service.get_authorization_url(provider, redirect_uri)
 
 
-@router.get("/providers/{provider}/callback", response_model=AuthResponse)
+@router.get("/providers/{provider}/callback")
 async def oauth_callback(
+    request: Request,
     provider: str,
     code: str = Query(..., description="Authorization code returned by the provider."),
     state: str = Query(..., description="Opaque state value generated during authorization."),
     redirect_uri: str | None = None,
     oauth_service: OAuthService = Depends(get_oauth_service),
-) -> AuthResponse:
+):
+    accept_header = request.headers.get("accept", "")
+    
+    if "application/json" not in accept_header:
+        from urllib.parse import quote
+        from app.modules.auth.repository import OAuthStateRepository
+        
+        state_repo = OAuthStateRepository(oauth_service.session)
+        state_record = await state_repo.get_by_provider_state(provider, state)
+        
+        if state_record is None:
+            return HTMLResponse(
+                content="""
+                <html>
+                    <body>
+                        <h1>Authentication Error</h1>
+                        <p>Invalid or expired state parameter.</p>
+                    </body>
+                </html>
+                """,
+                status_code=400
+            )
+        
+        auth_response = await oauth_service.handle_callback(
+            provider_name=provider,
+            code=code,
+            state=state,
+            redirect_uri=redirect_uri,
+        )
+        
+        access_token = quote(auth_response.tokens.access_token)
+        app_deep_link = f"vellora://oauth/{provider}/callback?access_token={access_token}"
+        return HTMLResponse(
+            content=f"""
+            <html>
+                <head>
+                    <meta http-equiv="refresh" content="0;url={app_deep_link}">
+                    <script>window.location.href = "{app_deep_link}";</script>
+                </head>
+                <body>
+                    <p>Redirecting to app...</p>
+                    <p>If you are not redirected, <a href="{app_deep_link}">click here</a>.</p>
+                </body>
+            </html>
+            """
+        )
+    
     return await oauth_service.handle_callback(
         provider_name=provider,
         code=code,

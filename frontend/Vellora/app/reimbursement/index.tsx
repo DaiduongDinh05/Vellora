@@ -35,7 +35,7 @@ function mapToCustomRate(customization: RateCustomization): CustomRate {
 	};
 }
 
-export default function Stats() {
+export default function Index() {
 	const params = useLocalSearchParams();
 	const [customRates, setCustomRates] = useState<CustomRate[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -51,7 +51,7 @@ export default function Stats() {
 				setRedirecting(true);
 				router.replace({
 					pathname: "/login",
-					params: { redirect: "/(tabs)/stats" },
+					params: { redirect: "/reimbursement" },
 				} as any);
 			}
 			return;
@@ -79,7 +79,7 @@ export default function Stats() {
 					tokenStorage.clearToken();
 					router.replace({
 						pathname: "/login",
-						params: { redirect: "/(tabs)/stats" },
+						params: { redirect: "/reimbursement" },
 					} as any);
 					return;
 				}
@@ -138,7 +138,7 @@ export default function Stats() {
 						setRedirecting(true);
 						router.replace({
 							pathname: "/login",
-							params: { redirect: "/(tabs)/stats" },
+							params: { redirect: "/reimbursement" },
 						} as any);
 					}
 				}, 2000);
