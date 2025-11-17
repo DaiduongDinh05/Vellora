@@ -7,9 +7,10 @@ import Mapbox from '@rnmapbox/maps';
 import ScreenLayout from './components/ScreenLayout';
 import TripDetailsForm from './components/TripDetailsForm';
 import Button from './components/Button';
-import { vehicleItems, typeItems, rateItems } from '../app/constants/dropdownOptions';
+import { vehicleItems, typeItems } from '../app/constants/dropdownOptions';
 import UserLocationMap from './components/UserLocationMap';
 import { useLocationTracking } from './hooks/useLocationTracking';
+import { useRates } from './hooks/useRateOptions';
 
 const MAPBOX_KEY = process.env.EXPO_PUBLIC_API_KEY_MAPBOX_PUBLIC_ACCESS_TOKEN;
 Mapbox.setAccessToken(`${MAPBOX_KEY}`);
@@ -31,12 +32,36 @@ const Tracking = () => {
   // receive values from tracking logic
   const { startTracking, errorMessage, isTracking } = useLocationTracking();
 
+  // fetch rates
+  const { rateItems, loading, error } = useRates();
+
   useEffect(() => {
     if (isTracking && isStarting) {
       router.push('/trackingInAction');
       setIsStarting(false);
     }
   }, [isTracking, isStarting]);
+
+    // Show loading state
+  if (loading) {
+    return (
+        <Text className="text-3xl text-primaryPurple font-bold p-6">Loading rates...</Text>
+      );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <>
+        <Text className="text-3xl text-primaryPurple font-bold p-6">Error loading rates</Text>
+        <Text className="text-red-500 p-6">{error}</Text>
+        <Button 
+          title="Retry" 
+          onPress={() => window.location.reload()} 
+        />
+      </>
+    );
+  }
 
   // start trip event handler
   const handleStartTrip = async () => {
