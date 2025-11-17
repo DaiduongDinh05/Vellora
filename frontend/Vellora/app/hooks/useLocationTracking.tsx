@@ -16,6 +16,8 @@ let stationaryCount = 0;
 let lastCheckTime = 0;
 let recentLocations: Location.LocationObject[] = [];
 const MAPBOX_KEY = process.env.EXPO_PUBLIC_API_KEY_MAPBOX_PUBLIC_ACCESS_TOKEN;
+let startTime: Date | undefined;
+let endTime: Date | undefined;
 
 // flag to track if we should auto-stop because of inactivity (shared between task and hook)
 let shouldAutoStop = false;
@@ -24,6 +26,8 @@ let shouldAutoStop = false;
 interface TripData {
     distance: number;           // trip distance in meters
     geometry: object | null;    // geojson geometry of the route
+    startTime: Date | undefined;
+    endTime: Date | undefined;
 }
 
 Mapbox.setAccessToken(`${MAPBOX_KEY}`);
@@ -120,7 +124,7 @@ async function getTripDistance(coordinates: string | null): Promise<TripData> { 
     
     // return empty data if no coordinates provided
     if (coordinates === null) {
-        return { distance: 0, geometry: null }; 
+        return { distance: 0, geometry: null, startTime: undefined, endTime: undefined}; 
     }
     
     try {
@@ -138,12 +142,13 @@ async function getTripDistance(coordinates: string | null): Promise<TripData> { 
         // extract distance and geometry from the first matching route
         let distance = tripData.matchings?.[0]?.distance || 0;
         let geometry = tripData.matchings?.[0]?.geometry || null;
-
-        return { distance, geometry };
+        endTime = new Date();
+        
+        return { distance, geometry, startTime, endTime };
  
     } catch(error) {
             console.error('Error getting trip distance: ', error);
-            return { distance: 0, geometry: null};
+            return { distance: 0, geometry: null, startTime: undefined, endTime: undefined};
     }
 
 }
@@ -172,6 +177,7 @@ export const useLocationTracking = () => {
             });
 
             setIsTracking(true);
+            startTime = new Date();
             return true;
         
         } catch (error) {
@@ -189,7 +195,7 @@ export const useLocationTracking = () => {
             if (!started) {
                 console.log('stopTracking: location updates not started, nothing to stop.');
                 if (setIsTracking) setIsTracking(false);
-                return { distance: 0, geometry: null};
+                return { distance: 0, geometry: null, startTime: undefined, endTime: undefined};
             }
 
             await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME);
@@ -218,16 +224,17 @@ export const useLocationTracking = () => {
                 stationaryCount = 0;
                 recentLocations = [];
                 shouldAutoStop = false;
+                startTime = undefined;
 
                 return tripData;
             }
 
-            return { distance: 0, geometry: null };     // return empty data if no coordinates collected
+            return { distance: 0, geometry: null, startTime: undefined, endTime: undefined};     // return empty data if no coordinates collected
 
         } catch (error) {
             console.error('Error to stop tracking: ', error);
             if (setIsTracking) setIsTracking(false);
-            return { distance: 0, geometry: null };
+            return { distance: 0, geometry: null, startTime: undefined, endTime: undefined };
         }
     };
 
@@ -265,5 +272,7 @@ export const useLocationTracking = () => {
         tripGeoJSON,        // geometry of the route
         startTracking,      // function to start tracking
         stopTracking,       // function to stop tracking
+        startTime,
+        endTime
     };
 };

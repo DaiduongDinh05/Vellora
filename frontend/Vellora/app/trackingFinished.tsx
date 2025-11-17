@@ -33,6 +33,9 @@ const TrackingFinished = () => {
   const params = useLocalSearchParams();
   const routeDistance = params.distance as string;
   const routeGeometry = params.geometry as string;
+  const routeStartTime = params.startTime as string;
+  const routeEndTime = params.endTime as string;
+
 
   // initialize router hook for navigation
   const router = useRouter();
@@ -142,6 +145,11 @@ const TrackingFinished = () => {
   // end end trip event handler
   const handleSaveTrip = () => {
     console.log('Saving trip...');
+    try {
+        
+    } catch (error) {
+        
+    }
     router.push('/(tabs)/history');
   };
 

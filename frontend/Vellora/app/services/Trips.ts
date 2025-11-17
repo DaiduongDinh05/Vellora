@@ -1,5 +1,8 @@
 import { API_BASE_URL } from "../constants/api";
 import { tokenStorage } from "./tokenStorage";
+import { ApiError, handleResponse, checkToken } from "./helpers";
+import { fetch } from 'expo/fetch';
+
 
 export type Expense = {
     id: string;
@@ -54,4 +57,35 @@ export type createManualTripPayload = {
     rateCustomizationId: string;
     rateCategoryId: string;
     expenses: Expense[];
+}
+
+
+export async function getTrips(token?: string): Promise<Trip[]> {
+    const authToken = await checkToken();
+
+    const response = await fetch(`${API_BASE_URL}/trips/`, {
+        method: 'GET',
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`
+        },
+    });
+
+    const Trips = await handleResponse<Trip[]>(response);
+
+    return Trips;
+}
+
+export async function getTrip(id: string, token?: string): Promise<Trip> {
+    const authToken = await checkToken();
+
+    const response = await fetch(`${API_BASE_URL}/trips/${id}`, {
+        method: 'GET',
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`
+        }
+    });
+
+    return handleResponse<Trip>(response);
 }

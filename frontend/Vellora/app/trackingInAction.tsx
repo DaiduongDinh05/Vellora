@@ -19,7 +19,7 @@ const TrackingInAction = () => {
     const router = useRouter();
 
     // receive values from tracking logic
-    const { stopTracking, totalTripDistance } = useLocationTracking();
+    const { stopTracking, totalTripDistance, startTime, endTime } = useLocationTracking();
 
     // convert meters to miles. updates whenever totaltripDistance changes
     useEffect(() => {
@@ -48,7 +48,9 @@ const TrackingInAction = () => {
                 pathname: '/trackingFinished',
                 params: {
                     distance: miles,
-                    geometry: JSON.stringify(tripData.geometry)
+                    geometry: JSON.stringify(tripData.geometry),
+                    startTime: startTime?.toISOString(),
+                    endTime: endTime?.toISOString()
                 }
             });
         } else{
