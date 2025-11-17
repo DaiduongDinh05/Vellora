@@ -1,24 +1,67 @@
 import { Image, Text, View } from 'react-native'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter } from 'expo-router';
 import ScreenLayout from './components/ScreenLayout';
 import NoteInput from './components/NoteInput';
 import CurrencyInput from './components/CurrencyInput';
 import Button from './components/Button';
+import { useLocationTracking } from './hooks/useLocationTracking';
 
 const TrackingInAction = () => {
     // state variables
     const [notes, setNotes] = useState('');
     const [parking, setParking] = useState<string>('');
     const [gas, setGas] = useState<string>('');
+    const [isStopping, setIsStopping] = useState(false);
+    const [displayDistance, setDisplayDistance] = useState(0);
+
+    // navigation router
     const router = useRouter();
 
-    // end trip event handler. TO BE ADJUSTED
-    const handleEndTrip = () => {
+    // receive values from tracking logic
+    const { stopTracking, totalTripDistance } = useLocationTracking();
 
-        // TRACKING END LOGIC TO BE IMPLEMENTED
-        console.log('Starting trip...');
-        router.push('/trackingFinished');
+    // convert meters to miles. updates whenever totaltripDistance changes
+    useEffect(() => {
+        const miles = (totalTripDistance / 1609.34).toFixed(2);
+        setDisplayDistance(parseFloat(miles));
+    }, [totalTripDistance]);
+
+
+    // end trip event handler
+    const handleEndTrip = async () => {
+
+        console.log('ENDING');
+
+        // set loading step to prevent multiple stops
+        setIsStopping(true);
+        
+        // stop the location tracking and get final trip data
+        const tripData = await stopTracking();
+
+        // check if distance collected is valid
+        if (tripData.distance > 0) {
+            const miles = (tripData.distance / 1609.34).toFixed(2);
+
+            // navigate to finished screen and pass down the parameters
+            router.push({
+                pathname: '/trackingFinished',
+                params: {
+                    distance: miles,
+                    geometry: JSON.stringify(tripData.geometry)
+                }
+            });
+        } else{
+            // no valid trip data collected. Default to zero
+            router.push({
+                pathname: '/trackingFinished',
+                params: {
+                    distance: '0',
+                    geometry:''
+                }
+            });
+        }
+        setIsStopping(false);
 
     };
     
@@ -56,7 +99,7 @@ const TrackingInAction = () => {
                         Distance: {' '}
 
                         {/* Distance value. TO BE CHANGED TO REAL TIME COLLECTED AMOUNT */}
-                        <Text className='font-bold'>0 mi</Text>
+                        <Text className='font-bold'>{displayDistance} mi</Text>
                     </Text>
                 </View>
 

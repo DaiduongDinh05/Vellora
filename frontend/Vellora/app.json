@@ -6,6 +6,7 @@
     "orientation": "portrait",
     "icon": "./app/assets/Vellora_Dark_Logo.png",
     "scheme": "vellora",
+    "deeplinks": ["auth/google/callback"],
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {

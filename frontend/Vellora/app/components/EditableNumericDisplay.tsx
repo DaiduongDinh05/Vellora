@@ -17,8 +17,9 @@ const EditableNumericDisplay: React.FC<Props> = ({ label, value, onChangeText, u
     let suffix = '';    // text to show after the value (like " mi" in "5 mi")
 
     // if the unit is currency, allow decimals and add the correct prefix
+    keyboardType = 'decimal-pad';
+
     if (unit === '$'){
-        keyboardType = 'decimal-pad';
         prefix = '$';
     }
 
@@ -29,20 +30,20 @@ const EditableNumericDisplay: React.FC<Props> = ({ label, value, onChangeText, u
 
     const handleTextChange = (text: string) => {
         let formattedText = text;
-        if (unit === '$'){
-            // allow only digits and decimal points
-            formattedText = text.replace(/[^0-9.]/g, '');
 
-            // ensure there are no multiple decimal points like 1.20.23
-            const parts = formattedText.split('.');
-            if (parts.length > 2){
-                onChangeText(value);
-                return;
-            }
+        // allow only digits and decimal points
+        formattedText = text.replace(/[^0-9.]/g, '');
+
+        // ensure there are no multiple decimal points like 1.20.23
+        const parts = formattedText.split('.');
+
+        if (parts.length > 2){
+            onChangeText(value);
+            return;
         }
-        else {
-            // allow whole digits for miles
-            formattedText = text.replace(/[^0-9]/g, '');
+
+        if (parts.length === 2 && parts[1].length > 2) {
+            formattedText = parts[0] + ',' + parts[1].slice(0, 2);
         }
 
         onChangeText(formattedText);
@@ -51,11 +52,27 @@ const EditableNumericDisplay: React.FC<Props> = ({ label, value, onChangeText, u
     // format the final value when a user taps away. Switch to display mode
     const handleBlur = () => {
         setIsEditing(false);    // exit editing
-        if (unit === '$'){
-            const num = parseFloat(value) || 0;
+
+        if (value){
+            let num = parseFloat(value);
+
+            if (isNaN(num)){
+                num = 0;
+            }
             onChangeText(num.toFixed(2));
+        } else {
+            onChangeText('0.00');
         }
     };
+
+    const getDisplayValue = () => {
+        if (!value) return '0.00';
+
+        const num = parseFloat(value);
+        if (isNaN(num)) return '0.00';
+
+        return num.toFixed(2);
+    }
 
     return (
         <View className='flex-row items-center gap-2'>
@@ -78,7 +95,7 @@ const EditableNumericDisplay: React.FC<Props> = ({ label, value, onChangeText, u
                 // if we are in display mode, just show plain text
                 <View className='flex-row items-center gap-2'>
                     <Text className='text-xl'>{label}: {' '}
-                        <Text className='font-bold'>{prefix}{value}{suffix}</Text>
+                        <Text className='font-bold'>{prefix}{getDisplayValue()}{suffix}</Text>
                     </Text>
                     <TouchableOpacity onPress={() => setIsEditing(true)}>
 

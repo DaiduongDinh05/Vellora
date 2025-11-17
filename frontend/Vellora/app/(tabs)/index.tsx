@@ -1,6 +1,6 @@
 import { Text, View } from "react-native";
 import { Link } from "expo-router";
-import Tracking from "../components/tracking";
+// import Tracking from "../components/tracking";
 
 export default function Index() {
   return (
@@ -10,7 +10,7 @@ export default function Index() {
       <Link href="../tracking">Live track a trip</Link>
       <Link href="../manualLogScreen">Manually log a trip</Link>
       <Link href="../trackingTest"></Link>
-      <Tracking></Tracking>
+      {/* <Tracking></Tracking> */}
     </View>
   );
 }

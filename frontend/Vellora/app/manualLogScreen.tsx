@@ -84,6 +84,35 @@ const ManualLogScreen = () => {
 
             <View style={{ paddingHorizontal: 25, gap: 16 }}>
 
+                <Text className='text-sm text-gray-500 mb-1'>Start Time</Text>
+                {/* button for picking a date and time */}
+                <TouchableOpacity onPress={() => setShowPicker(true)}>
+                    {/* style it to look like a dropdown to match the general visuals */}
+                    <View className='flex-row border items-center border-gray-300 bg-white rounded-lg px-3 py-3'>
+                        <View className='w-6 items-center'>
+                            <FontAwesome name='calendar' {...iconProps} />
+                        </View>
+                        <Text style={{fontSize: 16, color: 'black', marginLeft: 10}}>
+                            {date.toLocaleString()}
+                        </Text>
+
+                    </View>
+
+                </TouchableOpacity>
+
+                {/* picker where you choose date and time. Hidden until showpicker is set true*/}
+                {
+                    showPicker && (
+                        <DateTimePicker
+                            value={date}
+                            mode='datetime'
+                            display='default'
+                            onChange={onDateChange}
+                        />
+                    )
+                }
+
+                <Text className='text-sm text-gray-500 mb-1'>End Time</Text>
                 {/* button for picking a date and time */}
                 <TouchableOpacity onPress={() => setShowPicker(true)}>
                     {/* style it to look like a dropdown to match the general visuals */}
