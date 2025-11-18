@@ -7,15 +7,19 @@ import ScreenLayout from './components/ScreenLayout';
 import TripDetailsForm from './components/TripDetailsForm';
 import EditableNumericDisplay from './components/EditableNumericDisplay';
 import Button from './components/Button';
-import { vehicleItems, typeItems, rateItems } from '../app/constants/dropdownOptions';
+import { vehicleItems  } from '../app/constants/dropdownOptions';
 import GeometryMap from './components/GeometryMap';
 import { useTripData } from './contexts/TripDataContext';
+import { useRateOptions } from './hooks/useRateOptions';
 
 const MAPBOX_KEY = process.env.EXPO_PUBLIC_API_KEY_MAPBOX_PUBLIC_ACCESS_TOKEN;
 
 const TrackingFinished = () => {
     // use trip data context
     const { tripData, updateTripData, resetTripData} = useTripData();
+
+    // use rate options hook for dynamic rates
+    const { rateItems, categoryItems, loading, error, updateSelectedRate } = useRateOptions();
 
     // state variables
     const [notes, setNotes] = useState(tripData.notes);
@@ -30,7 +34,7 @@ const TrackingFinished = () => {
     const [startAddress, setStartAddress] = useState<string>(tripData.startAddress || 'Loading address...');
     const [endAddress, setEndAddress] = useState<string>(tripData.endAddress || 'Loading address...');
     const [tripGeometry, setTripGeometry] = useState<object | null>(null);
-    const[isLoadingAddresses, setIsLoadingAddresses] = useState(false);
+    const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
 
     // get trip data from navigation params
     const params = useLocalSearchParams();
@@ -40,6 +44,20 @@ const TrackingFinished = () => {
     // initialize router hook for navigation
     const router = useRouter();
 
+    // handle rate selection to update categories
+    const handleRateChange = (selectedRateId: string | null) => {
+        setRate(selectedRateId);
+
+        if (selectedRateId !== rate) {
+            setType(null);
+        }
+        updateSelectedRate(selectedRateId);
+    };
+
+    const handleTypeChange = (newType: string | null) => {
+        setType(newType);
+        updateTripData({ ...tripData, type: newType });
+    };
     // update context when any data changes
     useEffect(() => {
         updateTripData({
@@ -56,6 +74,36 @@ const TrackingFinished = () => {
         value: tripValue
         });
     }, [notes, vehicle, type, rate, parking, gas, tolls, startAddress, endAddress, tripDistance, tripValue]);
+
+    // update selected rate when component mounts or when rate from context changes
+    useEffect(() => {
+        if (tripData.rate) {
+            updateSelectedRate(tripData.rate);
+            setRate(tripData.rate); 
+        }
+    }, []);
+
+    // calculate trip value when rate or distance changes
+    useEffect(() => {
+        if (rate && tripDistance) {
+            // extract the actual numeric value from rateItems
+            const selectedRateItem = rateItems.find(item => item.value === rate);
+            if (selectedRateItem && selectedRateItem.originalRate) {
+    
+                // find the selected category's cost per mile
+                const selectedCategory = categoryItems.find(item => item.value === type);
+    
+                if (selectedCategory && selectedCategory.originalCategory) {
+    
+                    const rateValue = selectedCategory.originalCategory.cost_per_mile;
+                    let distanceValue = parseFloat(tripDistance);
+                    const calculatedValue = (rateValue * distanceValue).toFixed(2);
+                    setTripValue(calculatedValue);
+    
+                }
+            }
+        }
+    }, [rate, type, tripDistance, rateItems, categoryItems]);
 
     // convert coordinates to address using mapbox
     const findGeocode = async (longitude: number, latitude: number): Promise<string> => {
@@ -221,8 +269,8 @@ const TrackingFinished = () => {
                 // state variables
                 notes={notes} setNotes={setNotes}
                 vehicle={vehicle} setVehicle={setVehicle}
-                type={type} setType={setType}
-                rate={rate} setRate={setRate}
+                type={type} setType={handleTypeChange}
+                rate={rate} setRate={handleRateChange}
                 parking={parking} setParking={setParking}
                 gas={gas} setGas={setGas}
                 tolls={tolls} setTolls={setTolls}
@@ -231,7 +279,7 @@ const TrackingFinished = () => {
 
                 // mock data arrays
                 vehicleItems={vehicleItems}
-                typeItems={typeItems}
+                typeItems={categoryItems}
                 rateItems={rateItems}
                 
             />
@@ -239,6 +287,7 @@ const TrackingFinished = () => {
         </ScreenLayout>
 
     );
-    }
+}
 
-    export default TrackingFinished;
+export default TrackingFinished;
+

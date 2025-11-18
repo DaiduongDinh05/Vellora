@@ -72,7 +72,7 @@ const TrackingInAction = () => {
                 pathname: '/trackingFinished',
                 params: {
                     distance: '0',
-                    geometry:''
+                    geometry: null
                 }
             });
         }
