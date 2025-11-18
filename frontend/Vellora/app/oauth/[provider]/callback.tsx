@@ -16,9 +16,10 @@ export default function OAuthCallback() {
 				const accessToken = params.access_token as string;
 				const code = params.code as string;
 				const state = params.state as string;
+				const segmentsArray = segments as readonly string[];
 				const provider =
 					(params.provider as string) ||
-					(segments.length > 1 ? segments[1] : undefined) ||
+					(segmentsArray.length > 1 ? segmentsArray[1] : undefined) ||
 					"google";
 
 				if (accessToken) {
