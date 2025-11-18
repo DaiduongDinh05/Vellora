@@ -19,7 +19,6 @@ export const useRateOptions = () => {
             setLoading(true);
             setError(null);
             const userRates = await getRateCustomizations();
-            console.log('Fetched rates:', userRates);
             setRates(userRates);
 
         } catch (err) {
@@ -78,7 +77,6 @@ export const useRateOptions = () => {
             }
 
             const rate = rates.find(r => r.id === rateId);
-            console.log('Found rate:', rate);
             setSelectedRate(rate || null);
         } catch (error) {
             console.error('Error in updateSelectedRate:', error);

@@ -1,3 +1,4 @@
+// tracking.tsx (updated)
 import { View, Text } from 'react-native'
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'expo-router';
@@ -11,19 +12,22 @@ import { vehicleItems } from '../app/constants/dropdownOptions';
 import UserLocationMap from './components/UserLocationMap';
 import { useLocationTracking } from './hooks/useLocationTracking';
 import { useRateOptions } from './hooks/useRateOptions';
+import { useTripData } from './contexts/TripDataContext';
 
 const MAPBOX_KEY = process.env.EXPO_PUBLIC_API_KEY_MAPBOX_PUBLIC_ACCESS_TOKEN;
 Mapbox.setAccessToken(`${MAPBOX_KEY}`);
 
 const Tracking = () => {
-
+  // Use trip data context
+  const { tripData, updateTripData } = useTripData();
+  
   // state variables
-  const [notes, setNotes] = useState('');
-  const [vehicle, setVehicle] = useState<string | null>(null);
-  const [type, setType] = useState<string | null>(null);
-  const [rate, setRate] = useState<string | null>(null);
-  const [parking, setParking] = useState<string>('');
-  const [gas, setGas] = useState<string>('');
+  const [notes, setNotes] = useState(tripData.notes);
+  const [vehicle, setVehicle] = useState<string | null>(tripData.vehicle);
+  const [type, setType] = useState<string | null>(tripData.type);
+  const [rate, setRate] = useState<string | null>(tripData.rate);
+  const [parking, setParking] = useState(tripData.parking);
+  const [gas, setGas] = useState(tripData.gas);
   const [isStarting, setIsStarting] = useState(false);
 
   // initialize router hook for navigation
@@ -35,14 +39,24 @@ const Tracking = () => {
   // fetch rates
   const { rateItems, categoryItems, loading, error, updateSelectedRate, selectedRate } = useRateOptions();
 
+  // Update context when form data changes
+  useEffect(() => {
+    updateTripData({
+      notes,
+      vehicle,
+      type,
+      rate,
+      parking,
+      gas
+    });
+  }, [notes, vehicle, type, rate, parking, gas]);
+
   // handle rate selection
   const handleRateChange = (selectedRateId: string | null) => {
-    console.log('Rate changed to: ', selectedRate);
     setRate(selectedRateId);
     setType(null);      // reset category when rate changes
     updateSelectedRate(selectedRateId);
   };
-
 
   useEffect(() => {
     if (isTracking && isStarting) {
@@ -74,7 +88,6 @@ const Tracking = () => {
 
   // start trip event handler
   const handleStartTrip = async () => {
-
     // require input
     if (!vehicle || !type || !rate) {
       alert('Please fill in all required trip details');
@@ -91,19 +104,17 @@ const Tracking = () => {
       setIsStarting(false);
       alert(errorMessage || 'Failed to start tracking:(');
     }
-
   };
 
   return (
-    <ScreenLayout               // screen layout as the main wrapper
+    <ScreenLayout
       footer={
         <Button 
           title='Start Trip'
-          onPress={handleStartTrip}     // start the trip when footer button is pressed
-          className=''                  // for additional styling
+          onPress={handleStartTrip}
+          className=''
         />
       }
-
     >
       <Text className="text-3xl text-primaryPurple font-bold p-6">Live Track Current Trip</Text>
 
@@ -115,23 +126,18 @@ const Tracking = () => {
       <View className='flex-row justify-between px-6 pt-6'>
         <Text className='text-xl'>
           Value: {' '}
-
-          {/* Cost value. Starts at 0 */}
           <Text className='font-bold'>$0</Text>
         </Text>
 
         <Text className='text-xl'>
           Distance: {' '}
-
-          {/* Distance value. Starts at 0 */}
           <Text className='font-bold'>0 mi</Text>
         </Text>
       </View>
 
       {/* display the form for trip details */}
       <TripDetailsForm 
-
-        // state vairables
+        // state variables
         notes={notes} setNotes={setNotes}
         vehicle={vehicle} setVehicle={setVehicle}
         type={type} setType={setType}
@@ -143,10 +149,8 @@ const Tracking = () => {
         vehicleItems={vehicleItems}
         typeItems={categoryItems}
         rateItems={rateItems}
-      
       />
     </ScreenLayout>
-
   )
 }
 
