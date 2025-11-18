@@ -1,8 +1,9 @@
-import { Text, View, TouchableOpacity } from 'react-native'
+import { Text, View, TouchableOpacity, Platform } from 'react-native'
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 
 // component and data imports
 import { vehicleItems } from '../app/constants/dropdownOptions';
@@ -24,8 +25,12 @@ const ManualLogScreen = () => {
     // state variables
     const [startDate, setStartDate] = useState(new Date());
     const [endDate, setEndDate] = useState(new Date());
-    const [showStartPicker, setShowStartPicker] = useState(false);
-    const [showEndPicker, setShowEndPicker] = useState(false);
+    // const [showStartPicker, setShowStartPicker] = useState(false);
+    // const [showEndPicker, setShowEndPicker] = useState(false);
+
+    const [showStartIOS, setShowStartIOS] = useState(false);
+    const [showEndIOS, setShowEndIOS] = useState(false);
+
     const [startAddress, setStartAddress] = useState('');
     const [endAddress, setEndAddress] = useState('');
     const [notes, setNotes] = useState('');
@@ -71,19 +76,93 @@ const ManualLogScreen = () => {
         }
     }, [rate, type, tripDistance, rateItems, categoryItems]);
 
-    // when a user select a start date or closes the picker, hide it
-    const onStartDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
-        setShowStartPicker(false);
-        if(selectedDate){
-            setStartDate(selectedDate);
+    // // when a user select a start date or closes the picker, hide it
+    // const onStartDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
+
+    //     //  if the user dismissed (cancelled) the picker, hide it
+    //     if (event.type === 'dismissed') {
+    //         setShowStartPicker(false);
+    //         return;
+    //     }
+
+    //     // if the user set a date/time
+    //     if (event.type === 'set' && selectedDate) {
+    //         setShowStartPicker(false);
+    //         setStartDate(selectedDate);
+    //     }
+
+    // };
+
+    // // when a user select an end date or closes the picker, hide it
+    // const onEndDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
+
+    //     // if the user dismissed (cancelled) the picker, hide it
+    //     if (event.type === 'dismissed') {
+    //         setShowEndPicker(false);
+    //         return;
+    //     }
+
+    //     // if the user set a date/time
+    //     if (event.type === 'set' && selectedDate) {
+    //         setShowEndPicker(false);
+    //         setEndDate(selectedDate);
+    //     }
+    // };
+
+
+    // toggle functions for the date pickers
+    // const toggleStartPicker = () => {
+    //     setShowStartPicker(prev => !prev);
+    // };
+
+    // const toggleEndPicker = () => {
+    //     setShowEndPicker(prev => !prev);
+    // };
+
+    // OPEN ANDROID PICKER
+    const openAndroidDateTimePicker = (
+        currentDate: Date,
+        onChange: (event: DateTimePickerEvent, date?: Date) => void
+        ) => {
+        DateTimePickerAndroid.open({
+            value: currentDate,
+            onChange: (event, date) => {
+            if (date) {
+                // first pick date
+                DateTimePickerAndroid.open({
+                value: date,
+                mode: 'time',
+                onChange, // final combined result
+                });
+            }
+            },
+            mode: 'date',
+        });
+    };
+
+    // HANDLER TO OPEN START PICKER
+    const handleStartPress = () => {
+        if (Platform.OS === 'ios') {
+            setShowStartIOS(!showStartIOS);
+        } else {
+            openAndroidDateTimePicker(startDate, (event, selectedDate) => {
+                if (event.type === "set" && selectedDate) {
+                    setStartDate(selectedDate);
+                }
+            });
         }
     };
 
-    // when a user select an end date or closes the picker, hide it
-    const onEndDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
-        setShowEndPicker(false);
-        if(selectedDate){
-            setEndDate(selectedDate);
+    // HANDLER TO OPEN END PICKER
+    const handleEndPress = () => {
+        if (Platform.OS === 'ios') {
+            setShowEndIOS(!showEndIOS);
+        } else {
+             openAndroidDateTimePicker(startDate, (event, selectedDate) => {
+                if (event.type === "set" && selectedDate) {
+                    setEndDate(selectedDate);
+                }
+            });
         }
     };
 
@@ -155,7 +234,7 @@ const ManualLogScreen = () => {
 
                 <Text className='text-sm text-gray-500 mb-1'>Start Time</Text>
                 {/* button for picking a date and time */}
-                <TouchableOpacity onPress={() => setShowStartPicker(true)}>
+                <TouchableOpacity onPress={handleStartPress}>
                     {/* style it to look like a dropdown to match the general visuals */}
                     <View className='flex-row border items-center border-gray-300 bg-white rounded-lg px-3 py-3'>
                         <View className='w-6 items-center'>
@@ -169,21 +248,19 @@ const ManualLogScreen = () => {
 
                 </TouchableOpacity>
 
-                {/* picker where you choose date and time. Hidden until showpicker is set true*/}
-                {
-                    showStartPicker && (
-                        <DateTimePicker
-                            value={startDate}
-                            mode='datetime'
-                            display='default'
-                            onChange={onStartDateChange}
-                        />
-                    )
-                }
+                {/* iOS inline picker */}
+                {Platform.OS === 'ios' && showStartIOS && (
+                    <DateTimePicker
+                        value={startDate}
+                        mode='datetime'
+                        display='spinner'
+                        onChange={(event, date) => date && setStartDate(date)}
+                    />
+                )}
 
                 <Text className='text-sm text-gray-500 mb-1'>End Time</Text>
                 {/* button for picking a date and time */}
-                <TouchableOpacity onPress={() => setShowEndPicker(true)}>
+                <TouchableOpacity onPress={handleEndPress}>
                     {/* style it to look like a dropdown to match the general visuals */}
                     <View className='flex-row border items-center border-gray-300 bg-white rounded-lg px-3 py-3'>
                         <View className='w-6 items-center'>
@@ -198,16 +275,15 @@ const ManualLogScreen = () => {
                 </TouchableOpacity>
 
                 {/* picker where you choose date and time. Hidden until showpicker is set true*/}
-                {
-                    showEndPicker && (
-                        <DateTimePicker
-                            value={endDate}
-                            mode='datetime'
-                            display='default'
-                            onChange={onEndDateChange}
-                        />
-                    )
-                }
+                {/* iOS inline picker */}
+                {Platform.OS === 'ios' && showEndIOS && (
+                    <DateTimePicker
+                        value={endDate}
+                        mode='datetime'
+                        display='spinner'
+                        onChange={(event, date) => date && setEndDate(date)}
+                    />
+                )}
             </View>
                 <TripDetailsForm 
 
