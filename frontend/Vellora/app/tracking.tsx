@@ -14,12 +14,15 @@ import { useLocationTracking } from './hooks/useLocationTracking';
 import { useRateOptions } from './hooks/useRateOptions';
 import { useTripData } from './contexts/TripDataContext';
 
+// service import
+import { createTrip, getActiveTrip } from './services/Trips';
+
 const MAPBOX_KEY = process.env.EXPO_PUBLIC_API_KEY_MAPBOX_PUBLIC_ACCESS_TOKEN;
 Mapbox.setAccessToken(`${MAPBOX_KEY}`);
 
 const Tracking = () => {
   // Use trip data context
-  const { tripData, updateTripData } = useTripData();
+  const { tripData, updateTripData, setTripId } = useTripData();
   
   // state variables
   const [notes, setNotes] = useState(tripData.notes);
@@ -97,13 +100,44 @@ const Tracking = () => {
     console.log('STARTING...');
     setIsStarting(true);
 
-    const success = await startTracking();
+    try {
+      const activeTrip = await getActiveTrip();
+      if (activeTrip) {
+        alert('You already have an active trip. Please end it before starting a new one.');
+        setIsStarting(false);
+        return;
+      }
 
-    // check if tracking start unsuccessfu;
-    if(!success) {
+      // PREPARE PAYLOAD FOR CREATETRIP API
+      const tripPayload = {
+        start_address: 'Current Location',
+        purpose: notes || null,
+        vehicle: vehicle || null,
+        rate_customization_id: rate,
+        rate_category_id: type
+      };
+
+      console.log('Creating trip with payload: ', tripPayload);
+
+      const newTrip = await createTrip(tripPayload);
+      console.log('trip create successfully: ', newTrip);
+
+      // store the trip id in the context
+      setTripId(newTrip.id);
+
+      const success = await startTracking();
+
+      // check if tracking start unsuccessfu;
+      if(!success) {
+        setIsStarting(false);
+        alert(errorMessage || 'Failed to start tracking:(');
+      }
+    } catch (error) {
+      console.log('Error creating trip: ', error);
       setIsStarting(false);
-      alert(errorMessage || 'Failed to start tracking:(');
+      alert('Failed to create trip. Please try again');
     }
+
   };
 
   return (

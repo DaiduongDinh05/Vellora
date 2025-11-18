@@ -14,6 +14,9 @@ import EditableNumericDisplay from './components/EditableNumericDisplay';
 import { useRateOptions } from './hooks/useRateOptions';
 import { useTripData } from './contexts/TripDataContext';
 
+//  import service
+import { createManualTrip, createManualTripPayload } from './services/Trips';
+
 const ManualLogScreen = () => {
 
     // use trip data context
@@ -76,49 +79,6 @@ const ManualLogScreen = () => {
         }
     }, [rate, type, tripDistance, rateItems, categoryItems]);
 
-    // // when a user select a start date or closes the picker, hide it
-    // const onStartDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
-
-    //     //  if the user dismissed (cancelled) the picker, hide it
-    //     if (event.type === 'dismissed') {
-    //         setShowStartPicker(false);
-    //         return;
-    //     }
-
-    //     // if the user set a date/time
-    //     if (event.type === 'set' && selectedDate) {
-    //         setShowStartPicker(false);
-    //         setStartDate(selectedDate);
-    //     }
-
-    // };
-
-    // // when a user select an end date or closes the picker, hide it
-    // const onEndDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
-
-    //     // if the user dismissed (cancelled) the picker, hide it
-    //     if (event.type === 'dismissed') {
-    //         setShowEndPicker(false);
-    //         return;
-    //     }
-
-    //     // if the user set a date/time
-    //     if (event.type === 'set' && selectedDate) {
-    //         setShowEndPicker(false);
-    //         setEndDate(selectedDate);
-    //     }
-    // };
-
-
-    // toggle functions for the date pickers
-    // const toggleStartPicker = () => {
-    //     setShowStartPicker(prev => !prev);
-    // };
-
-    // const toggleEndPicker = () => {
-    //     setShowEndPicker(prev => !prev);
-    // };
-
     // OPEN ANDROID PICKER
     const openAndroidDateTimePicker = (
         currentDate: Date,
@@ -167,31 +127,42 @@ const ManualLogScreen = () => {
     };
 
     // add trip to history event handler. TO BE ADJUSTED
-    const handleAddTrip = () => {
+    const handleAddTrip = async () => {
         console.log("Adding trip to history...");
 
-        // manually logged trip data object
-        const manualTripData = {
-            notes,
-            vehicle,
-            type,
-            rate,
-            parking,
-            gas,
-            tolls,
-            startAddress,
-            endAddress,
-            distance: tripDistance,
-            value: tripValue,
-            startTime: startDate.toISOString(),
-            endTime: endDate.toISOString(),
-            isManual: true,                         // flag to identify manual trips
-            timestamp: new Date().toISOString()
-        };
+        try {
+            // validate
+            if (!rate || !type || !tripDistance || parseFloat(tripDistance) <= 0) {
+                alert("please fill in all required fields including distance");
+                return;
+            }
 
-        console.log('Manual trip data to save:', manualTripData);
+            // typed shape  createManualTrip expects
+            const manualTripPayload: createManualTripPayload = {
+                start_address: startAddress?.trim() || "Unknown start location",
+                end_address: endAddress?.trim() || "Unknown end location",
+                started_at: startDate.toISOString(),
+                ended_at: endDate.toISOString(),
+                miles: Number(parseFloat(tripDistance)),
+                geometry: null,
+                rate_customization_id: rate, // these should be UUID strings
+                rate_category_id: type,
+                expenses: [], 
+            };
 
-        router.push('/(tabs)/history');
+            console.log("Creating manual trip with frontend payload:", manualTripPayload);
+
+            // call the service which will map the backend format
+            const newTrip = await createManualTrip(manualTripPayload);
+            console.log("Manual trip created successfully:", newTrip);
+
+            // navigate away
+            router.push("/(tabs)/history");
+
+        } catch (error: any) {
+            console.error("Error creating manual trip: ", error);
+            alert("Failed to create manual trip: " + (error?.message ?? String(error)));
+        }
     };
 
 

@@ -12,12 +12,15 @@ export interface TripData {
     endAddress?: string;
     distance?: string;
     value?: string;
+    tripId?: string;
 }
 
 interface TripDataContextType {
     tripData: TripData;
     updateTripData: (updates: Partial<TripData>) => void;
     resetTripData: () => void;
+    setTripId: (tripId: string) => void;
+    clearTripId: () => void;
 }
 
 const defaultTripData: TripData = {
@@ -31,7 +34,8 @@ const defaultTripData: TripData = {
     startAddress: '',
     endAddress: '',
     distance: '0',
-    value: '0.00'
+    value: '0.00',
+    tripId: undefined
 };
 
 const TripDataContext = createContext<TripDataContextType | undefined>(undefined);
@@ -47,8 +51,16 @@ export const TripDataProvider: React.FC<{ children: ReactNode }> = ({ children }
         setTripData(defaultTripData);
     };
 
+    const setTripId = (tripId: string) => {
+        setTripData(prev => ({ ...prev, tripId }));
+    };
+
+    const clearTripId = () => {
+        setTripData(prev => ({ ...prev, tripId: undefined }));
+    };
+
     return (
-        <TripDataContext.Provider value={{ tripData, updateTripData, resetTripData }}>
+        <TripDataContext.Provider value={{ tripData, updateTripData, resetTripData, setTripId, clearTripId }}>
             {children}
         </TripDataContext.Provider>
     );

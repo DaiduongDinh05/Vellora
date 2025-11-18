@@ -38,23 +38,23 @@ export type Trip = {
 
  // Types for payloads for Backend API calls
 export type createTripPayload = {
-    startAddress: string;
+    start_address: string;
     purpose?: string | null;
     vechicle?: string | null;
-    rateCustomizationId: string;
-    rateCategoryId: string;
+    rate_customization_id: string;
+    rate_category_id: string;
 }
 
 
 export type createManualTripPayload = {
-    startAddress: string;
-    endAddress: string;
-    startedAt: Date;
-    endedAt: Date;
+    start_address: string;
+    end_address: string;
+    started_at: string; // ISO datetime string
+    ended_at: string; // ISO datetime string
     miles: number;
-    geometry?: object | null;
-    rateCustomizationId: string;
-    rateCategoryId: string;
+    geometry?: string | null;   // backend expects a string or null
+    rate_customization_id: string;
+    rate_category_id: string;
     expenses?: Expense[];
 }
 
@@ -117,4 +117,26 @@ export async function createManualTrip(payload: createManualTripPayload, token?:
     });
 
     return handleResponse<Trip>(response);
+}
+
+export async function getActiveTrip(token?: string): Promise<Trip | null> {
+    const authToken = await checkToken();
+
+    const response = await fetch(`${API_BASE_URL}/trips/active`, {
+        method: 'GET',
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`
+        },
+    });
+
+    try {
+        return await handleResponse<Trip>(response);
+    } catch (error) {
+        // if no active trip is found, return null
+        if (error instanceof ApiError && error.status === 404) {
+            return null;
+        }
+        throw error;
+    }
 }
