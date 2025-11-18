@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { View, Text, ActivityIndicator } from "react-native";
-import { router, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams, useSegments } from "expo-router";
 import { tokenStorage } from "../../services/tokenStorage";
+import { handleOAuthCallback } from "../../services/auth";
 
 export default function OAuthCallback() {
 	const params = useLocalSearchParams();
+	const segments = useSegments();
 	const [error, setError] = useState<string | null>(null);
 	const [loading, setLoading] = useState(true);
 
@@ -12,21 +14,42 @@ export default function OAuthCallback() {
 		const processCallback = async () => {
 			try {
 				const accessToken = params.access_token as string;
+				const code = params.code as string;
+				const state = params.state as string;
+				const provider = (params.provider as string) || segments[1] || "google";
 
-				if (!accessToken) {
-					setError("Missing access token.");
-					setLoading(false);
+				if (accessToken) {
+					tokenStorage.setToken(accessToken);
+					const redirect = params.redirect as string;
+					if (redirect) {
+						router.replace(redirect as any);
+					} else {
+						router.replace("/(tabs)");
+					}
 					return;
 				}
 
-				tokenStorage.setToken(accessToken);
+				if (code && state) {
+					const redirectUri = params.redirect_uri as string;
+					const response = await handleOAuthCallback(
+						provider,
+						code,
+						state,
+						redirectUri
+					);
+					tokenStorage.setToken(response.tokens.access_token);
 
-				const redirect = params.redirect as string;
-				if (redirect) {
-					router.replace(redirect as any);
-				} else {
-					router.replace("/(tabs)");
+					const redirect = params.redirect as string;
+					if (redirect) {
+						router.replace(redirect as any);
+					} else {
+						router.replace("/(tabs)");
+					}
+					return;
 				}
+
+				setError("Missing authorization code or access token.");
+				setLoading(false);
 			} catch (err) {
 				setError(err instanceof Error ? err.message : "Authentication failed.");
 				setLoading(false);
@@ -34,7 +57,7 @@ export default function OAuthCallback() {
 		};
 
 		processCallback();
-	}, [params]);
+	}, [params, segments]);
 
 	if (loading) {
 		return (

@@ -9,3 +9,5 @@ env/
 .env
 
 .idea/
+
+ANDROID_OAUTH_SETUP.md
