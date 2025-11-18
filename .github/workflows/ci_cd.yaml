@@ -66,20 +66,20 @@ jobs:
         with:
           node-version: '24'
           cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: frontend/Vellora/package-lock.json
   
       # Add any frontend build/test steps if needed.
       - name: Install Frontend Dependencies
-        working-directory: frontend
+        working-directory: frontend/Vellora
         run: |
           npm ci
 
       - name: Run ESLint
-        working-directory: frontend
+        working-directory: frontend/Vellora
         run: npm run lint
 
       - name: Check TypeScript types
-        working-directory: frontend
+        working-directory: frontend/Vellora
         run: npx tsc --noEmit
   
   regression_tests:

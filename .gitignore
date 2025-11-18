@@ -5,3 +5,7 @@ ENV/
 env/
 .env
 .DS_Store
+
+.env
+
+.idea/

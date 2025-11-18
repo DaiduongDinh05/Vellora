@@ -1,3 +1,4 @@
+from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
@@ -22,7 +23,20 @@ class TripRepo:
         )
         return result.scalar_one()
     
-    async def get(self, trip_id):
+    async def get(self, trip_id: UUID, user_id: UUID = None):
+        query = select(Trip).options(
+            selectinload(Trip.expenses),
+            selectinload(Trip.rate_customization),
+            selectinload(Trip.rate_category),
+        ).where(Trip.id == trip_id)
+        
+        if user_id is not None:
+            query = query.where(Trip.user_id == user_id)
+            
+        result = await self.db.execute(query)
+        return result.scalar_one_or_none()
+    
+    async def get_user_trips(self, user_id: UUID):
         result = await self.db.execute(
             select(Trip)
             .options(
@@ -30,6 +44,19 @@ class TripRepo:
                 selectinload(Trip.rate_customization),
                 selectinload(Trip.rate_category),
             )
-            .where(Trip.id == trip_id)
+            .where(Trip.user_id == user_id)
+            .order_by(Trip.started_at.desc())
+        )
+        return result.scalars().all()
+    
+    async def get_active_trip(self, user_id: UUID):
+        result = await self.db.execute(
+            select(Trip)
+            .options(
+                selectinload(Trip.expenses),
+                selectinload(Trip.rate_customization),
+                selectinload(Trip.rate_category),
+            )
+            .where(Trip.user_id == user_id, Trip.status == "active")
         )
         return result.scalar_one_or_none()
