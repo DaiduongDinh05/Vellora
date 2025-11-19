@@ -6,12 +6,16 @@ import NoteInput from './components/NoteInput';
 import CurrencyInput from './components/CurrencyInput';
 import Button from './components/Button';
 import { useLocationTracking } from './hooks/useLocationTracking';
+import { useTripData } from './contexts/TripDataContext';
 
 const TrackingInAction = () => {
+    // use trip data context
+    const { tripData, updateTripData } = useTripData();
+
     // state variables
-    const [notes, setNotes] = useState('');
-    const [parking, setParking] = useState<string>('');
-    const [gas, setGas] = useState<string>('');
+    const [notes, setNotes] = useState(tripData.notes);
+    const [parking, setParking] = useState<string>(tripData.parking);
+    const [gas, setGas] = useState<string>(tripData.gas);
     const [isStopping, setIsStopping] = useState(false);
     const [displayDistance, setDisplayDistance] = useState(0);
 
@@ -21,10 +25,21 @@ const TrackingInAction = () => {
     // receive values from tracking logic
     const { stopTracking, totalTripDistance } = useLocationTracking();
 
+    // update context when form data changes
+    useEffect(() => {
+        updateTripData({
+            notes,
+            parking,
+            gas
+        });
+    }, [notes, parking, gas]);
+
     // convert meters to miles. updates whenever totaltripDistance changes
     useEffect(() => {
         const miles = (totalTripDistance / 1609.34).toFixed(2);
         setDisplayDistance(parseFloat(miles));
+
+        updateTripData({ distance: miles });
     }, [totalTripDistance]);
 
 
@@ -57,7 +72,7 @@ const TrackingInAction = () => {
                 pathname: '/trackingFinished',
                 params: {
                     distance: '0',
-                    geometry:''
+                    geometry: null
                 }
             });
         }

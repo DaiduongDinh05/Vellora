@@ -198,6 +198,19 @@ export const useLocationTracking = () => {
             // remove trailing semicolon before using coordinates if needed
             if (coordinates.endsWith(';')) coordinates = coordinates.slice(0, -1);
 
+            const coordinatePairs = coordinates.split(';');
+            if (coordinatePairs.length < 2) {
+                console.warn('Not enough coordinates to get trip distance. Need at least 2.');
+                
+                // Reset variables
+                coordinates = '';
+                stationaryCount = 0;
+                recentLocations = [];
+                shouldAutoStop = false;
+
+                return { distance: 0, geometry: null }; // Return empty data
+            }
+            
             // process collected coordinates if provided
             if (coordinates) {
 
