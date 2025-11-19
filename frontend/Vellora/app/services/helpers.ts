@@ -26,6 +26,7 @@ export async function handleResponse<T>(response: Response): Promise<T> {
 	throw new ApiError(message, response.status);
 }
 
+// Function to check the users token
 export async function checkToken() {
 	const authToken = tokenStorage.getToken();
 		if (!authToken) {

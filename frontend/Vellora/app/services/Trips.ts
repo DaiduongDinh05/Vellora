@@ -18,21 +18,20 @@ export enum TripStatus {
 
 export type Trip = {
     id: string;
-    userId: string;
     status: TripStatus;
-    startAddress: string;
-    endAddress?: string;
+    start_address: string;
+    end_address?: string;
     purpose?: string;
-    reimbursementRate?: number | null;
+    reimbursement_rate?: number | null;
     miles?: number | null;
     geometry?: object | null;
-    mileageReimbursementTotal?: number | null;
-    expenseReimbursementTotal?: number | null;
-    startAt: Date;
-    endAt?: Date | undefined;
-    updatedAt: Date;
-    rateCustomizationId: string;
-    rateCategoryId: string;
+    milage_reimbursement_total?: number | null;
+    expense_reimbursement_total?: number | null;
+    start_at: Date;
+    ended_at?: Date | undefined;
+    updated_at: Date;
+    rate_customization_id: string;
+    rate_category_id: string;
     expenses?: Expense[] | null;
 }
 
@@ -155,3 +154,36 @@ export async function endTrip(tripId: string, payload: Partial<Trip>, token?: st
 
     return handleResponse<Trip>(response);
 }
+
+export async function editTrip(trip_id: string, payload: Partial<Trip>, token?: string): Promise<Trip> {
+    const authToken = token || await checkToken();
+
+    const response = await fetch(`${API_BASE_URL}/trips/${trip_id}`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify(payload),
+    });
+
+    return handleResponse<Trip>(response);
+}
+
+export async function cancelTrip(trip_id: string, token?: string): Promise<Trip> {
+    const authToken = token || await checkToken();
+
+    const response = await fetch(`${API_BASE_URL}/trips/${trip_id}/cancel`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`
+        },
+        body: JSON.stringify({
+            trip_id: trip_id
+        })
+    });
+
+    return handleResponse<Trip>(response);
+}
+
