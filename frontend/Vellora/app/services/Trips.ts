@@ -118,3 +118,18 @@ export async function createManualTrip(payload: createManualTripPayload, token?:
 
     return handleResponse<Trip>(response);
 }
+
+export async function endTrip(tripId: string, payload: Partial<Trip>): Promise<Trip> {
+    const authToken = await checkToken();
+
+    const response = await fetch(`${API_BASE_URL}/trips/${tripId}/end`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`
+        },
+        body: JSON.stringify(payload)
+    });
+
+    return handleResponse<Trip>(response);
+}
