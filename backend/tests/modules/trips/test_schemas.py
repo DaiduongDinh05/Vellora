@@ -58,12 +58,12 @@ class TestEndTripDTO:
     def test_end_trip_dto_valid(self):
         dto = EndTripDTO(
             end_address="456 Oak Ave",
-            geometry='{"type":"LineString","coordinates":[[-122.4194,37.7749],[-122.4094,37.7849]]}',
+            geometry={"type":"LineString","coordinates":[[-122.4194,37.7749],[-122.4094,37.7849]]},
             distance_meters=81320.0
         )
 
         assert dto.end_address == "456 Oak Ave"
-        assert dto.geometry == '{"type":"LineString","coordinates":[[-122.4194,37.7749],[-122.4094,37.7849]]}'
+        assert dto.geometry == {"type":"LineString","coordinates":[[-122.4194,37.7749],[-122.4094,37.7849]]}
         assert dto.distance_meters == 81320.0
         assert dto.miles == 50.53
 
@@ -138,7 +138,7 @@ class TestManualCreateTripDTO:
             purpose="Client meeting",
             vehicle="Honda Civic",
             miles=25.5,
-            geometry='{"type":"LineString","coordinates":[[-122.4194,37.7749],[-122.4094,37.7849]]}',
+            geometry={"type":"LineString","coordinates":[[-122.4194,37.7749],[-122.4094,37.7849]]},
             started_at=started_time,
             ended_at=ended_time,
             rate_customization_id=customization_id,

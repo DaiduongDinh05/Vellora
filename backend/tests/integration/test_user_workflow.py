@@ -105,7 +105,7 @@ class TestUserWorkflowIntegration:
         # 7. End the trip
         end_trip_data = {
             "end_address": "456 Oak Ave, Anytown, USA",
-            "geometry": "mock_encrypted_geometry_data_for_end_location",
+            "geometry": {"type":"LineString","coordinates":[[-122.4194,37.7749],[-122.4094,37.7849]]},
             "distance_meters": 41040.0  # 25.5 miles in meters
         }
         
