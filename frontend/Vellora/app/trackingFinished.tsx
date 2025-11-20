@@ -11,6 +11,7 @@ import { vehicleItems  } from '../app/constants/dropdownOptions';
 import GeometryMap from './components/GeometryMap';
 import { useTripData } from './contexts/TripDataContext';
 import { useRateOptions } from './hooks/useRateOptions';
+import { endTrip, TripStatus } from './services/Trips';
 
 const MAPBOX_KEY = process.env.EXPO_PUBLIC_API_KEY_MAPBOX_PUBLIC_ACCESS_TOKEN;
 
@@ -35,11 +36,13 @@ const TrackingFinished = () => {
     const [endAddress, setEndAddress] = useState<string>(tripData.endAddress || 'Loading address...');
     const [tripGeometry, setTripGeometry] = useState<object | null>(null);
     const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
+    const [expenseValue, setExpenseValue] = useState(tripData.gas + tripData.tolls + tripData.parking || '0.00');
 
     // get trip data from navigation params
     const params = useLocalSearchParams();
     const routeDistance = params.distance as string;
     const routeGeometry = params.geometry as string;
+    const tripId = params.id as string;
 
     // initialize router hook for navigation
     const router = useRouter();
@@ -207,26 +210,59 @@ const TrackingFinished = () => {
         }
     }, [rate, tripDistance]);
 
+    // calculate total expense reimursement rate if expenses change
+    useEffect(() => {
+        if (gas || tolls || parking) {
+            let totalGas = parseFloat(gas);
+            let totalTolls = parseFloat(tolls);
+            let totalParking = parseFloat(parking);
+            let totalExpenses = totalGas + totalTolls + totalParking;
+            setExpenseValue(totalExpenses.toString());
+        }
+    }, [gas, tolls, parking]);
+
     // end end trip event handler
-    const handleSaveTrip = () => {
+    const handleSaveTrip = async () => {
         console.log('Saving trip...');
 
+        
         const finalTripData = {
             ...tripData,
-            distance: tripDistance,
-            value: tripValue,
-            startAddress,
-            endAddress,
-            geometry: tripGeometry,
-            timestamp: new Date().toISOString()
+            distance: parseFloat(tripDistance),
+            mileage_reimbursement_total: tripValue,
+            expense_reimsement_total: parseFloat(expenseValue),             // make a way to calculate the expense reimbursement total
+            start_address: startAddress,
+            end_address: endAddress,
+            geometry: tripGeometry,                             // waiting for backend change to accept json
+            end_at: new Date().toISOString(),
+            status: TripStatus.completed
         };
 
         console.log('Final trip data to save: ', finalTripData);
-        resetTripData();
 
+        // Store the Trip
+
+        if (!tripData.tripId) {
+            alert("Unable to save trip: missing trip id.");
+            return;
+        }
+
+        try {
+            const response = await endTrip(tripData.tripId, finalTripData);
+
+            if (!response) {
+                alert("Failed to save trip. Please try again.");
+                return;
+            }
+        } catch (error) {
+            console.error('Error saving trip: ', error);
+            alert("Failed to save trip. Please try again.");
+            return;
+        }
+
+        resetTripData();
         router.push('/(tabs)/history');
     };
-
 
     return (
         <ScreenLayout       // screen layout as the main wrapper

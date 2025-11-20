@@ -11,9 +11,9 @@ export type Expense = {
 }
 
 export enum TripStatus {
-    Active,
-    Completed,
-    Cancelled
+    active,
+    completed,
+    cancelled
 }
 
 export type Trip = {
