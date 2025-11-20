@@ -38,9 +38,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
 	try {
 		const data = JSON.parse(fallback);
 		message = data.detail ?? data.message ?? message;
-	} catch {
-		// ignore json parse issues
-	}
+	} catch {}
 	throw new ApiError(message, response.status);
 }
 
@@ -97,9 +95,14 @@ export type ProviderAuthorizeResponse = {
 };
 
 export async function getProviderAuthorizeUrl(
-	provider: string
+	provider: string,
+	redirect_uri?: string
 ): Promise<ProviderAuthorizeResponse> {
-	const response = await fetch(AUTH_ROUTES.providerAuthorize(provider));
+	const url = new URL(AUTH_ROUTES.providerAuthorize(provider));
+	if (redirect_uri) {
+		url.searchParams.set("redirect_uri", redirect_uri);
+	}
+	const response = await fetch(url.toString());
 	return handleResponse<ProviderAuthorizeResponse>(response);
 }
 
