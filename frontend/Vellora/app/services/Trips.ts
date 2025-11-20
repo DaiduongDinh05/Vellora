@@ -89,15 +89,15 @@ export async function getTrip(id: string, token?: string): Promise<Trip> {
 }
 
 export async function createTrip(payload: createTripPayload, token?: string): Promise<Trip> {
-    const authToken = await checkToken();
+    const authToken = token || await checkToken();
 
-    const response = await fetch(`${API_BASE_URL}/trips`, {
+    const response = await fetch(`${API_BASE_URL}/trips/`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${authToken}`
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(payload), 
     });
 
     return handleResponse<Trip>(response);

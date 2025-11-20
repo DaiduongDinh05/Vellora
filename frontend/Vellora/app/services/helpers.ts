@@ -20,6 +20,7 @@ export async function handleResponse<T>(response: Response): Promise<T> {
 	try {
 		const data = JSON.parse(fallback);
 		message = data.detail ?? data.message ?? message;
+		console.log(message);
 	} catch {
 		// ignore json parse issues
 	}
