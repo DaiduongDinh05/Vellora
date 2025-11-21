@@ -1,0 +1,33 @@
+import { View, Text, Pressable } from "react-native";
+import React from 'react';
+import GeometryMap from "./GeometryMap";
+
+// start address
+// end address
+
+// value - amount of miles
+
+const sampleGeometry: object = {"coordinates": [[-122.061293, 37.332867], [-122.064478, 37.333984], [-122.066543, 37.334406], [-122.068987, 37.334437], [-122.071987, 37.333929], [-122.07274, 37.333793], [-122.075191, 37.333578], [-122.077674, 37.333954], [-122.07982, 37.334892], [-122.082163, 37.336633], [-122.083291, 37.337433]], "type": "LineString"}
+
+
+const TripCard = () => {
+
+    return (
+        <View style={{flex: 1, justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%', flexDirection:'row'}}>
+            <View style={{ height: 150, width: 150, overflow: 'hidden', borderRadius: 8}}>
+                <GeometryMap geometry={sampleGeometry}/>
+            </View>
+            <View>
+                <View> 
+                    <Text>TripCard</Text>
+                </View>
+                <View>
+                    <Text>Value - Distance</Text>
+                </View>
+            </View>
+        </View>
+    )
+}
+
+
+export default TripCard

@@ -1,7 +1,7 @@
 import { View, Text, Pressable, SafeAreaView } from "react-native";
 import { router } from "expo-router";
 
-export default function Index() {
+/* export default function Index() {
 	return (
 		<SafeAreaView
 			style={{
@@ -31,4 +31,4 @@ export default function Index() {
 			</Pressable>
 		</SafeAreaView>
 	);
-}
+} */
