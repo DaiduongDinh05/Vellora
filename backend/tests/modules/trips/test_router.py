@@ -298,7 +298,7 @@ class TestEndTripEndpoint:
         from app.modules.trips.router import end_trip
         
         trip_id = uuid4()
-        body = EndTripDTO(end_address="456 Oak Ave", geometry='{"type":"LineString","coordinates":[[-122.4194,37.7749],[-122.4094,37.7849]]}', distance_meters=81320.0)
+        body = EndTripDTO(end_address="456 Oak Ave", geometry={"type":"LineString","coordinates":[[-122.4194,37.7749],[-122.4094,37.7849]]}, distance_meters=81320.0)
         mock_service.end_trip.return_value = mock_trip
 
         with patch('app.modules.trips.router.TripResponseDTO.model_validate') as mock_validate:
@@ -313,7 +313,7 @@ class TestEndTripEndpoint:
         from app.modules.trips.router import end_trip
         
         trip_id = uuid4()
-        body = EndTripDTO(end_address="", geometry='{"type":"Point","coordinates":[-122.4194,37.7749]}', distance_meters=81320.0)
+        body = EndTripDTO(end_address="", geometry={"type":"Point","coordinates":[-122.4194,37.7749]}, distance_meters=81320.0)
         mock_service.end_trip.side_effect = InvalidTripDataError("End address is required")
 
         with pytest.raises(HTTPException) as exc_info:
@@ -326,7 +326,7 @@ class TestEndTripEndpoint:
         from app.modules.trips.router import end_trip
         
         trip_id = uuid4()
-        body = EndTripDTO(end_address="456 Oak Ave", geometry='{"type":"Polygon","coordinates":[[[-122.4,37.8],[-122.4,37.7],[-122.3,37.7],[-122.3,37.8],[-122.4,37.8]]]}', distance_meters=81320.0)
+        body = EndTripDTO(end_address="456 Oak Ave", geometry={"type":"Polygon","coordinates":[[[-122.4,37.8],[-122.4,37.7],[-122.3,37.7],[-122.3,37.8],[-122.4,37.8]]]}, distance_meters=81320.0)
         mock_service.end_trip.side_effect = TripNotFoundError("Not found")
 
         with pytest.raises(HTTPException) as exc_info:
