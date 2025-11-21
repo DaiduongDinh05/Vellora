@@ -8,6 +8,7 @@ from app.modules.reports.repository import ReportRepository
 from app.modules.reports.data_builder import ReportDataBuilder
 from app.modules.reports.storage import LocalReportStorage
 from app.modules.reports.renderer_fpdf import ReportPDFRenderer
+from app.modules.reports.queue import ReportQueue
 
 
 
@@ -31,6 +32,10 @@ class ReportsService:
 
         created_report = await self.repo.create(self.session, report)
         await self.session.commit()
+         
+        queue = ReportQueue()
+        queue.send(str(created_report.id))
+
         return created_report
 
     async def generate_now(self, report_id: UUID) -> Report:
