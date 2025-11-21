@@ -231,7 +231,7 @@ class TestTripsServiceManualCreateTrip:
             purpose="Business meeting",
             vehicle="Honda Civic",
             miles=25.5,
-            geometry='{"type":"LineString"}',
+            geometry={"type":"LineString"},
             started_at=started_time,
             ended_at=ended_time,
             rate_customization_id=mock_customization.id,
@@ -452,7 +452,7 @@ class TestTripsServiceManualCreateTrip:
             purpose="Business meeting",
             vehicle="Honda Civic",
             miles=25.5,
-            geometry='{"type":"LineString"}',
+            geometry={"type":"LineString"},
             started_at=started_time,
             ended_at=ended_time,
             rate_customization_id=mock_customization.id,
@@ -546,7 +546,7 @@ class TestTripsServiceEndTrip:
     @pytest.mark.asyncio
     async def test_end_trip_success(self, service, trip_repo, mock_trip, user_id):
         trip_id = uuid4()
-        dto = EndTripDTO(end_address="456 Oak Ave", geometry='{"type":"LineString","coordinates":[[-122.4194,37.7749],[-122.4094,37.7849]]}', distance_meters=81320.0)
+        dto = EndTripDTO(end_address="456 Oak Ave", geometry={"type":"LineString","coordinates":[[-122.4194,37.7749],[-122.4094,37.7849]]}, distance_meters=81320.0)
         trip_repo.get.return_value = mock_trip
         trip_repo.save.return_value = mock_trip
 
@@ -562,7 +562,7 @@ class TestTripsServiceEndTrip:
     @pytest.mark.asyncio
     async def test_end_trip_empty_address(self, service, trip_repo, mock_trip, user_id):
         trip_id = uuid4()
-        dto = EndTripDTO(end_address="   ", geometry='{"type":"Point","coordinates":[-122.4194,37.7749]}', distance_meters=81320.0)
+        dto = EndTripDTO(end_address="   ", geometry={"type":"Point","coordinates":[-122.4194,37.7749]}, distance_meters=81320.0)
         trip_repo.get.return_value = mock_trip
 
         with pytest.raises(InvalidTripDataError) as exc_info:
@@ -572,7 +572,7 @@ class TestTripsServiceEndTrip:
     @pytest.mark.asyncio
     async def test_end_trip_already_completed(self, service, trip_repo, mock_trip, user_id):
         trip_id = uuid4()
-        dto = EndTripDTO(end_address="456 Oak Ave", geometry='{"type":"Polygon","coordinates":[[[-122.4,37.8],[-122.4,37.7],[-122.3,37.7],[-122.3,37.8],[-122.4,37.8]]]}', distance_meters=81320.0)
+        dto = EndTripDTO(end_address="456 Oak Ave", geometry={"type":"Polygon","coordinates":[[[-122.4,37.8],[-122.4,37.7],[-122.3,37.7],[-122.3,37.8],[-122.4,37.8]]]}, distance_meters=81320.0)
         mock_trip.status = TripStatus.completed
         trip_repo.get.return_value = mock_trip
 
@@ -583,7 +583,7 @@ class TestTripsServiceEndTrip:
     @pytest.mark.asyncio
     async def test_end_trip_cancelled(self, service, trip_repo, mock_trip, user_id):
         trip_id = uuid4()
-        dto = EndTripDTO(end_address="456 Oak Ave", geometry='{"type":"MultiPoint","coordinates":[[-122.4194,37.7749],[-122.4094,37.7849]]}', distance_meters=81320.0)
+        dto = EndTripDTO(end_address="456 Oak Ave", geometry={"type":"MultiPoint","coordinates":[[-122.4194,37.7749],[-122.4094,37.7849]]}, distance_meters=81320.0)
         mock_trip.status = TripStatus.cancelled
         trip_repo.get.return_value = mock_trip
 
@@ -595,7 +595,7 @@ class TestTripsServiceEndTrip:
     async def test_end_trip_negative_miles(self, service, trip_repo, mock_trip):
         trip_id = uuid4()
         with pytest.raises(ValueError) as exc_info:
-            dto = EndTripDTO(end_address="456 Oak Ave", geometry='{"type":"Point","coordinates":[-122.4194,37.7749]}', distance_meters=-10.5)
+            dto = EndTripDTO(end_address="456 Oak Ave", geometry={"type":"Point","coordinates":[-122.4194,37.7749]}, distance_meters=-10.5)
         assert "Distance must be non-negative" in str(exc_info.value)
 
 
