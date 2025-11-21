@@ -228,12 +228,12 @@ const TrackingFinished = () => {
         
         const finalTripData = {
             ...tripData,
-            distance: parseFloat(tripDistance),
+            distance_meters: parseFloat(tripDistance),
             mileage_reimbursement_total: tripValue,
-            expense_reimsement_total: parseFloat(expenseValue),             // make a way to calculate the expense reimbursement total
+            expense_reimsement_total: parseFloat(expenseValue),
             start_address: startAddress,
             end_address: endAddress,
-            geometry: tripGeometry,                             // waiting for backend change to accept json
+            geometry: tripGeometry,                            
             end_at: new Date().toISOString(),
             status: TripStatus.completed
         };
