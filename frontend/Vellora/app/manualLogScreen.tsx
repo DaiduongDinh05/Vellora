@@ -1,21 +1,39 @@
-import { Text, View, TouchableOpacity } from 'react-native'
-import React, { useState } from 'react'
+import { Text, View, TouchableOpacity, Platform } from 'react-native'
+import React, { useState, useEffect } from 'react'
 import { useRouter } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 
 // component and data imports
-import { vehicleItems, typeItems, rateItems } from '../app/constants/dropdownOptions';
+import { vehicleItems } from '../app/constants/dropdownOptions';
 import ScreenLayout from './components/ScreenLayout';
 import TripDetailsForm from './components/TripDetailsForm';
 import Button from './components/Button';
 import EditableNumericDisplay from './components/EditableNumericDisplay';
+import { useRateOptions } from './hooks/useRateOptions';
+import { useTripData } from './contexts/TripDataContext';
+
+//  import service
+import { createManualTrip, createManualTripPayload } from './services/Trips';
 
 const ManualLogScreen = () => {
 
+    // use trip data context
+    const { tripData, updateTripData, resetTripData } = useTripData();
+
+    // use rate options hook for dynamic rates
+    const { rateItems, categoryItems, loading, error, updateSelectedRate } = useRateOptions();
+
     // state variables
-    const [date, setDate] = useState(new Date());
-    const [showPicker, setShowPicker] = useState(false);
+    const [startDate, setStartDate] = useState(new Date());
+    const [endDate, setEndDate] = useState(new Date());
+    // const [showStartPicker, setShowStartPicker] = useState(false);
+    // const [showEndPicker, setShowEndPicker] = useState(false);
+
+    const [showStartIOS, setShowStartIOS] = useState(false);
+    const [showEndIOS, setShowEndIOS] = useState(false);
+
     const [startAddress, setStartAddress] = useState('');
     const [endAddress, setEndAddress] = useState('');
     const [notes, setNotes] = useState('');
@@ -32,18 +50,119 @@ const ManualLogScreen = () => {
     
     const router = useRouter();
 
-    // when a user select a date or closes the picker, hide it
-    const onDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
-        setShowPicker(false);
-        if(selectedDate){
-            setDate(selectedDate);
+    // handle rate selection to update categories
+    const handleRateChange = (selectedRateId: string | null) => {
+        setRate(selectedRateId);
+        setType(null); // reset category when rate changes
+        updateSelectedRate(selectedRateId);
+    };
+
+    // calculate trip value when rate or distance changes
+    useEffect(() => {
+        if (rate && tripDistance) {
+            // extract the actual numeric value from rateItems
+            const selectedRateItem = rateItems.find(item => item.value === rate);
+            if (selectedRateItem && selectedRateItem.originalRate) {
+
+                // find the selected category's cost per mile
+                const selectedCategory = categoryItems.find(item => item.value === type);
+
+                if (selectedCategory && selectedCategory.originalCategory) {
+
+                    const rateValue = selectedCategory.originalCategory.cost_per_mile;
+                    let distanceValue = parseFloat(tripDistance);
+                    const calculatedValue = (rateValue * distanceValue).toFixed(2);
+                    setTripValue(calculatedValue);
+
+                }
+            }
+        }
+    }, [rate, type, tripDistance, rateItems, categoryItems]);
+
+    // OPEN ANDROID PICKER
+    const openAndroidDateTimePicker = (
+        currentDate: Date,
+        onChange: (event: DateTimePickerEvent, date?: Date) => void
+        ) => {
+        DateTimePickerAndroid.open({
+            value: currentDate,
+            onChange: (event, date) => {
+            if (date) {
+                // first pick date
+                DateTimePickerAndroid.open({
+                value: date,
+                mode: 'time',
+                onChange, // final combined result
+                });
+            }
+            },
+            mode: 'date',
+        });
+    };
+
+    // HANDLER TO OPEN START PICKER
+    const handleStartPress = () => {
+        if (Platform.OS === 'ios') {
+            setShowStartIOS(!showStartIOS);
+        } else {
+            openAndroidDateTimePicker(startDate, (event, selectedDate) => {
+                if (event.type === "set" && selectedDate) {
+                    setStartDate(selectedDate);
+                }
+            });
+        }
+    };
+
+    // HANDLER TO OPEN END PICKER
+    const handleEndPress = () => {
+        if (Platform.OS === 'ios') {
+            setShowEndIOS(!showEndIOS);
+        } else {
+             openAndroidDateTimePicker(startDate, (event, selectedDate) => {
+                if (event.type === "set" && selectedDate) {
+                    setEndDate(selectedDate);
+                }
+            });
         }
     };
 
     // add trip to history event handler. TO BE ADJUSTED
-    const handleAddTrip = () => {
+    const handleAddTrip = async () => {
         console.log("Adding trip to history...");
-        router.push('/(tabs)/history');
+
+        try {
+            // validate
+            if (!rate || !type || !tripDistance || parseFloat(tripDistance) <= 0) {
+                alert("please fill in all required fields including distance");
+                return;
+            }
+
+            // typed shape  createManualTrip expects
+            const manualTripPayload: createManualTripPayload = {
+                start_address: startAddress?.trim() || "Unknown start location",
+                end_address: endAddress?.trim() || "Unknown end location",
+                started_at: startDate.toISOString(),
+                ended_at: endDate.toISOString(),
+                miles: Number(parseFloat(tripDistance)),
+                geometry: null,
+                rate_customization_id: rate, // these should be UUID strings
+                rate_category_id: type,
+                expenses: [], 
+            };
+
+            console.log("Creating manual trip with frontend payload:", manualTripPayload);
+
+            // call the service which will map the backend format
+            const newTrip = await createManualTrip(manualTripPayload);
+            console.log("Manual trip created successfully:", newTrip);
+
+            // navigate away
+            router.push("/(tabs)/history");
+
+        } catch (error: any) {
+            console.error("Error creating manual trip: ", error);
+            alert("Failed to create manual trip: " + (error?.message ?? String(error)));
+        }
     };
 
 
@@ -86,42 +205,40 @@ const ManualLogScreen = () => {
 
                 <Text className='text-sm text-gray-500 mb-1'>Start Time</Text>
                 {/* button for picking a date and time */}
-                <TouchableOpacity onPress={() => setShowPicker(true)}>
+                <TouchableOpacity onPress={handleStartPress}>
                     {/* style it to look like a dropdown to match the general visuals */}
                     <View className='flex-row border items-center border-gray-300 bg-white rounded-lg px-3 py-3'>
                         <View className='w-6 items-center'>
                             <FontAwesome name='calendar' {...iconProps} />
                         </View>
                         <Text style={{fontSize: 16, color: 'black', marginLeft: 10}}>
-                            {date.toLocaleString()}
+                            {startDate.toLocaleString()}
                         </Text>
 
                     </View>
 
                 </TouchableOpacity>
 
-                {/* picker where you choose date and time. Hidden until showpicker is set true*/}
-                {
-                    showPicker && (
-                        <DateTimePicker
-                            value={date}
-                            mode='datetime'
-                            display='default'
-                            onChange={onDateChange}
-                        />
-                    )
-                }
+                {/* iOS inline picker */}
+                {Platform.OS === 'ios' && showStartIOS && (
+                    <DateTimePicker
+                        value={startDate}
+                        mode='datetime'
+                        display='spinner'
+                        onChange={(event, date) => date && setStartDate(date)}
+                    />
+                )}
 
                 <Text className='text-sm text-gray-500 mb-1'>End Time</Text>
                 {/* button for picking a date and time */}
-                <TouchableOpacity onPress={() => setShowPicker(true)}>
+                <TouchableOpacity onPress={handleEndPress}>
                     {/* style it to look like a dropdown to match the general visuals */}
                     <View className='flex-row border items-center border-gray-300 bg-white rounded-lg px-3 py-3'>
                         <View className='w-6 items-center'>
                             <FontAwesome name='calendar' {...iconProps} />
                         </View>
                         <Text style={{fontSize: 16, color: 'black', marginLeft: 10}}>
-                            {date.toLocaleString()}
+                            {endDate.toLocaleString()}
                         </Text>
 
                     </View>
@@ -129,16 +246,15 @@ const ManualLogScreen = () => {
                 </TouchableOpacity>
 
                 {/* picker where you choose date and time. Hidden until showpicker is set true*/}
-                {
-                    showPicker && (
-                        <DateTimePicker
-                            value={date}
-                            mode='datetime'
-                            display='default'
-                            onChange={onDateChange}
-                        />
-                    )
-                }
+                {/* iOS inline picker */}
+                {Platform.OS === 'ios' && showEndIOS && (
+                    <DateTimePicker
+                        value={endDate}
+                        mode='datetime'
+                        display='spinner'
+                        onChange={(event, date) => date && setEndDate(date)}
+                    />
+                )}
             </View>
                 <TripDetailsForm 
 
@@ -146,7 +262,7 @@ const ManualLogScreen = () => {
                     notes={notes} setNotes={setNotes}
                     vehicle={vehicle} setVehicle={setVehicle}
                     type={type} setType={setType}
-                    rate={rate} setRate={setRate}
+                    rate={rate} setRate={handleRateChange}
                     parking={parking} setParking={setParking}
                     gas={gas} setGas={setGas}
                     tolls={tolls} setTolls={setTolls}
@@ -155,7 +271,7 @@ const ManualLogScreen = () => {
 
                     // mock data arrays
                     vehicleItems={vehicleItems}
-                    typeItems={typeItems}
+                    typeItems={categoryItems}
                     rateItems={rateItems}
                     
                 />
