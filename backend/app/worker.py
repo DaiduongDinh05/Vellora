@@ -8,7 +8,7 @@ from app.infra.db import AsyncSessionLocal
 from app.modules.reports.repository import ReportRepository
 from app.modules.reports.service import ReportsService
 
-from app.modules.reports.models import Report
+from app.modules.reports.models import Report, ReportStatus
 from app.modules.trips.models import Trip
 from app.modules.expenses.models import Expense
 from app.modules.users.models import User
@@ -16,6 +16,8 @@ from app.modules.rate_categories.models import RateCategory
 from app.modules.rate_customizations.models import RateCustomization
 from app.modules.auth.models import RefreshToken
 
+VISIBILITY_TIMEOUT = 60 
+MAX_RECEIVE_COUNT = 3 
 
 class ReportWorker:
 
@@ -30,7 +32,8 @@ class ReportWorker:
             response = self.sqs.receive_message(
                 QueueUrl=self.queue_url,
                 MaxNumberOfMessages=1,
-                WaitTimeSeconds=5
+                WaitTimeSeconds=5,
+                VisibilityTimeout=VISIBILITY_TIMEOUT
             )
 
             messages = response.get("Messages", [])
@@ -41,24 +44,44 @@ class ReportWorker:
 
             for message in messages:
                 body = json.loads(message["Body"])
-                print(f"Received message: {body}")
+                receipt = message["ReceiptHandle"]
+                retry_count = int(message.get("Attributes", {}).get("ApproximateReceiveCount", 1))
 
-                await self.process_report(body["report_id"])
+                print(f"Received message: {body} (Attempt {retry_count})")
 
-                self.sqs.delete_message(
-                    QueueUrl=self.queue_url,
-                    ReceiptHandle=message["ReceiptHandle"]
-                )
+                success = await self.process_report(body["report_id"])
 
-                print(f"Deleted message from queue: {body}\n")
+                if success:
+                    self.sqs.delete_message(QueueUrl=self.queue_url, ReceiptHandle=receipt)
+                    print(f"Deleted message from queue: {body}\n")
+                else:
+                    print(f"Worker failed for {body}. Will retry.\n")
+
 
     async def process_report(self, report_id: str):
-        async with AsyncSessionLocal() as session:
-            service = ReportsService(session, ReportRepository())
-            print(f"Generating report for {report_id}...")
-            report = await service.generate_now(report_id)
+        
+        try:
+            async with AsyncSessionLocal() as session:
+                repo = ReportRepository()
+                report = await repo.get_by_id(session, report_id)
 
-            print(f"Report generated: file={report.file_name}")
+                if not report:
+                    print(f"report {report_id} not found. Skipping")
+                    return True
+                
+                if report.status == ReportStatus.completed:
+                    print(f"{report_id} already completed. Skipping")
+                    return True
+
+                service = ReportsService(session, repo)
+
+                print(f"Generating report for {report_id}")
+                await service.generate_now(report_id)
+                print(f"Report generated: file={report.file_name}")
+
+        except Exception as e:
+            print(f"Error generating {report_id}: {e}")
+            return False
 
 
 async def main():

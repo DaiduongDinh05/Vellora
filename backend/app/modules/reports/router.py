@@ -19,7 +19,7 @@ def get_reports_service(db: AsyncSession = Depends(get_db)):
 async def create_report(dto: GenerateReportDTO, user=Depends(get_current_user), service: ReportsService = Depends(get_reports_service)):
     return await service.generate_report(user.id, dto)
 
-@router.post("/{report_id}/generate", response_model=ReportResponse)
-async def generate_now(report_id: UUID,service: ReportsService = Depends(get_reports_service)):
-    report = await service.generate_now(report_id)
-    return ReportResponse.model_validate(report, from_attributes=True)
+# @router.post("/{report_id}/generate", response_model=ReportResponse)
+# async def generate_now(report_id: UUID,service: ReportsService = Depends(get_reports_service)):
+#     report = await service.generate_now(report_id)
+#     return ReportResponse.model_validate(report, from_attributes=True)
