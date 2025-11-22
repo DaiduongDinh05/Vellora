@@ -302,6 +302,9 @@ const TrackingFinished = () => {
 
             <TripDetailsForm 
 
+                // mapbox token
+                mapboxAccessToken={MAPBOX_KEY || ""}
+
                 // state variables
                 notes={notes} setNotes={setNotes}
                 vehicle={vehicle} setVehicle={setVehicle}
