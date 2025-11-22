@@ -137,6 +137,15 @@ const TripDetailsForm: React.FC<TripDtailsFormProps> = (props) => {
                 icon={<FontAwesome name="car" {...iconProps} />}
             />
 
+            {/* render rate dropdown */}
+            <Dropdown 
+                placeholder="Select reimbursement rate"
+                items={props.rateItems}
+                onValueChange={props.setRate}
+                value={props.rate}
+                icon={<FontAwesome name="dollar" {...iconProps} />}
+            />
+            
             {/* render type dropdown */}
             <Dropdown 
                 placeholder="Select type"
@@ -146,14 +155,6 @@ const TripDetailsForm: React.FC<TripDtailsFormProps> = (props) => {
                 icon={<FontAwesome name="list-ul" {...iconProps} />}
             />
 
-            {/* render rate dropdown */}
-            <Dropdown 
-                placeholder="Select reimbursement rate"
-                items={props.rateItems}
-                onValueChange={props.setRate}
-                value={props.rate}
-                icon={<FontAwesome name="dollar" {...iconProps} />}
-            />
         
         </View>
     )
