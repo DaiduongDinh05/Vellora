@@ -13,16 +13,17 @@ const sampleGeometry: object = {"coordinates": [[-122.061293, 37.332867], [-122.
 const TripCard = () => {
 
     return (
-        <View style={{flex: 1, justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%', flexDirection:'row'}}>
-            <View style={{ height: 150, width: 150, overflow: 'hidden', borderRadius: 8}}>
+        <View style={{justifyContent: 'flex-start', alignItems: 'center', width: '100%', height: '20%', flexDirection:'row', borderTopWidth: 2, borderBottomWidth: 2, borderColor: 'gray'}}>
+            <View style={{ height: 125, width: 125, overflow: 'hidden', borderRadius: 10, marginLeft: 30 }}>
                 <GeometryMap geometry={sampleGeometry}/>
             </View>
             <View>
-                <View> 
-                    <Text>TripCard</Text>
+                <View style={{marginBottom: 40, marginLeft: 10, marginTop: 20}}> 
+                    <Text>{'\u2022'} Start</Text>
+                    <Text>{'\u2022'} End</Text>
                 </View>
-                <View>
-                    <Text>Value - Distance</Text>
+                <View style={{marginBottom: 40, marginLeft: 50}}>
+                    <Text style={{color: '#4DBF69'}}>$Value - Distance mi</Text>
                 </View>
             </View>
         </View>
