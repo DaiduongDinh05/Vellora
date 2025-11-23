@@ -1,12 +1,70 @@
-import { View, Text } from 'react-native'
-import React from 'react'
+import { View, Text, ScrollView } from 'react-native'
+import React, { useState, useEffect } from 'react'
 import TripCard from '../components/TripCard'
+import { getTrips, Trip } from '../services/Trips'
+
 
 const history = () => {
+  const [loading, setIsLoading] = useState(true);
+  const [trips, setTrips] = useState<Trip[]>([]);
+  const [error, setError] = useState<unknown | null>(null);
+
+  const handleGetAllTrips = async () => { 
+  try {
+    setIsLoading(true);
+    const response = await getTrips();
+
+    if (!response) {
+      alert("Failed to get trip history. Please try again.");
+      return;
+    }
+
+    setTrips(response);
+    setIsLoading(false);
+
+  } catch (error) {
+    console.error('failed to get trips: ', error);
+    alert("Failed to get trip history. Please try again.");
+    setError(error);
+    return;
+  }
+}
+
+  useEffect(() => {
+    handleGetAllTrips();
+  }, [])
+
+  if (loading) {
+    return (
+      <Text>Loading...</Text>
+    )
+  }
+
+  if (error) {
+    return (
+      <Text>Error</Text>
+    )
+  }
+
   return (
-    <View className="flex-1 justify-center items-center">
-      <TripCard></TripCard>
-    </View>
+    <ScrollView>
+      {trips.length === 0 ? (
+        <Text>No Trips Found.</Text>
+      ) : (
+        <View style={{flex: 1, width:'100%', height: '100%' }}>
+          {trips.map((trip, idx) => (
+            <TripCard
+              key={trip.id ?? idx}
+              geometry={trip.geometry ?? null}
+              start_address={trip.start_address ?? ''}
+              end_address={trip.end_address ?? ''}
+              mileage_reimbursement_total={trip.milage_reimbursement_total ?? 0}
+              distance_meters={trip.miles ?? 0}
+            />
+          ))}
+        </View>
+      )}
+    </ScrollView>
   )
 }
 
