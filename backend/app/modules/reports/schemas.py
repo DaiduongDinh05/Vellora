@@ -32,3 +32,9 @@ class ReportResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class ReportStatusResponse(BaseModel):
+    id: UUID
+    status: ReportStatus
+    file_url: str | None

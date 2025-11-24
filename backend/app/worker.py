@@ -33,7 +33,9 @@ class ReportWorker:
                 QueueUrl=self.queue_url,
                 MaxNumberOfMessages=1,
                 WaitTimeSeconds=5,
-                VisibilityTimeout=VISIBILITY_TIMEOUT
+                VisibilityTimeout=VISIBILITY_TIMEOUT,
+                AttributeNames=['All'],
+                MessageAttributeNames=['All'] 
             )
 
             messages = response.get("Messages", [])
@@ -45,7 +47,7 @@ class ReportWorker:
             for message in messages:
                 body = json.loads(message["Body"])
                 receipt = message["ReceiptHandle"]
-                retry_count = int(message.get("Attributes", {}).get("ApproximateReceiveCount", 1))
+                retry_count = int(message.get("Attributes", {}).get("ApproximateReceiveCount", "1"))
 
                 print(f"Received message: {body} (Attempt {retry_count})")
 
@@ -54,8 +56,9 @@ class ReportWorker:
                 if success:
                     self.sqs.delete_message(QueueUrl=self.queue_url, ReceiptHandle=receipt)
                     print(f"Deleted message from queue: {body}\n")
-                else:
-                    print(f"Worker failed for {body}. Will retry.\n")
+                    continue
+
+                print(f"Worker failed for {body}. Will retry.\n")
 
 
     async def process_report(self, report_id: str):
@@ -66,18 +69,19 @@ class ReportWorker:
                 report = await repo.get_by_id(session, report_id)
 
                 if not report:
-                    print(f"report {report_id} not found. Skipping")
+                    print(f"Report {report_id} not found. Skipping.")
                     return True
-                
+
                 if report.status == ReportStatus.completed:
-                    print(f"{report_id} already completed. Skipping")
+                    print(f"{report_id} already completed — skipping.")
                     return True
 
                 service = ReportsService(session, repo)
 
-                print(f"Generating report for {report_id}")
+                print(f"Generating report for {report_id}...")
                 await service.generate_now(report_id)
-                print(f"Report generated: file={report.file_name}")
+                print(f"Report done: {report.file_name}")
+                return True
 
         except Exception as e:
             print(f"Error generating {report_id}: {e}")

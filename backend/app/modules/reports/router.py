@@ -1,12 +1,12 @@
 from uuid import UUID
-from fastapi import Depends
+from fastapi import Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter
 
 from app.container import get_db
 from app.modules.reports.repository import ReportRepository
 from app.modules.reports.service import ReportsService
-from app.modules.reports.schemas import GenerateReportDTO, ReportResponse
+from app.modules.reports.schemas import GenerateReportDTO, ReportResponse, ReportStatusResponse
 from app.core.dependencies import get_current_user
 
 
@@ -18,6 +18,22 @@ def get_reports_service(db: AsyncSession = Depends(get_db)):
 @router.post("", response_model=ReportResponse)
 async def create_report(dto: GenerateReportDTO, user=Depends(get_current_user), service: ReportsService = Depends(get_reports_service)):
     return await service.generate_report(user.id, dto)
+
+
+#for frontend u might need to poll like every 3 secs or smthn so that the status get updated
+@router.get("/{report_id}/status", response_model=ReportStatusResponse)
+async def check_report_status(report_id: UUID, db: AsyncSession = Depends(get_db)):
+    repo = ReportRepository()
+    report = await repo.get_by_id(db, report_id)
+
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+
+    return ReportStatusResponse(
+        id=report.id,
+        status=report.status,
+        file_url=report.file_url
+    )
 
 # @router.post("/{report_id}/generate", response_model=ReportResponse)
 # async def generate_now(report_id: UUID,service: ReportsService = Depends(get_reports_service)):

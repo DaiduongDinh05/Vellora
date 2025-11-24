@@ -127,6 +127,7 @@ class ReportDataBuilder:
             employee_email=user.email,
             period_start=report.start_date,
             period_end=report.end_date,
+            #will make this timezone friendly later
             generated_at=datetime.utcnow(),
 
             trips=trip_items,
