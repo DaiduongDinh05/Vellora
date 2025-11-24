@@ -66,11 +66,20 @@ class ManualCreateTripDTO(BaseModel):
     rate_category_id: UUID
     expenses: List[CreateExpenseDTO] | None = None 
 
+class TripExpenseReceiptDTO(BaseModel):
+    id: str
+    file_name: str
+    content_type: str
+    size_bytes: int
+    created_at: datetime.datetime
+
+
 class ExpenseResponseDTO(BaseModel):
     id: str
     type: str
     amount: float
     created_at: datetime.datetime
+    receipts: List[TripExpenseReceiptDTO] = []
 
 class TripResponseDTO(BaseModel):
     id: str
@@ -120,6 +129,16 @@ class TripResponseDTO(BaseModel):
                     type=e.type,
                     amount=e.amount,
                     created_at=e.created_at,
+                    receipts=[
+                        TripExpenseReceiptDTO(
+                            id=str(r.id),
+                            file_name=r.file_name,
+                            content_type=r.content_type,
+                            size_bytes=r.size_bytes,
+                            created_at=r.created_at,
+                        )
+                        for r in getattr(e, "receipts", [])
+                    ],
                 )
                 for e in getattr(trip, "expenses", [])
             ],
