@@ -2,6 +2,7 @@ import { View, Text, ScrollView } from 'react-native'
 import React, { useState, useEffect } from 'react'
 import TripCard from '../components/TripCard'
 import { getTrips, Trip } from '../services/Trips'
+import ScreenLayout from '../components/ScreenLayout'
 
 
 const history = () => {
