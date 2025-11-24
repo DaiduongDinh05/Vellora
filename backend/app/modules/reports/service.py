@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 import os
 from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -52,6 +53,8 @@ class ReportsService:
         report.file_name = key
         report.file_url = key
         report.status = ReportStatus.completed
+        report.completed_at = datetime.utcnow()
+        report.expires_at = datetime.utcnow() + timedelta(days=90)
 
         await self.session.commit()
 
