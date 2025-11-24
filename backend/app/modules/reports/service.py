@@ -6,7 +6,7 @@ from app.modules.reports.schemas import GenerateReportDTO
 from app.modules.reports.models import Report, ReportStatus
 from app.modules.reports.repository import ReportRepository
 from app.modules.reports.data_builder import ReportDataBuilder
-from app.modules.reports.storage import LocalReportStorage
+from app.modules.reports.storage import S3ReportStorage
 from app.modules.reports.renderer_fpdf import ReportPDFRenderer
 from app.modules.reports.queue import ReportQueue
 
@@ -20,7 +20,7 @@ class ReportsService:
         self.repo = repo
         self.data_builder = ReportDataBuilder(session)
         self.renderer = ReportPDFRenderer()
-        self.storage = LocalReportStorage()
+        self.storage = S3ReportStorage()
 
     async def generate_report(self, user_id: UUID, dto: GenerateReportDTO) -> Report:
         report = Report(

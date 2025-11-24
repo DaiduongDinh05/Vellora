@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     AWS_REGION: str = "us-east-1"
     LOCALSTACK_ENDPOINT: str = "http://localhost:4566"
     REPORTS_QUEUE: str = "generate-reports-queue"
+    REPORTS_BUCKET: str = "vellora-s3-bucket"
 
     JWT_SECRET_KEY: str = Field(
         default="__change_me_in_prod_please_1234567890abcd",
