@@ -47,10 +47,10 @@ class ReportsService:
 
         pdf_bytes = self.renderer.render(data)
 
-        file_path = self.storage.save(report.id, pdf_bytes)
+        key = self.storage.save(report.id, pdf_bytes)
 
-        report.file_name = os.path.basename(file_path)
-        report.file_url = file_path
+        report.file_name = key
+        report.file_url = key
         report.status = ReportStatus.completed
 
         await self.session.commit()

@@ -18,5 +18,12 @@ class S3ReportStorage:
             ContentType="application/pdf"
         )
 
-        #will return a public or signed URL later for now returns S3 key path
-        return f"s3://{self.bucket}/{file_name}"
+        return file_name
+
+
+    def get_signed_url(self, key: str, expires_in: int = 300) -> str:
+        return self.s3.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": self.bucket, "Key": key},
+            ExpiresIn = expires_in
+        )
