@@ -12,6 +12,7 @@ class ReportStatus(str, enum.Enum):
     processing = "processing"
     completed = "completed"
     failed = "failed"
+    expired = "expired"
 
 class Report(Base):
     __tablename__="reports"

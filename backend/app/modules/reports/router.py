@@ -44,6 +44,11 @@ async def download_report(report_id: UUID, service: ReportsService = Depends(get
 
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")
+    
+    if report.expires_at and report.expires_at < datetime.now(timezone.utc):
+        report.status = ReportStatus.expired
+        await service.session.commit()
+        raise HTTPException(status_code=410, detail="Report expired")
 
     if report.status != ReportStatus.completed:
         raise HTTPException(status_code=400, detail="Report not generated yet")
@@ -58,5 +63,18 @@ async def list_reports(user = Depends(get_current_user),db: AsyncSession = Depen
     repo = ReportRepository()
     reports = await repo.list_for_user(db, user.id)
     reports.sort(key=lambda r: r.requested_at, reverse=True)
-    return [ReportResponse.model_validate(r, from_attributes=True) for r in reports]
+    now = datetime.now(timezone.utc)
+    changed = False
+    for report in reports:
+        if (report.status == ReportStatus.completed and report.expires_at and report.expires_at < now):
+            report.status = ReportStatus.expired
+            changed = True
+
+    if changed:
+        await db.commit()
+
+    return [
+        ReportResponse.model_validate(r, from_attributes=True)
+        for r in reports
+    ]
 
