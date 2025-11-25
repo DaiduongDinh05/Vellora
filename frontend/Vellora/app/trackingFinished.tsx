@@ -41,6 +41,7 @@ const TrackingFinished = () => {
     // get trip data from navigation params
     const params = useLocalSearchParams();
     const routeDistance = params.distance as string;
+    const routeDistanceMeters = params.distance_meters as string;
     const routeGeometry = params.geometry as string;
     const tripId = params.id as string;
 
@@ -102,10 +103,16 @@ const TrackingFinished = () => {
                     let distanceValue = parseFloat(tripDistance);
                     const calculatedValue = (rateValue * distanceValue).toFixed(2);
                     setTripValue(calculatedValue);
+
+                    console.log('Rate:', rate);
+                    console.log('Type:', type);
+                    console.log('Trip Distance:', tripDistance);
+                    console.log('Calculated Value:', calculatedValue);
     
                 }
             }
         }
+        
     }, [rate, type, tripDistance, rateItems, categoryItems]);
 
     // convert coordinates to address using mapbox
@@ -227,12 +234,25 @@ const TrackingFinished = () => {
 
         
         const finalTripData = {
-            ...tripData,
-            distance_meters: parseFloat(tripDistance),
-            mileage_reimbursement_total: tripValue,
-            expense_reimsement_total: parseFloat(expenseValue),
+            notes: notes,
+            vehicle: vehicle,
+
+            rate_customization_id: rate || undefined,
+            rate_category_id: type || undefined,
+
+            parking: parking,
+            gas: gas,
+            tolls: tolls,
+
+            miles: parseFloat(tripDistance),
+            distance_meters: parseFloat(routeDistanceMeters),
+
+            mileage_reimbursement_total: parseFloat(tripValue),
+            expense_reimbursement_total: parseFloat(expenseValue),
+
             start_address: startAddress,
             end_address: endAddress,
+
             geometry: tripGeometry,                            
             end_at: new Date().toISOString(),
             status: TripStatus.completed
