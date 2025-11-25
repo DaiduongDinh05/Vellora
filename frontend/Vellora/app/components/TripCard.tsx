@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         alignContent: 'center',
         width: '100%',
-        height: '20%',
+        height: '10%',
         flexDirection: 'row',
         borderTopWidth: 1.5,
         borderColor: '#b5b5b5',

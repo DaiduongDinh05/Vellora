@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react'
 import TripCard from '../components/TripCard'
 import { getTrips, Trip } from '../services/Trips'
 import ScreenLayout from '../components/ScreenLayout'
+import { SafeAreaView } from 'react-native-safe-area-context'
 
 
 const history = () => {
@@ -48,10 +49,15 @@ const history = () => {
   }
 
   return (
+  <View>
     <ScrollView>
+      <View className='content-center'>
+        <Text className='text-3xl text-primaryPurple font-bold p-6'>History</Text>
+      </View>
       {trips.length === 0 ? (
         <Text>No Trips Found.</Text>
       ) : (
+      
         <View style={{flex: 1, width:'100%', height: '100%' }}>
           {trips.map((trip, idx) => (
             <TripCard
@@ -66,6 +72,7 @@ const history = () => {
         </View>
       )}
     </ScrollView>
+  </View>
   )
 }
 
