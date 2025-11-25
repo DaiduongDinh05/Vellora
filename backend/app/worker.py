@@ -63,9 +63,10 @@ class ReportWorker:
 
     async def process_report(self, report_id: str):
         
+        repo = ReportRepository()
+        
         try:
             async with AsyncSessionLocal() as session:
-                repo = ReportRepository()
                 report = await repo.get_by_id(session, report_id)
 
                 if not report:
@@ -78,12 +79,19 @@ class ReportWorker:
 
                 service = ReportsService(session, repo)
 
+                report.status = ReportStatus.processing
+                await session.commit()
+
                 print(f"Generating report for {report_id}...")
                 await service.generate_now(report_id)
                 print(f"Report done: {report.file_name}")
                 return True
 
         except Exception as e:
+            report = await repo.get_by_id(session, report_id)
+            if report:
+                report.status = ReportStatus.failed
+                await session.commit()
             print(f"Error generating {report_id}: {e}")
             return False
 
