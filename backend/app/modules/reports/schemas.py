@@ -29,6 +29,8 @@ class ReportResponse(BaseModel):
     file_url: str | None
     requested_at: datetime
     completed_at: datetime | None
+    expires_at: datetime | None
+
 
     class Config:
         from_attributes = True

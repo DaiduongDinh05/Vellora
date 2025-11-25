@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from typing import List
 from uuid import UUID
 
@@ -128,7 +128,7 @@ class ReportDataBuilder:
             period_start=report.start_date,
             period_end=report.end_date,
             #will make this timezone friendly later
-            generated_at=datetime.utcnow(),
+            generated_at=datetime.now(timezone.utc),
 
             trips=trip_items,
             expenses=expense_items,

@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from uuid import UUID
 from fastapi import Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -52,7 +53,10 @@ async def download_report(report_id: UUID, service: ReportsService = Depends(get
 
     return {"download_url": signed_url}
 
-# @router.post("/{report_id}/generate", response_model=ReportResponse)
-# async def generate_now(report_id: UUID,service: ReportsService = Depends(get_reports_service)):
-#     report = await service.generate_now(report_id)
-#     return ReportResponse.model_validate(report, from_attributes=True)
+@router.get("/history", response_model=list[ReportResponse])
+async def list_reports(user = Depends(get_current_user),db: AsyncSession = Depends(get_db)):
+    repo = ReportRepository()
+    reports = await repo.list_for_user(db, user.id)
+    reports.sort(key=lambda r: r.requested_at, reverse=True)
+    return [ReportResponse.model_validate(r, from_attributes=True) for r in reports]
+
