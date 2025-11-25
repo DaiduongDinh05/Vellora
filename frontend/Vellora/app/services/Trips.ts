@@ -55,6 +55,11 @@ export type createManualTripPayload = {
     rate_customization_id: string;
     rate_category_id: string;
     expenses?: Expense[];
+    purpose?: string | null;
+    vehicle?: string | null;
+    parking?: number | null;
+    gas?: number | null;
+    tolls?: number | null;
 }
 
 

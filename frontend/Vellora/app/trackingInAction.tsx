@@ -63,6 +63,7 @@ const TrackingInAction = () => {
                 pathname: '/trackingFinished',
                 params: {
                     distance: miles,
+                    distance_meters: tripData.distance.toString(),
                     geometry: JSON.stringify(tripData.geometry)
                 }
             });
@@ -72,6 +73,7 @@ const TrackingInAction = () => {
                 pathname: '/trackingFinished',
                 params: {
                     distance: '0',
+                    distance_meters: '0',
                     geometry: null
                 }
             });
