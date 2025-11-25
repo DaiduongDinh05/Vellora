@@ -64,7 +64,7 @@ const history = () => {
               geometry={trip.geometry ?? null}
               start_address={trip.start_address ?? ''}
               end_address={trip.end_address ?? ''}
-              mileage_reimbursement_total={trip.milage_reimbursement_total ?? 0}
+              mileage_reimbursement_total={trip.mileage_reimbursement_total ?? 0}
               distance_meters={trip.miles ?? 0}
             />
           ))}
