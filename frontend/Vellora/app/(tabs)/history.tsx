@@ -1,4 +1,4 @@
-import { View, Text, ScrollView } from 'react-native'
+import { View, Text, ScrollView, Pressable } from 'react-native'
 import React, { useState, useEffect } from 'react'
 import TripCard from '../components/TripCard'
 import { getTrips, Trip } from '../services/Trips'
@@ -34,7 +34,7 @@ const history = () => {
 
   useEffect(() => {
     handleGetAllTrips();
-  }, [])
+  }, []);
 
   if (loading) {
     return (
@@ -51,13 +51,12 @@ const history = () => {
   return (
   <View>
     <ScrollView>
-      <View className='content-center'>
+      <View style={{alignItems: 'center', justifyContent: 'center', height: 200, backgroundColor: 'white', marginBottom: 10}}>
         <Text className='text-3xl text-primaryPurple font-bold p-6'>History</Text>
       </View>
       {trips.length === 0 ? (
         <Text>No Trips Found.</Text>
       ) : (
-      
         <View style={{flex: 1, width:'100%', height: '100%' }}>
           {trips.map((trip, idx) => (
             <TripCard
