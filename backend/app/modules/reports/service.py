@@ -61,3 +61,31 @@ class ReportsService:
         await self.session.refresh(report)
 
         return report
+    
+    async def retry_report(self, report_id: UUID, user_id: UUID) -> Report:
+        report = await self.repo.get_by_id(self.session, report_id)
+
+        if not report:
+            raise ValueError("Report not found")
+
+        if report.user_id != user_id:
+            raise PermissionError("Not allowed")
+
+        if report.status not in {ReportStatus.failed, ReportStatus.expired}:
+            raise ValueError("Only failed or expired reports can be retried")
+
+        #reset state
+        report.status = ReportStatus.pending
+        report.file_url = None
+        report.file_name = None
+        report.expires_at = None
+        report.completed_at = None
+
+        await self.repo.update(self.session, report)
+        await self.session.commit()
+
+        #requeue
+        queue = ReportQueue()
+        queue.send(str(report.id))
+
+        return report

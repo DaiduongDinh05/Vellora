@@ -78,3 +78,15 @@ async def list_reports(user = Depends(get_current_user),db: AsyncSession = Depen
         for r in reports
     ]
 
+@router.post("/{report_id}/retry", response_model=ReportResponse)
+async def retry_report(report_id: UUID, service: ReportsService = Depends(get_reports_service),user=Depends(get_current_user)):
+    try:
+        report = await service.retry_report(report_id, user.id)
+        return ReportResponse.model_validate(report, from_attributes=True)
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="Not allowed")
+

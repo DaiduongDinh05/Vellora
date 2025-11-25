@@ -29,3 +29,8 @@ class ReportRepository:
             sa.select(Report).where(Report.user_id == user_id)
         )
         return result.scalars().all()
+
+    @staticmethod
+    async def update(session: AsyncSession, report: Report) -> Report:
+        await session.flush()
+        return report
