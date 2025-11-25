@@ -4,10 +4,8 @@ import { fetch } from 'expo/fetch';
 
 
 export type Expense = {
-    id: string;
     type: string;
     amount: number;
-    createdAt: Date;
 }
 
 export enum TripStatus {
