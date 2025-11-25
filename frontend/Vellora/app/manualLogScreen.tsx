@@ -137,6 +137,22 @@ const ManualLogScreen = () => {
                 return;
             }
 
+            // update the context data BEFORE making an API call to ensure the context is up to date
+            updateTripData({
+                notes,
+                vehicle,
+                type,
+                rate,
+                parking: parking.toString(),
+                gas: gas.toString(),
+                tolls: tolls.toString(),
+                startAddress,
+                endAddress,
+                distance: tripDistance,
+                value: tripValue
+            })
+
+
             // typed shape  createManualTrip expects
             const manualTripPayload: createManualTripPayload = {
                 start_address: startAddress?.trim() || "Unknown start location",
@@ -147,7 +163,13 @@ const ManualLogScreen = () => {
                 geometry: null,
                 rate_customization_id: rate, // these should be UUID strings
                 rate_category_id: type,
-                expenses: [], 
+                expenses: [],               // CHANGE THE EXPENSES TO CALCULATE THE SUM OF ALL EXPENSES LIKE PARKING, GAS, TOLLS. THIS EMPTY ARRAY IS HERE TEMPORARILY
+                purpose: notes?.trim() || null,
+                parking: parseFloat(parking) || 0,
+                gas: parseFloat(gas) || 0,
+                tolls: parseFloat(tolls) || 0,
+                vehicle: vehicle || null,
+
             };
 
             console.log("Creating manual trip with frontend payload:", manualTripPayload);
