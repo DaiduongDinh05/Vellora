@@ -10,19 +10,25 @@ from app.modules.reports.data_builder import ReportDataBuilder
 from app.modules.reports.storage import S3ReportStorage
 from app.modules.reports.renderer_fpdf import ReportPDFRenderer
 from app.modules.reports.queue import ReportQueue
+from app.modules.reports.exceptions import (
+    ReportNotFoundError, ReportPermissionError, ReportRateLimitError,
+    ReportSystemLimitError, ReportMaxRetriesError, ReportInvalidStateError,
+    ReportExpiredError, ReportPersistenceError
+)
 
 
 
 class ReportsService:
-    SYSTEM_MAX= 50
+    SYSTEM_MAX = 50
     MAX_RETRY_ATTEMPTS = 3
 
-    def __init__(self, session: AsyncSession, repo: type[ReportRepository]):
+    def __init__(self, session: AsyncSession, repo: ReportRepository, data_builder: ReportDataBuilder | None = None, renderer: ReportPDFRenderer | None = None, storage: S3ReportStorage | None = None,queue: ReportQueue | None = None):
         self.session = session
         self.repo = repo
-        self.data_builder = ReportDataBuilder(session)
-        self.renderer = ReportPDFRenderer()
-        self.storage = S3ReportStorage()
+        self.data_builder = data_builder or ReportDataBuilder(session)
+        self.renderer = renderer or ReportPDFRenderer()
+        self.storage = storage or S3ReportStorage()
+        self.queue = queue or ReportQueue()
 
     async def generate_report(self, user_id: UUID, dto: GenerateReportDTO) -> Report:
         #rate limit stuff. disable when in local dev
@@ -35,18 +41,21 @@ class ReportsService:
             status=ReportStatus.pending,
         )
 
-        created_report = await self.repo.create(self.session, report)
-        await self.session.commit()
-         
-        queue = ReportQueue()
-        queue.send(str(created_report.id))
-
-        return created_report
+        try:
+            created_report = await self.repo.create(self.session, report)
+            await self.session.commit()
+            
+            self.queue.send(str(created_report.id))
+            
+            return created_report
+        except Exception as e:
+            await self.session.rollback()
+            raise ReportPersistenceError("Failed to create report") from e
 
     async def generate_now(self, report_id: UUID) -> Report:
         report = await self.repo.get_by_id(self.session, report_id)
         if not report:
-            raise ValueError("Report not found")
+            raise ReportNotFoundError("Report not found")
 
         data = await self.data_builder.build(report)
 
@@ -73,17 +82,17 @@ class ReportsService:
         report = await self.repo.get_by_id(self.session, report_id)
 
         if not report:
-            raise ValueError("Report not found")
+            raise ReportNotFoundError("Report not found")
 
         if report.user_id != user_id:
-            raise PermissionError("Not allowed")
+            raise ReportPermissionError("Not allowed to retry this report")
 
         if report.status not in {ReportStatus.failed, ReportStatus.expired}:
-            raise ValueError("Only failed or expired reports can be retried")
+            raise ReportInvalidStateError("Only failed or expired reports can be retried")
         
         #rate limiting. disable in local dev
         if report.retry_attempts >= self.MAX_RETRY_ATTEMPTS:
-            raise ValueError("Maximum retry attempts reached for this report")
+            raise ReportMaxRetriesError("Maximum retry attempts reached for this report")
 
         report.retry_attempts += 1
 
@@ -94,14 +103,17 @@ class ReportsService:
         report.expires_at = None
         report.completed_at = None
 
-        await self.repo.update(self.session, report)
-        await self.session.commit()
+        try:
+            await self.repo.update(self.session, report)
+            await self.session.commit()
 
-        #requeue
-        queue = ReportQueue()
-        queue.send(str(report.id))
+            #requeue
+            self.queue.send(str(report.id))
 
-        return report
+            return report
+        except Exception as e:
+            await self.session.rollback()
+            raise ReportPersistenceError("Failed to retry report") from e
     
     async def regenerate_report(self, report_id: UUID, user_id: UUID):
         
@@ -111,42 +123,49 @@ class ReportsService:
         report = await self.repo.get_by_id(self.session, report_id)
 
         if not report:
-            raise ValueError("Report not found")
+            raise ReportNotFoundError("Report not found")
 
         if report.user_id != user_id:
-            raise PermissionError("Not allowed")
+            raise ReportPermissionError("Not allowed to regenerate this report")
 
         if report.status not in {ReportStatus.completed, ReportStatus.expired}:
-            raise ValueError("Only completed or expired reports can be regenerated")
+            raise ReportInvalidStateError("Only completed or expired reports can be regenerated")
         
         #rate limiting. disable in local dev
         if report.retry_attempts >= self.MAX_RETRY_ATTEMPTS:
-            raise ValueError("Maximum attempts reached for this report")
+            raise ReportMaxRetriesError("Maximum attempts reached for this report")
 
         #if file still exists in storage then try to sign it
         if report.file_name:
             if self.storage.exists(report.file_name):
+                now = datetime.now(timezone.utc)
+                report.expires_at = now + timedelta(days=90)
+                await self.session.commit()
+                
                 url = self.storage.get_signed_url(report.file_name)
                 return {
                     "status": "available",
                     "download_url": url
                 }
 
-        #i file missing then regenerate
-        report.status = ReportStatus.pending
-        report.file_url = None
-        report.file_name = None
-        report.expires_at = None
-        report.completed_at = None
-        report.retry_attempts += 1
+        try:
+            #if file missing then regenerate
+            report.status = ReportStatus.pending
+            report.file_url = None
+            report.file_name = None
+            report.expires_at = None
+            report.completed_at = None
+            report.retry_attempts += 1
 
-        await self.repo.update(self.session, report)
-        await self.session.commit()
+            await self.repo.update(self.session, report)
+            await self.session.commit()
 
-        queue = ReportQueue()
-        queue.send(str(report.id))
+            self.queue.send(str(report.id))
 
-        return {"status": "regenerating"}
+            return {"status": "regenerating"}
+        except Exception as e:
+            await self.session.rollback()
+            raise ReportPersistenceError("Failed to regenerate report") from e
     
     async def validate_rate_limit(self, user_id: UUID):
         one_minute_ago = datetime.now(timezone.utc) - timedelta(minutes=1)
@@ -165,10 +184,10 @@ class ReportsService:
         )
 
         if recent_count >= 1:
-            raise ValueError("Too many requests please try again in a minute")
+            raise ReportRateLimitError("Too many requests please try again in a minute")
 
         if daily_count >= 5:
-            raise ValueError("Daily report limit reached")
+            raise ReportRateLimitError("Daily report limit reached")
         
     async def validate_global_limit(self):
         pending_count = await self.session.scalar(
@@ -178,4 +197,56 @@ class ReportsService:
         )
 
         if pending_count >= self.SYSTEM_MAX:
-            raise ValueError("System busy please try again later.")
+            raise ReportSystemLimitError("System busy please try again later.")
+
+    async def get_report_status(self, report_id: UUID) -> Report:
+        report = await self.repo.get_by_id(self.session, report_id)
+        if not report:
+            raise ReportNotFoundError("Report not found")
+        return report
+
+    async def get_download_url(self, report_id: UUID, user_id: UUID) -> str:
+        report = await self.repo.get_by_id(self.session, report_id)
+        
+        if not report:
+            raise ReportNotFoundError("Report not found")
+            
+        if report.user_id != user_id:
+            raise ReportPermissionError("Not allowed to access this report")
+        
+        # Check if expired
+        now = datetime.now(timezone.utc)
+        if report.expires_at and report.expires_at < now:
+            report.status = ReportStatus.expired
+            await self.session.commit()
+            raise ReportExpiredError("Report expired please regenerate")
+
+        if report.status != ReportStatus.completed:
+            raise ReportInvalidStateError("Report not generated yet")
+
+        #check if file still exists in storage
+        if not self.storage.exists(report.file_name):
+            report.status = ReportStatus.expired
+            await self.session.commit()
+            raise ReportExpiredError("Report no longer available and must be regenerated")
+
+        return self.storage.get_signed_url(report.file_name)
+
+    async def list_user_reports(self, user_id: UUID) -> list[Report]:
+        reports = await self.repo.list_for_user(self.session, user_id)
+        reports.sort(key=lambda r: r.requested_at, reverse=True)
+        
+        now = datetime.now(timezone.utc)
+        changed = False
+        
+        for report in reports:
+            if (report.status == ReportStatus.completed 
+                and report.expires_at 
+                and report.expires_at < now):
+                report.status = ReportStatus.expired
+                changed = True
+
+        if changed:
+            await self.session.commit()
+
+        return reports

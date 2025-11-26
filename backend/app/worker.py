@@ -68,11 +68,14 @@ class ReportWorker:
                 print(f"Worker failed for {body}. Will retry.\n")
 
     async def mark_failed(self, session, report_id):
-        repo = ReportRepository()
-        report = await repo.get_by_id(session, report_id)
-        if report:
-            report.status = ReportStatus.failed
-            await session.commit()
+        try:
+            repo = ReportRepository()
+            report = await repo.get_by_id(session, report_id)
+            if report:
+                report.status = ReportStatus.failed
+                await session.commit()
+        except Exception as e:
+            print(f"Error marking report {report_id} as failed: {e}")
 
     async def process_report(self, report_id: str):
         
@@ -90,7 +93,7 @@ class ReportWorker:
                     print(f"{report_id} already completed - skipping.")
                     return True
 
-                service = ReportsService(session, repo)
+                service = ReportsService(session, repo, None, None, None, None)
 
                 report.status = ReportStatus.processing
                 await session.commit()
@@ -101,10 +104,12 @@ class ReportWorker:
                 return True
 
         except Exception as e:
-            report = await repo.get_by_id(session, report_id)
-            if report:
-                report.status = ReportStatus.failed
-                await session.commit()
+            try:
+                async with AsyncSessionLocal() as session:
+                    await self.mark_failed(session, report_id)
+            except Exception as commit_error:
+                print(f"Error marking report {report_id} as failed: {commit_error}")
+                
             print(f"Error generating {report_id}: {e}")
             return False
 

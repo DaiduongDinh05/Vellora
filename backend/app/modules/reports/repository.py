@@ -4,33 +4,27 @@ import sqlalchemy as sa
 from app.modules.reports.models import Report
 from sqlalchemy.orm import selectinload
 
-#im not committing inside the repo so the service layer can control the transaction.
-# which should prevent partial writes and should keep things flexible for background jobs, retries and rollback
 
 class ReportRepository:
 
-    @staticmethod
-    async def create(session: AsyncSession, report: Report) -> Report:
+    async def create(self, session: AsyncSession, report: Report) -> Report:
         session.add(report)
         await session.flush()
         return report
 
-    @staticmethod
-    async def get_by_id(session: AsyncSession, report_id: UUID) -> Report | None:
+    async def get_by_id(self, session: AsyncSession, report_id: UUID) -> Report | None:
         result = await session.execute(
             sa.select(Report).where(Report.id == report_id)
             .options(selectinload(Report.user))
         )
         return result.scalar_one_or_none()
 
-    @staticmethod
-    async def list_for_user(session: AsyncSession, user_id: UUID) -> list[Report]:
+    async def list_for_user(self, session: AsyncSession, user_id: UUID) -> list[Report]:
         result = await session.execute(
             sa.select(Report).where(Report.user_id == user_id)
         )
-        return result.scalars().all()
+        return list(result.scalars().all())
 
-    @staticmethod
-    async def update(session: AsyncSession, report: Report) -> Report:
+    async def update(self, session: AsyncSession, report: Report) -> Report:
         await session.flush()
         return report
