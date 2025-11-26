@@ -20,7 +20,10 @@ def get_reports_service(db: AsyncSession = Depends(get_db)):
 
 @router.post("", response_model=ReportResponse)
 async def create_report(dto: GenerateReportDTO, user=Depends(get_current_user), service: ReportsService = Depends(get_reports_service)):
-    return await service.generate_report(user.id, dto)
+    try:
+        return await service.generate_report(user.id, dto)
+    except ValueError as e:
+        raise HTTPException(status_code=429, detail=str(e))
 
 
 #for frontend u might need to poll like every 3 secs or smthn so that the status get updated

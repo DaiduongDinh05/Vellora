@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta, timezone
-import os
 from uuid import UUID
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from fpdf import FPDF
+import sqlalchemy as sa
 from app.modules.reports.schemas import GenerateReportDTO
 from app.modules.reports.models import Report, ReportStatus
 from app.modules.reports.repository import ReportRepository
@@ -14,7 +14,7 @@ from app.modules.reports.queue import ReportQueue
 
 
 class ReportsService:
-
+    SYSTEM_MAX= 50
 
     def __init__(self, session: AsyncSession, repo: type[ReportRepository]):
         self.session = session
@@ -24,6 +24,9 @@ class ReportsService:
         self.storage = S3ReportStorage()
 
     async def generate_report(self, user_id: UUID, dto: GenerateReportDTO) -> Report:
+        #rate limit stuff. disable when in local dev
+        await self.validate_global_limit()
+        await self.validate_rate_limit(user_id)
         report = Report(
             user_id=user_id,
             start_date=dto.start_date,
@@ -125,3 +128,35 @@ class ReportsService:
         queue.send(str(report.id))
 
         return {"status": "regenerating"}
+    
+    async def validate_rate_limit(self, user_id: UUID):
+        two_minutes_ago = datetime.now(timezone.utc) - timedelta(minutes=1)
+        today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+
+        recent_count = await self.session.scalar(
+            select(func.count(Report.id))
+            .where(Report.user_id == user_id)
+            .where(Report.requested_at > two_minutes_ago)
+        )
+
+        daily_count = await self.session.scalar(
+            select(func.count(Report.id))
+            .where(Report.user_id == user_id)
+            .where(Report.requested_at > today_start)
+        )
+
+        if recent_count >= 1:
+            raise ValueError("Too many requests please try again in a minute")
+
+        if daily_count >= 5:
+            raise ValueError("Daily report limit reached")
+        
+    async def validate_global_limit(self):
+        pending_count = await self.session.scalar(
+            sa.select(sa.func.count(Report.id)).where(
+                Report.status.in_([ReportStatus.pending, ReportStatus.processing])
+            )
+        )
+
+        if pending_count >= self.SYSTEM_MAX:
+            raise ValueError("System busy please try again later.")
