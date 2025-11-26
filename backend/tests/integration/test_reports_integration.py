@@ -2,7 +2,7 @@ import pytest
 from uuid import uuid4, UUID
 from datetime import date, datetime, timezone, timedelta
 from httpx import AsyncClient
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, AsyncMock
 
 from app.modules.users.models import User, UserRole
 from app.modules.trips.models import Trip, TripStatus
@@ -11,6 +11,35 @@ from app.modules.rate_categories.models import RateCategory
 from app.modules.rate_customizations.models import RateCustomization
 from app.modules.reports.models import Report, ReportStatus
 from tests.modules.auth.test_helpers import register, login
+
+
+@pytest.fixture
+def mock_aws_services():
+    """Mock AWS services to prevent LocalStack dependencies"""
+    with patch('app.modules.reports.storage.get_s3_client') as mock_s3_client, \
+         patch('app.modules.reports.queue.get_sqs_client') as mock_sqs_client, \
+         patch('app.aws_client.get_s3_client') as mock_aws_s3, \
+         patch('app.aws_client.get_sqs_client') as mock_aws_sqs:
+        
+        # Mock S3 client
+        s3_mock = MagicMock()
+        s3_mock.put_object.return_value = {'ETag': 'mock-etag'}
+        s3_mock.head_object.return_value = {'ContentLength': 1024}
+        s3_mock.generate_presigned_url.return_value = 'http://localhost/mock-download-url'
+        mock_s3_client.return_value = s3_mock
+        mock_aws_s3.return_value = s3_mock
+        
+        # Mock SQS client  
+        sqs_mock = MagicMock()
+        sqs_mock.get_queue_url.return_value = {'QueueUrl': 'http://localhost/mock-queue'}
+        sqs_mock.send_message.return_value = {'MessageId': 'mock-message-id'}
+        mock_sqs_client.return_value = sqs_mock
+        mock_aws_sqs.return_value = sqs_mock
+        
+        yield {
+            's3': s3_mock,
+            'sqs': sqs_mock
+        }
 
 
 @pytest.mark.integration 
@@ -98,142 +127,116 @@ class TestReportsIntegration:
         return trip, expenses
 
     async def test_complete_report_generation_workflow(
-        self, client: AsyncClient, authenticated_user, sample_trip_data
+        self, client: AsyncClient, authenticated_user, sample_trip_data, mock_aws_services
     ):
         headers, user_id = authenticated_user
         trip, expenses = sample_trip_data
         
-        mock_storage = MagicMock()
-        mock_storage.save.return_value = "report_123.pdf"
-        mock_storage.exists.return_value = True
-        mock_storage.get_signed_url.return_value = "http://example.com/download"
+        # 1. Create a report request
+        report_data = {
+            "start_date": "2024-01-01",
+            "end_date": "2024-01-31"
+        }
         
-        mock_queue = MagicMock()
+        create_response = await client.post(
+            "/api/v1/reports",
+            json=report_data,
+            headers=headers
+        )
+        assert create_response.status_code == 200
         
-        with patch('app.modules.reports.router.S3ReportStorage', return_value=mock_storage), \
-             patch('app.modules.reports.router.ReportQueue', return_value=mock_queue):
-            
-            # 1. Create a report request
-            report_data = {
-                "start_date": "2024-01-01",
-                "end_date": "2024-01-31"
-            }
-            
-            create_response = await client.post(
-                "/api/v1/reports",
-                json=report_data,
-                headers=headers
-            )
-            assert create_response.status_code == 200
-            
-            report = create_response.json()
-            report_id = report["id"]
-            assert report["status"] == "pending"
-            assert mock_queue.send.called
-            
-            # 2. Check report status
-            status_response = await client.get(
-                f"/api/v1/reports/{report_id}/status",
-                headers=headers
-            )
-            assert status_response.status_code == 200
-            
-            status_data = status_response.json()
-            assert status_data["id"] == report_id
-            assert status_data["status"] == "pending"
-            
-            # 3. Simulate report processing by updating status directly
-            with patch('app.modules.reports.service.ReportsService.generate_now') as mock_generate:
-                # Simulate successful processing
-                processing_response = await client.get(
-                    f"/api/v1/reports/{report_id}/status",
-                    headers=headers
-                )
-                assert processing_response.status_code == 200
-            
-            # 4. List user reports
-            history_response = await client.get(
-                "/api/v1/reports/history",
-                headers=headers
-            )
-            assert history_response.status_code == 200
-            
-            reports_list = history_response.json()
-            assert len(reports_list) >= 1
-            assert any(r["id"] == report_id for r in reports_list)
+        report = create_response.json()
+        report_id = report["id"]
+        assert report["status"] == "pending"
+        
+        # Verify SQS message was sent
+        assert mock_aws_services['sqs'].send_message.called
+        
+        # 2. Check report status
+        status_response = await client.get(
+            f"/api/v1/reports/{report_id}/status",
+            headers=headers
+        )
+        assert status_response.status_code == 200
+        
+        status_data = status_response.json()
+        assert status_data["id"] == report_id
+        assert status_data["status"] == "pending"
+        
+        # 3. List user reports
+        history_response = await client.get(
+            "/api/v1/reports/history",
+            headers=headers
+        )
+        assert history_response.status_code == 200
+        
+        reports_list = history_response.json()
+        assert len(reports_list) >= 1
+        assert any(r["id"] == report_id for r in reports_list)
 
     async def test_report_retry_workflow(
-        self, client: AsyncClient, authenticated_user, test_db_session
+        self, client: AsyncClient, authenticated_user, test_db_session, mock_aws_services
     ):
         headers, user_id = authenticated_user
         
-        with patch('app.modules.reports.storage.S3ReportStorage'), \
-             patch('app.modules.reports.queue.ReportQueue') as mock_queue_class:
-            
-            mock_queue = MagicMock()
-            mock_queue_class.return_value = mock_queue
-            
-            # Create a failed report directly in the database
-            failed_report = Report(
-                id=uuid4(),
-                user_id=UUID(user_id) if isinstance(user_id, str) else user_id,
-                start_date=date(2024, 1, 1),
-                end_date=date(2024, 1, 31),
-                status=ReportStatus.failed,
-                retry_attempts=1
-            )
-            test_db_session.add(failed_report)
-            await test_db_session.commit()
-            await test_db_session.refresh(failed_report)
-            
-            # Retry the failed report
-            retry_response = await client.post(
-                f"/api/v1/reports/{failed_report.id}/retry",
-                headers=headers
-            )
-            # Could be successful, rate limited, or not found (security)
-            assert retry_response.status_code in [200, 404, 429]
-            
-            if retry_response.status_code == 200:
-                retried_report = retry_response.json()
-                assert retried_report["status"] == "pending"
-                assert mock_queue.send.called
+        # Create a failed report directly in the database
+        failed_report = Report(
+            id=uuid4(),
+            user_id=UUID(user_id) if isinstance(user_id, str) else user_id,
+            start_date=date(2024, 1, 1),
+            end_date=date(2024, 1, 31),
+            status=ReportStatus.failed,
+            retry_attempts=1
+        )
+        test_db_session.add(failed_report)
+        await test_db_session.commit()
+        await test_db_session.refresh(failed_report)
+        
+        # Retry the failed report
+        retry_response = await client.post(
+            f"/api/v1/reports/{failed_report.id}/retry",
+            headers=headers
+        )
+        # Could be successful, rate limited, or not found (security)
+        assert retry_response.status_code in [200, 404, 429]
+        
+        if retry_response.status_code == 200:
+            retried_report = retry_response.json()
+            assert retried_report["status"] == "pending"
+            assert mock_aws_services['sqs'].send_message.called
 
     async def test_report_rate_limiting(
-        self, client: AsyncClient, authenticated_user
+        self, client: AsyncClient, authenticated_user, mock_aws_services
     ):
         """Test report rate limiting functionality"""
         headers, user_id = authenticated_user
         
-        with patch('app.modules.reports.storage.S3ReportStorage'), \
-             patch('app.modules.reports.queue.ReportQueue'):
-            
-            report_data = {
-                "start_date": "2024-01-01", 
-                "end_date": "2024-01-31"
-            }
-            
-            # First request (could be rate limited immediately if limits are strict)
-            first_response = await client.post(
+        report_data = {
+            "start_date": "2024-01-01", 
+            "end_date": "2024-01-31"
+        }
+        
+        # First request (could be rate limited immediately if limits are strict)
+        first_response = await client.post(
+            "/api/v1/reports",
+            json=report_data,
+            headers=headers
+        )
+        # Accept either success or rate limit
+        assert first_response.status_code in [200, 429]
+        
+        # Second request within a minute should be rate limited if first succeeded
+        if first_response.status_code == 200:
+            second_response = await client.post(
                 "/api/v1/reports",
                 json=report_data,
                 headers=headers
             )
-            # Accept either success or rate limit
-            assert first_response.status_code in [200, 429]
-            
-            # Second request within a minute should be rate limited if first succeeded
-            if first_response.status_code == 200:
-                second_response = await client.post(
-                    "/api/v1/reports",
-                    json=report_data,
-                    headers=headers
-                )
-                assert second_response.status_code == 429
-                assert "Too many requests" in second_response.json()["detail"]
+            assert second_response.status_code == 429
+            assert "Too many requests" in second_response.json()["detail"]
 
     async def test_report_permissions(
-        self, client: AsyncClient, test_db_session
+        self, client: AsyncClient, test_db_session, mock_aws_services
     ):
         # Create two users
         email1, email2 = "user1@example.com", "user2@example.com"
@@ -253,54 +256,43 @@ class TestReportsIntegration:
         user2_id = login2_response.json()["user"]["id"]
         headers2 = {"Authorization": f"Bearer {user2_token}"}
         
-        with patch('app.modules.reports.storage.S3ReportStorage'), \
-             patch('app.modules.reports.queue.ReportQueue'):
-            
-            # User1 creates a report
-            report_data = {
-                "start_date": "2024-01-01",
-                "end_date": "2024-01-31"
-            }
-            
-            create_response = await client.post(
-                "/api/v1/reports",
-                json=report_data,
-                headers=headers1
-            )
-            assert create_response.status_code == 200
-            report_id = create_response.json()["id"]
-            
-            # User2 tries to access User1's report - should fail
-            access_response = await client.get(
-                f"/api/v1/reports/{report_id}/status",
-                headers=headers2
-            )
-            # This will actually succeed in getting status since we don't have user validation in get_report_status
-            # Let's test download permission instead
-            
-            # Create a completed report for User1
-            completed_report = Report(
-                id=uuid4(),
-                user_id=UUID(user1_id) if isinstance(user1_id, str) else user1_id,
-                start_date=date(2024, 1, 1),
-                end_date=date(2024, 1, 31),
-                status=ReportStatus.completed,
-                file_name="test-report.pdf"
-            )
-            test_db_session.add(completed_report)
-            await test_db_session.commit()
-            await test_db_session.refresh(completed_report)
-            
-            # User2 tries to download User1's report - should fail
-            download_response = await client.get(
-                f"/api/v1/reports/{completed_report.id}/download",
-                headers=headers2
-            )
-            # Should be 403 forbidden or 404 not found (both are acceptable for security)
-            assert download_response.status_code in [403, 404]
+        # User1 creates a report
+        report_data = {
+            "start_date": "2024-01-01",
+            "end_date": "2024-01-31"
+        }
+        
+        create_response = await client.post(
+            "/api/v1/reports",
+            json=report_data,
+            headers=headers1
+        )
+        assert create_response.status_code == 200
+        report_id = create_response.json()["id"]
+        
+        # Create a completed report for User1
+        completed_report = Report(
+            id=uuid4(),
+            user_id=UUID(user1_id) if isinstance(user1_id, str) else user1_id,
+            start_date=date(2024, 1, 1),
+            end_date=date(2024, 1, 31),
+            status=ReportStatus.completed,
+            file_name="test-report.pdf"
+        )
+        test_db_session.add(completed_report)
+        await test_db_session.commit()
+        await test_db_session.refresh(completed_report)
+        
+        # User2 tries to download User1's report - should fail
+        download_response = await client.get(
+            f"/api/v1/reports/{completed_report.id}/download",
+            headers=headers2
+        )
+        # Should be 403 forbidden or 404 not found (both are acceptable for security)
+        assert download_response.status_code in [403, 404]
 
     async def test_report_with_real_data_calculation(
-        self, client: AsyncClient, authenticated_user, test_db_session
+        self, client: AsyncClient, authenticated_user, test_db_session, mock_aws_services
     ):
         """Test report generation with actual trip and expense data"""
         headers, user_id_str = authenticated_user
@@ -364,36 +356,30 @@ class TestReportsIntegration:
         
         await test_db_session.commit()
         
-        with patch('app.modules.reports.storage.S3ReportStorage') as mock_storage_class, \
-             patch('app.modules.reports.queue.ReportQueue'):
+        # Generate report for January 2024
+        report_data = {
+            "start_date": "2024-01-01",
+            "end_date": "2024-01-31"
+        }
+        
+        create_response = await client.post(
+            "/api/v1/reports",
+            json=report_data,
+            headers=headers
+        )
+        # Could be successful or rate limited from previous tests
+        assert create_response.status_code in [200, 429]
+        
+        if create_response.status_code == 200:
+            report = create_response.json()
             
-            mock_storage = MagicMock()
-            mock_storage_class.return_value = mock_storage
-            
-            # Generate report for January 2024
-            report_data = {
-                "start_date": "2024-01-01",
-                "end_date": "2024-01-31"
-            }
-            
-            create_response = await client.post(
-                "/api/v1/reports",
-                json=report_data,
-                headers=headers
-            )
-            # Could be successful or rate limited from previous tests
-            assert create_response.status_code in [200, 429]
-            
-            if create_response.status_code == 200:
-                report = create_response.json()
-                
-                # Verify report includes the date range
-                assert report["start_date"] == "2024-01-01"
-                assert report["end_date"] == "2024-01-31"
-                assert report["status"] == "pending"
+            # Verify report includes the date range
+            assert report["start_date"] == "2024-01-01"
+            assert report["end_date"] == "2024-01-31"
+            assert report["status"] == "pending"
 
     async def test_invalid_date_range(
-        self, client: AsyncClient, authenticated_user
+        self, client: AsyncClient, authenticated_user, mock_aws_services
     ):
         """Test report creation with invalid date range"""
         headers, user_id = authenticated_user
@@ -414,7 +400,7 @@ class TestReportsIntegration:
         error_detail = response.json()["detail"]
         assert any("end_date cannot be earlier than start_date" in str(err) for err in error_detail)
 
-    async def test_unauthenticated_access(self, client: AsyncClient):
+    async def test_unauthenticated_access(self, client: AsyncClient, mock_aws_services):
         """Test that unauthenticated users cannot access reports endpoints"""
         
         # Try to create report without authentication
