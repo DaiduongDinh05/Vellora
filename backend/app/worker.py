@@ -50,6 +50,13 @@ class ReportWorker:
                 retry_count = int(message.get("Attributes", {}).get("ApproximateReceiveCount", "1"))
 
                 print(f"Received message: {body} (Attempt {retry_count})")
+                
+                if retry_count >= MAX_RECEIVE_COUNT:
+                    print(f"Max retries reached for {body['report_id']}. Marking as failed.")
+                    async with AsyncSessionLocal() as session:
+                        await self.mark_failed(session, body["report_id"])
+                    self.sqs.delete_message(QueueUrl=self.queue_url, ReceiptHandle=receipt)
+                    continue
 
                 success = await self.process_report(body["report_id"])
 
@@ -60,11 +67,17 @@ class ReportWorker:
 
                 print(f"Worker failed for {body}. Will retry.\n")
 
+    async def mark_failed(self, session, report_id):
+        repo = ReportRepository()
+        report = await repo.get_by_id(session, report_id)
+        if report:
+            report.status = ReportStatus.failed
+            await session.commit()
 
     async def process_report(self, report_id: str):
         
         repo = ReportRepository()
-        
+
         try:
             async with AsyncSessionLocal() as session:
                 report = await repo.get_by_id(session, report_id)
@@ -74,7 +87,7 @@ class ReportWorker:
                     return True
 
                 if report.status == ReportStatus.completed:
-                    print(f"{report_id} already completed — skipping.")
+                    print(f"{report_id} already completed - skipping.")
                     return True
 
                 service = ReportsService(session, repo)

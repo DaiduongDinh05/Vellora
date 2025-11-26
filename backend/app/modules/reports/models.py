@@ -27,6 +27,8 @@ class Report(Base):
     expires_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
     requested_at: Mapped[sa.DateTime] = mapped_column(sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False)
     completed_at: Mapped[sa.DateTime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
+    retry_attempts: Mapped[int] = mapped_column(sa.Integer, nullable=False, server_default="0")
+
 
     user: Mapped["User"] = relationship("User", back_populates="reports")
 

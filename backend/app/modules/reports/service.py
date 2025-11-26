@@ -15,6 +15,7 @@ from app.modules.reports.queue import ReportQueue
 
 class ReportsService:
     SYSTEM_MAX= 50
+    MAX_RETRY_ATTEMPTS = 3
 
     def __init__(self, session: AsyncSession, repo: type[ReportRepository]):
         self.session = session
@@ -66,6 +67,9 @@ class ReportsService:
         return report
     
     async def retry_report(self, report_id: UUID, user_id: UUID) -> Report:
+        #rate limiting. disable in local dev
+        await self.validate_global_limit()
+        
         report = await self.repo.get_by_id(self.session, report_id)
 
         if not report:
@@ -76,6 +80,12 @@ class ReportsService:
 
         if report.status not in {ReportStatus.failed, ReportStatus.expired}:
             raise ValueError("Only failed or expired reports can be retried")
+        
+        #rate limiting. disable in local dev
+        if report.retry_attempts >= self.MAX_RETRY_ATTEMPTS:
+            raise ValueError("Maximum retry attempts reached for this report")
+
+        report.retry_attempts += 1
 
         #reset state
         report.status = ReportStatus.pending
@@ -94,6 +104,10 @@ class ReportsService:
         return report
     
     async def regenerate_report(self, report_id: UUID, user_id: UUID):
+        
+        #rate limiting. disable in local dev
+        await self.validate_global_limit()
+
         report = await self.repo.get_by_id(self.session, report_id)
 
         if not report:
@@ -104,6 +118,10 @@ class ReportsService:
 
         if report.status not in {ReportStatus.completed, ReportStatus.expired}:
             raise ValueError("Only completed or expired reports can be regenerated")
+        
+        #rate limiting. disable in local dev
+        if report.retry_attempts >= self.MAX_RETRY_ATTEMPTS:
+            raise ValueError("Maximum attempts reached for this report")
 
         #if file still exists in storage then try to sign it
         if report.file_name:
@@ -120,6 +138,7 @@ class ReportsService:
         report.file_name = None
         report.expires_at = None
         report.completed_at = None
+        report.retry_attempts += 1
 
         await self.repo.update(self.session, report)
         await self.session.commit()
@@ -130,13 +149,13 @@ class ReportsService:
         return {"status": "regenerating"}
     
     async def validate_rate_limit(self, user_id: UUID):
-        two_minutes_ago = datetime.now(timezone.utc) - timedelta(minutes=1)
+        one_minute_ago = datetime.now(timezone.utc) - timedelta(minutes=1)
         today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
 
         recent_count = await self.session.scalar(
             select(func.count(Report.id))
             .where(Report.user_id == user_id)
-            .where(Report.requested_at > two_minutes_ago)
+            .where(Report.requested_at > one_minute_ago)
         )
 
         daily_count = await self.session.scalar(
