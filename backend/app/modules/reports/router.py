@@ -48,12 +48,18 @@ async def download_report(report_id: UUID, service: ReportsService = Depends(get
     if report.expires_at and report.expires_at < datetime.now(timezone.utc):
         report.status = ReportStatus.expired
         await service.session.commit()
-        raise HTTPException(status_code=410, detail="Report expired")
+        raise HTTPException(status_code=410, detail="Report expired please regenerate")
 
     if report.status != ReportStatus.completed:
         raise HTTPException(status_code=400, detail="Report not generated yet")
 
     storage = S3ReportStorage()
+
+    if not storage.exists(report.file_name):
+        report.status = ReportStatus.expired
+        await service.session.commit()
+        raise HTTPException(status_code=410, detail="Report no longer available and must be regenerated")
+
     signed_url = storage.get_signed_url(report.file_name)
 
     return {"download_url": signed_url}
