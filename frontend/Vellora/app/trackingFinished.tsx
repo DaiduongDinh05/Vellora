@@ -11,7 +11,8 @@ import { vehicleItems  } from '../app/constants/dropdownOptions';
 import GeometryMap from './components/GeometryMap';
 import { useTripData } from './contexts/TripDataContext';
 import { useRateOptions } from './hooks/useRateOptions';
-import { endTrip, TripStatus } from './services/Trips';
+import { endTrip, TripStatus, Expense, createExpensePayload, createTripExpense } from './services/Trips';
+
 
 const MAPBOX_KEY = process.env.EXPO_PUBLIC_API_KEY_MAPBOX_PUBLIC_ACCESS_TOKEN;
 
@@ -232,6 +233,12 @@ const TrackingFinished = () => {
     const handleSaveTrip = async () => {
         console.log('Saving trip...');
 
+         const expensesInput: createExpensePayload[] = [
+            { type: 'parking', amount: parseFloat(parking) || 0 },
+            { type: 'gas', amount: parseFloat(gas) || 0 },
+            { type: 'tolls', amount: parseFloat(tolls) || 0 }
+        ].filter(e => e.amount > 0)
+        .map(e => ({ ...e, amount: Number(e.amount.toFixed(2))}));  // map the objects for payloads later
         
         const finalTripData = {
             notes: notes,
@@ -274,6 +281,25 @@ const TrackingFinished = () => {
                 alert("Failed to save trip. Please try again.");
                 return;
             }
+
+            let newExpenses: Expense[] = [];
+
+            if (expensesInput.length) { // only proceed if there are entered expenses
+                const results = await Promise.allSettled(
+                    expensesInput.map((payload) => createTripExpense(response.id, payload))
+                );
+
+                // Ensure expense promises are fuffiled to create new expenses
+
+                results.filter((r): r is PromiseFulfilledResult<Expense> => r.status === 'fulfilled')
+                .map((r) => r.value);
+
+                // check for any possible failures
+                const failures = results.filter(r => r.status === 'rejected');
+                if (failures.length) console.warn(`Failure to create ${failures.length} expense(s).`)
+            }
+
+
         } catch (error) {
             console.error('Error saving trip: ', error);
             alert("Failed to save trip. Please try again.");

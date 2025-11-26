@@ -17,14 +17,16 @@ interface TripCardProps {
     distance_meters: number;
 }
 
-const router = useRouter();
-
-
-const handleEditTrip = () => {
-    router.push('/pages/editTripPage')
-}
 
 const TripCard: React.FC<TripCardProps> = ({ geometry, start_address, end_address, mileage_reimbursement_total, distance_meters }) => {
+
+
+    const router = useRouter();
+
+
+    const handleEditTrip = () => {
+        router.push('/pages/editTripPage')
+    } 
 
     return (
         <View style={styles.cardContainer}>
@@ -33,14 +35,14 @@ const TripCard: React.FC<TripCardProps> = ({ geometry, start_address, end_addres
             </View>
             <View style={styles.textContainer}>
                 <View style={styles.addressTextContainer}> 
-                    <Text style={{flexWrap: 'wrap', flex: 1, fontSize: 12}}>{'\u2022'} {start_address}</Text>
-                    <Text style={{flexWrap: 'wrap', flex: 1, fontSize: 12}}>{'\u2022'} {end_address}</Text>
+                    <Text numberOfLines={3} style={{flexWrap: 'wrap', flex: 1, fontSize: 12 }}>{'\u2022'} {start_address}</Text>
+                    <Text numberOfLines={3} style={{flexWrap: 'wrap', flex: 1, fontSize: 12 }}>{'\u2022'} {end_address}</Text>
                 </View>
-                <View style={{marginBottom: 40, marginLeft: 40}}>
-                    <Text style={{color: '#4DBF69'}}>${mileage_reimbursement_total} - {distance_meters} mi</Text>
+                <View style={{marginLeft: 30}}>
+                    <Text style={{color: '#4DBF69'}}>${mileage_reimbursement_total.toFixed(2)} - {distance_meters.toFixed(2)} mi</Text>
                 </View>
             </View>
-            <Pressable style={styles.editContainer} onPress={handleEditTrip}>
+           <Pressable onPress={handleEditTrip} style={styles.editContainer}>
                 <FontAwesome name='pencil' size={18} color="#6B7280"></FontAwesome>
             </Pressable>
         </View>
@@ -51,19 +53,18 @@ const styles = StyleSheet.create({
     cardContainer: {
         justifyContent: 'flex-start',
         alignItems: 'center',
-        alignContent: 'center',
         width: '100%',
-        height: '10%',
+        minHeight: 155,
         flexDirection: 'row',
         borderTopWidth: 1.5,
         borderColor: '#b5b5b5',
-        paddingTop: 40,
-        paddingBottom: 40,
+        paddingTop: 12,
+        paddingBottom: 12,
         backgroundColor: 'white'
     },
     mapContainer: {
-        height: 115, 
-        width: 115, 
+        height: 100, 
+        width: 100, 
         overflow: 'hidden', 
         borderRadius: 10, 
         flexShrink: 0 ,
@@ -75,14 +76,12 @@ const styles = StyleSheet.create({
         marginTop: 2
     },
     addressTextContainer: {
-        marginBottom: 30, 
-        marginTop: 20,
-        maxWidth: '80%'
+        marginBottom: 15, 
+        marginTop: 6,
     },
     editContainer: {
-        marginRight: 15
+        marginRight: 6
     }
-
 });
 
 
