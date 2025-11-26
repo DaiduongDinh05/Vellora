@@ -1,4 +1,6 @@
 import uuid
+
+import botocore
 from app.aws_client import get_s3_client
 from app.config import settings
 
@@ -27,3 +29,12 @@ class S3ReportStorage:
             Params={"Bucket": self.bucket, "Key": key},
             ExpiresIn = expires_in
         )
+    
+    def exists(self, key: str) -> bool:
+        try:
+            self.s3.head_object(Bucket=self.bucket, Key=key)
+            return True
+        except botocore.exceptions.ClientError as e:
+            if e.response['Error']['Code'] == '404':
+                return False
+            raise

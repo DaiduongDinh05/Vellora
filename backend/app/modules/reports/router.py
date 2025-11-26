@@ -90,3 +90,14 @@ async def retry_report(report_id: UUID, service: ReportsService = Depends(get_re
     except PermissionError:
         raise HTTPException(status_code=403, detail="Not allowed")
 
+@router.post("/{report_id}/regenerate")
+async def regenerate_report(report_id: UUID,service: ReportsService = Depends(get_reports_service),user=Depends(get_current_user)):
+    try:
+        result = await service.regenerate_report(report_id, user.id)
+        return result
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="Not allowed")

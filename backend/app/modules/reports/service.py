@@ -89,3 +89,39 @@ class ReportsService:
         queue.send(str(report.id))
 
         return report
+    
+    async def regenerate_report(self, report_id: UUID, user_id: UUID):
+        report = await self.repo.get_by_id(self.session, report_id)
+
+        if not report:
+            raise ValueError("Report not found")
+
+        if report.user_id != user_id:
+            raise PermissionError("Not allowed")
+
+        if report.status not in {ReportStatus.completed, ReportStatus.expired}:
+            raise ValueError("Only completed or expired reports can be regenerated")
+
+        #if file still exists in storage then try to sign it
+        if report.file_name:
+            if self.storage.exists(report.file_name):
+                url = self.storage.get_signed_url(report.file_name)
+                return {
+                    "status": "available",
+                    "download_url": url
+                }
+
+        #i file missing then regenerate
+        report.status = ReportStatus.pending
+        report.file_url = None
+        report.file_name = None
+        report.expires_at = None
+        report.completed_at = None
+
+        await self.repo.update(self.session, report)
+        await self.session.commit()
+
+        queue = ReportQueue()
+        queue.send(str(report.id))
+
+        return {"status": "regenerating"}
