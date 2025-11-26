@@ -5,6 +5,8 @@ import { getProviderAuthorizeUrl, login } from "../services/auth";
 import { FontAwesome } from "@expo/vector-icons";
 import Button from "../components/Button";
 import { useState } from "react";
+
+import CommonPlaceCard from "../components/CommonPlaceCard";
 // import Tracking from "../components/tracking";
 
 export default function Index() {
@@ -13,6 +15,17 @@ export default function Index() {
   
   // state for modal pop up with trip log seelction
   const [shotLogTripModal, setShowLogTripModal] = useState(false);
+
+  // temporary common places data
+  const commonPlaces = [
+
+    { id: '1', title: 'Home', address: '123 Main St, Springfield, IL'},
+    { id: '2', title: 'Work', address: '456 Corporate Blvd, Springfield, IL'},
+    { id: '3', title: 'Gym', address: '789 Fitness Ave, Springfield, IL'},
+    { id: '4', title: 'Grocery Store', address: '101 Market St, Springfield, IL'},
+  ];
+
+
 
   // modal button handlers
   const handleManualLogPress = () => {
@@ -58,7 +71,28 @@ export default function Index() {
             />
 
             {/* common places */}
+            <View className="mt-8 mb-4 flex-row justify-between items-center">
+              <Text className="text-2xl text-textBlack font-bold mb-4">Common Places</Text>
+              <Button 
+                title="+ Add Place"
+                onPress={() => {}}
+                className="px-3 py-1.5 rounded-full flex-row items-center"
+              />
 
+            </View>
+
+            {/* common places GRID CARDS*/}
+            <View className="flex-row flex-wrap gap-4">
+
+              {commonPlaces.map((place) => (
+                <CommonPlaceCard
+                  key={place.id}
+                  title={place.title}
+                  address={place.address}
+                  onPress={() => {console.log('Pressed place: ', place.title)}}
+                />
+              ))}  
+            </View>
               
           </View>
         </ScrollView>
