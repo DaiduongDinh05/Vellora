@@ -245,6 +245,7 @@ const ManualLogScreen = () => {
                         title='Save trip'
                         onPress={handleAddTrip}
                         style={{top: 10}}
+                        className='py-4 px-5'
                     />
                 </>
             }

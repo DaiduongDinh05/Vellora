@@ -22,7 +22,7 @@ const CommonPlaceCard: React.FC<CommonPlaceCardProps> = ({
                     shadowColor: '#000',
                     shadowOffset: { width: 0, height: 2 },
                     shadowOpacity: 0.05,
-                    shadowRadius: 4,
+                    shadowRadius: 8,
                     elevation: 3,
              }}
         >

@@ -308,6 +308,7 @@ const TrackingFinished = () => {
                         title='Save trip'
                         onPress={handleSaveTrip}
                         style={{top: 10}}
+                        className='py-4 px-5'
                     />
                 </>
             }

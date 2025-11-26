@@ -67,7 +67,7 @@ export default function Index() {
             <Button
               title="Log a Trip"
               onPress={() => setShowLogTripModal(true)}
-              className="w-full" 
+              className="w-full py-4 px-5" 
             />
 
             {/* common places */}
@@ -126,12 +126,12 @@ export default function Index() {
                 <Button 
                   title="Manually Log a Trip"
                   onPress={handleManualLogPress}
-                  className="mb-4 w-full"
+                  className="mb-4 w-full py-4 px-5"
                 />
                 <Button 
                   title="Live Track a Trip"
                   onPress={handleLiveTrackPress}
-                  className="mb-4 w-full"
+                  className="mb-4 w-full py-4 px-5"
                 />
               </View>
             </TouchableWithoutFeedback>

@@ -88,7 +88,7 @@ const TrackingInAction = () => {
                 <Button 
                     title='End Trip'
                     onPress={handleEndTrip}     // end the trip when footer button is pressed
-                    className=''                // for additional styling
+                    className='py-4 px-5'                // for additional styling
                 />
             }
         >
