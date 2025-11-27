@@ -21,7 +21,7 @@ const CommonPlaceCard: React.FC<CommonPlaceCardProps> = ({
             style={{ minHeight: 60,
                     shadowColor: '#000',
                     shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.05,
+                    shadowOpacity: 0.08,
                     shadowRadius: 8,
                     elevation: 3,
              }}
