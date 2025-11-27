@@ -75,7 +75,7 @@ export default function Index() {
               <Text className="text-2xl text-textBlack font-bold mb-4">Common Places</Text>
               <Button 
                 title="+ Add Place"
-                onPress={() => {}}
+                onPress={() => {router.push('/AddCommonPlaceScreen')}}
                 className="px-3 py-1.5 rounded-full flex-row items-center"
               />
 
