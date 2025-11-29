@@ -1,10 +1,11 @@
 import { View, Text } from "react-native";
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { getTrip, Trip } from "../services/Trips";
+import { getTrip, Trip, getTripExpenses, updateTripExpense } from "../services/Trips";
 import TripDetailsForm from "../components/TripDetailsForm";
 import { useRateOptions } from "../hooks/useRateOptions";
 import GeometryMap from "../components/GeometryMap";
 import ScreenLayout from "../components/ScreenLayout";
+import { vehicleItems } from "../constants/dropdownOptions";
 import { useState, useEffect } from "react";
 import EditableNumericDisplay from "../components/EditableNumericDisplay";
 import Button from "../components/Button";
@@ -16,23 +17,28 @@ const EditTripPage = () => {
     const router = useRouter();
     const { id } = useLocalSearchParams();
 
-    // states
+    // default states before trip is loaded
     const [trip, setTrip] = useState<Trip | null>(null);
     const [isTripLoading, setTripLoading] = useState<boolean>(false);
+    const [isExpenseLoading, setExpenseLoading] = useState<boolean>(false);
     const [notes, setNotes] = useState<string>('')
     const [vehicle, setVehicle] = useState<string | null>('');
     const [tripValue, setTripValue] = useState<number | null>(0.00);
-    const [parking, setParking] = useState<number>(0.00);
-    const [tolls, setTolls] = useState<number>(0.00)
-    const [gas, setGas] = useState<number>(0.00)
+    const [rate, setRate] = useState<string | null>('');
+    const [type, setType] = useState<string | null>('');
+    const [parking, setParking] = useState<string>('0.00');
+    const [tolls, setTolls] = useState<string>('0.00')
+    const [gas, setGas] = useState<string>('0.00')
     const [tripDistance, setTripDistance] = useState<number>(0)
     const [startAddress, setStartAddress] = useState<string>('');
     const [endAddress, setEndAddress] = useState<string>('');
     const [tripGeometry, setTripGeometry] = useState<object | null>(null);
-    const [error, setError] = useState<string | null>(null);
+    const [tripDate, setTripDate] = useState<string | undefined>('');
+    const [error, setError] = useState<string | null>(null)
 
-     const { rateItems, categoryItems, loading } = useRateOptions();
+    const { rateItems, categoryItems, loading } = useRateOptions();
 
+    // Get the trip that will be edited
     const handleGetTrip = async () => {
         const tripId = id as string | undefined;
         if (!tripId) return;
@@ -50,6 +56,27 @@ const EditTripPage = () => {
         setTripLoading(false);
     }
 
+    const handleGetExpenses = async () => {
+        const tripId = id as string | undefined;
+        if (!tripId) return;
+        
+        setExpenseLoading(true);
+        const response = await getTripExpenses(tripId);
+
+        if (!response) {
+            alert("Expenses not found. Please try again");
+            setExpenseLoading(false);
+            return;
+        }
+        
+        // Set the Parking, toll, and gas based on the response
+        setParking(String(response.find(e => e.type === 'Parking' || e.type === 'parking')?.amount ?? 0.00));
+        setTolls(String(response.find(e => e.type === 'tolls' || e.type === 'Tolls')?.amount ?? 0.00));
+        setGas(String(response.find(e => e.type === 'gas' || e.type === 'Gas')?.amount ?? 0.00));
+        setExpenseLoading(false);
+    }
+
+    // When the trip is modified, handle update
     const handleUpdateTrip = async () => {
         // logic here
     }
@@ -68,14 +95,16 @@ const EditTripPage = () => {
         setNotes(trip.purpose ?? '');
         setVehicle(trip.vehicle ?? null);
         setTripValue(trip.mileage_reimbursement_total ?? 0.00);
-        const expenses = trip.expenses ?? []
-        setParking(expenses.find(e => e.type === 'Parking' || 'parking')?.amount ?? 0.00);
-        setTolls(expenses.find(e => e.type === 'tolls' || 'Tolls')?.amount?? 0.00);
-        setGas(expenses.find(e => e.type === 'gas' || 'Gas')?.amount ?? 0.00);
+        setRate(trip.rate_customization_id ?? null);
+        setType(trip.rate_category_id ?? null);
         setTripDistance(trip.miles ?? 0);
         setStartAddress(trip.start_address ?? '');
         setEndAddress(trip.end_address ?? '');
         setTripGeometry(trip.geometry ?? null);
+        // checking if the start time is null bc typescript be wilding
+        const startedAt = trip.started_at ? new Date(trip.started_at as unknown as string) : null;
+        setTripDate(startedAt ? startedAt.toUTCString() : '');
+        handleGetExpenses();
     }, [trip])
 
     if (isTripLoading) {
@@ -86,7 +115,7 @@ const EditTripPage = () => {
 
     if (error) {
         return (
-            <Text>Error: ${error}</Text>
+            <Text>Error: {error}</Text>
         )
     }
 
@@ -128,7 +157,27 @@ const EditTripPage = () => {
             <View style={{height: 300, width: '100%', overflow: 'hidden'}}>
                 <GeometryMap geometry={tripGeometry}/>
             </View>
-            
+            <Text className="text-xl text-black p-6">{tripDate}</Text>
+
+            <TripDetailsForm
+
+            mapboxAccessToken={MAPBOX_KEY || ''}
+
+            notes={notes} setNotes={setNotes}
+            vehicle={vehicle} setVehicle={setVehicle}
+            type={type} setType={setType}
+            rate={rate} setRate={setRate}
+            parking={parking} setParking={setParking}
+            gas={gas} setGas={setGas}
+            tolls={tolls} setTolls={setTolls}
+            startAddress={startAddress} setStartAddress={setStartAddress}
+            endAddress={endAddress} setEndAddress={setEndAddress}
+
+            vehicleItems={vehicleItems}
+            typeItems={categoryItems}
+            rateItems={rateItems}
+
+            />
         </ScreenLayout>
     );
 }

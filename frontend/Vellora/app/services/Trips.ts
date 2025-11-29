@@ -25,8 +25,8 @@ export type Trip = {
     geometry?: object | null;
     mileage_reimbursement_total?: number | null;
     expense_reimbursement_total?: number | null;
-    start_at: Date;
-    ended_at?: Date | undefined;
+    started_at: Date;
+    endeded_at?: Date | undefined;
     updated_at: Date;
     rate_customization_id: string;
     rate_category_id: string;
@@ -216,7 +216,7 @@ export async function createTripExpense(tripId: string, payload: createExpensePa
 export async function getTripExpenses(tripId: string, token?: string): Promise<Expense[]> {
     const authToken = token || await checkToken();
 
-    const response = await fetch(`${API_BASE_URL}/trips/${tripId}/expenses`, {
+    const response = await fetch(`${API_BASE_URL}/trips/${tripId}/expenses/`, {
         method: "GET",
         headers: {
             "Content-Type": "application/json",
