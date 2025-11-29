@@ -9,6 +9,7 @@ import { vehicleItems } from "../constants/dropdownOptions";
 import { useState, useEffect } from "react";
 import EditableNumericDisplay from "../components/EditableNumericDisplay";
 import Button from "../components/Button";
+import * as ImagePicker from 'expo-image-picker';
 
 const MAPBOX_KEY = process.env.EXPO_PUBLIC_API_KEY_MAPBOX_PUBLIC_ACCESS_TOKEN;
 
@@ -34,7 +35,9 @@ const EditTripPage = () => {
     const [endAddress, setEndAddress] = useState<string>('');
     const [tripGeometry, setTripGeometry] = useState<object | null>(null);
     const [tripDate, setTripDate] = useState<string | undefined>('');
-    const [error, setError] = useState<string | null>(null)
+    const [error, setError] = useState<string | null>(null);
+    const [image, setImage] = useState<string | null>(null);
+    const [imageName, setImageName] = useState<string | null>(null);
 
     const { rateItems, categoryItems, loading } = useRateOptions();
 
@@ -76,10 +79,37 @@ const EditTripPage = () => {
         setExpenseLoading(false);
     }
 
+    const handleTakePhoto = async () => {
+        try {
+            const permissionResults = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+            if (!permissionResults.granted) {
+                alert("Permission Required. Please allow media library permissions.")
+                return;
+            }
+
+            // let the user pick a picture from the media library
+            let picture = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ['images'],
+                allowsEditing: true,
+                aspect: [4,3],
+                quality: 1 // high quality
+            })
+
+            if (!picture.canceled) {    // if picture wasn't cancelled, set the image to picture uri
+                setImage(picture.assets[0].uri ?? null); 
+                setImageName(picture.assets[0].fileName ?? null);
+            }
+        } catch (error) {
+            console.error("Error getting photo: ", error);
+        }
+    }
+
     // When the trip is modified, handle update
     const handleUpdateTrip = async () => {
         // logic here
     }
+
     
     
     // get the trip with passed id
@@ -96,12 +126,12 @@ const EditTripPage = () => {
         setVehicle(trip.vehicle ?? null);
         setTripValue(trip.mileage_reimbursement_total ?? 0.00);
         setRate(trip.rate_customization_id ?? null);
-        setType(trip.rate_category_id ?? null);
+        setType(trip.rate_category_id ?? null);         // THIS WONT SET YET
         setTripDistance(trip.miles ?? 0);
         setStartAddress(trip.start_address ?? '');
         setEndAddress(trip.end_address ?? '');
         setTripGeometry(trip.geometry ?? null);
-        // checking if the start time is null bc typescript be wilding
+        // checking if the start time is null bc typescript
         const startedAt = trip.started_at ? new Date(trip.started_at as unknown as string) : null;
         setTripDate(startedAt ? startedAt.toUTCString() : '');
         handleGetExpenses();
@@ -178,6 +208,11 @@ const EditTripPage = () => {
             rateItems={rateItems}
 
             />
+            <Button
+                title="+ Add Receipt"
+                onPress={handleTakePhoto}
+                style={{top: 10}}
+                    />
         </ScreenLayout>
     );
 }
