@@ -40,6 +40,38 @@ services:
       - ./backend:/app
     depends_on:
       - postgres
+      - localstack
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - FERNET_KEY=${FERNET_KEY}
+      - OAUTH_PROVIDERS__GOOGLE__CLIENT_ID=${OAUTH_PROVIDERS__GOOGLE__CLIENT_ID}
+      - OAUTH_PROVIDERS__GOOGLE__CLIENT_SECRET=${OAUTH_PROVIDERS__GOOGLE__CLIENT_SECRET}
+      - OAUTH_PROVIDERS__GOOGLE__REDIRECT_URI=${OAUTH_PROVIDERS__GOOGLE__REDIRECT_URI}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - OAUTH_PROVIDERS__GOOGLE__SCOPES=${OAUTH_PROVIDERS__GOOGLE__SCOPES}
+      - OAUTH_STATE_TTL_SECONDS=${OAUTH_STATE_TTL_SECONDS}
+      - USE_LOCALSTACK=${USE_LOCALSTACK}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION}
+      - LOCALSTACK_ENDPOINT=${LOCALSTACK_ENDPOINT}
+      - REPORTS_BUCKET=${REPORTS_BUCKET}
+      - REPORTS_QUEUE=${REPORTS_QUEUE}
+
+  worker:
+    networks:
+      - vellora_network
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vellora_worker_service
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - postgres
+      - localstack
+      - backend
+    command: python -m app.worker
     environment:
       - DATABASE_URL=${DATABASE_URL}
       - FERNET_KEY=${FERNET_KEY}

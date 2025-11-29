@@ -7,12 +7,16 @@ import DateTimePicker, {
 import ScreenLayout from "../components/ScreenLayout";
 import Button from "../components/Button";
 import { reportStyles } from "../styles/ReportStyles";
+import { generateReport } from "../services/reports";
+import { tokenStorage } from "../services/tokenStorage";
 
 export default function GenerateReportPage() {
 	const [fromDate, setFromDate] = useState<Date>(new Date());
 	const [toDate, setToDate] = useState<Date>(new Date());
 	const [showFromPicker, setShowFromPicker] = useState(false);
 	const [showToPicker, setShowToPicker] = useState(false);
+	const [error, setError] = useState<string | null>(null);
+	const [loading, setLoading] = useState(false);
 
 	const handleFromDateChange = (
 		event: DateTimePickerEvent,
@@ -42,6 +46,53 @@ export default function GenerateReportPage() {
 		});
 	};
 
+	const formatDateForAPI = (date: Date): string => {
+		const year = date.getFullYear();
+		const month = String(date.getMonth() + 1).padStart(2, "0");
+		const day = String(date.getDate()).padStart(2, "0");
+		return `${year}-${month}-${day}`;
+	};
+
+	const handleGenerate = async () => {
+		if (fromDate > toDate) {
+			setError("End date must be after start date");
+			return;
+		}
+
+		const token = tokenStorage.getToken();
+		if (!token) {
+			router.replace("/login");
+			return;
+		}
+
+		setError(null);
+		setLoading(true);
+
+		try {
+			const report = await generateReport(
+				formatDateForAPI(fromDate),
+				formatDateForAPI(toDate),
+				token
+			);
+
+			router.push({
+				pathname: "/generating-report",
+				params: {
+					reportId: report.id,
+				},
+			} as any);
+		} catch (err) {
+			const errorMessage =
+				err instanceof Error
+					? err.message
+					: "Failed to generate report. Please try again.";
+			setError(errorMessage);
+			console.error("Failed to generate report:", err);
+		} finally {
+			setLoading(false);
+		}
+	};
+
 	return (
 		<ScreenLayout
 			footer={
@@ -52,17 +103,10 @@ export default function GenerateReportPage() {
 						<Text style={reportStyles.historyText}>View Report History</Text>
 					</Pressable>
 					<Button
-						title="Generate Report"
-						onPress={() =>
-							router.push({
-								pathname: "/generating-report",
-								params: {
-									fromDate: fromDate.toISOString(),
-									toDate: toDate.toISOString(),
-								},
-							} as any)
-						}
+						title={loading ? "Generating..." : "Generate Report"}
+						onPress={handleGenerate}
 						className="mt-3"
+						disabled={loading}
 					/>
 				</View>
 			}>
@@ -70,6 +114,18 @@ export default function GenerateReportPage() {
 				<Text style={reportStyles.title}>Generate Report</Text>
 
 				<Text style={reportStyles.sectionLabel}>Select Date Range</Text>
+
+				{error && (
+					<View
+						style={{
+							backgroundColor: "#FEE2E2",
+							padding: 12,
+							borderRadius: 8,
+							marginBottom: 16,
+						}}>
+						<Text style={{ color: "#DC2626", fontSize: 14 }}>{error}</Text>
+					</View>
+				)}
 
 				<View style={reportStyles.card}>
 					<Text style={reportStyles.inputLabel}>From Date</Text>
