@@ -1,4 +1,4 @@
-import { Linking } from "react-native";
+import { Linking, Platform } from "react-native";
 import { API_BASE_URL } from "../constants/api";
 import { tokenStorage } from "./tokenStorage";
 
@@ -240,7 +240,16 @@ export async function downloadAndOpenReport(
 	reportId: string
 ): Promise<void> {
 	try {
-		const fixedUrl = downloadUrl.replace("localstack:4566", "localhost:4566");
+		let fixedUrl = downloadUrl.replace("localstack:4566", "localhost:4566");
+
+		if (Platform.OS === "android" && process.env.EXPO_PUBLIC_LOCALSTACK_URL) {
+			const localstackUrl = process.env.EXPO_PUBLIC_LOCALSTACK_URL;
+			fixedUrl = fixedUrl.replace("http://localhost:4566", localstackUrl);
+			fixedUrl = fixedUrl.replace("https://localhost:4566", localstackUrl);
+			fixedUrl = fixedUrl.replace("localhost:4566", localstackUrl);
+			console.log("Android PDF URL:", fixedUrl);
+		}
+
 		await Linking.openURL(fixedUrl);
 	} catch (error) {
 		console.error("Error opening report:", error);
