@@ -31,6 +31,7 @@ export type Trip = {
     rate_customization_id: string;
     rate_category_id: string;
     expenses?: Expense[] | null;
+    vehicle?: string | null;
 }
 
  // Types for payloads for Backend API calls

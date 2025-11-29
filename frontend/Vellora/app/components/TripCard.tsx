@@ -10,6 +10,7 @@ import { useRouter } from "expo-router";
 // value - amount of miles
 
 interface TripCardProps {
+    id?: string;
     geometry?: object | null;
     start_address: string;
     end_address: string;
@@ -18,14 +19,18 @@ interface TripCardProps {
 }
 
 
-const TripCard: React.FC<TripCardProps> = ({ geometry, start_address, end_address, mileage_reimbursement_total, distance_meters }) => {
+const TripCard: React.FC<TripCardProps> = ({ id, geometry, start_address, end_address, mileage_reimbursement_total, distance_meters }) => {
 
 
     const router = useRouter();
 
 
     const handleEditTrip = () => {
-        router.push('/pages/editTripPage')
+        router.push({
+            pathname: '/pages/editTripPage',
+            params: {
+                    id: id
+        }})
     } 
 
     return (

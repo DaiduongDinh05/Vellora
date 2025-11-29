@@ -61,6 +61,7 @@ const history = () => {
           {trips.map((trip, idx) => (
             <TripCard
               key={trip.id ?? idx}
+              id={trip.id}
               geometry={trip.geometry ?? null}
               start_address={trip.start_address ?? ''}
               end_address={trip.end_address ?? ''}
