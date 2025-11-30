@@ -7,7 +7,6 @@ from app.modules.users.models import User
 from app.modules.reports.models import Report
 from .base import EmailServiceBase, EmailMessage, EmailRecipient
 from .exceptions import EmailServiceError
-from .mock import MockEmailService
 from .resend import ResendEmailService
 from .templates import render_report_ready_email, render_report_ready_text, render_report_failed_email
 
@@ -20,17 +19,13 @@ class EmailService:
         self.enabled = settings.EMAIL_ENABLED
     
     def _get_default_provider(self) -> EmailServiceBase:
-        if settings.EMAIL_PROVIDER == "mock":
-            return MockEmailService(sender_email=settings.EMAIL_SENDER)
-        elif settings.EMAIL_PROVIDER == "resend":
+        if settings.EMAIL_PROVIDER == "resend":
             return ResendEmailService(
                 sender_email=settings.EMAIL_SENDER,
                 api_key=settings.RESEND_API_KEY
             )
         else:
-            #default to mock if no valid provider configured
-            logger.warning(f"Unknown email provider '{settings.EMAIL_PROVIDER}', defaulting to mock")
-            return MockEmailService(sender_email=settings.EMAIL_SENDER)
+            raise ValueError(f"Unknown email provider '{settings.EMAIL_PROVIDER}'. Supported providers: 'resend'")
     
     async def send_report_ready_notification(self, user: User, report: Report, download_url: str) -> bool:
         if not self.enabled:
