@@ -13,6 +13,7 @@ import Button from './components/Button';
 import EditableNumericDisplay from './components/EditableNumericDisplay';
 import { useRateOptions } from './hooks/useRateOptions';
 import { useTripData } from './contexts/TripDataContext';
+import { useCommonPlaces } from './hooks/useCommonPlaces';
 
 //  import service
 import { createExpensePayload, createManualTrip, createManualTripPayload } from './services/Trips';
@@ -25,6 +26,9 @@ const ManualLogScreen = () => {
 
     // use rate options hook for dynamic rates
     const { rateItems, categoryItems, loading, error, updateSelectedRate } = useRateOptions();
+
+    // use common places hook to get all the common places
+    const { places: commonPlaces } = useCommonPlaces();
 
     // state variables
     const [startDate, setStartDate] = useState(new Date());
@@ -325,6 +329,13 @@ const ManualLogScreen = () => {
                     vehicleItems={vehicleItems}
                     typeItems={categoryItems}
                     rateItems={rateItems}
+
+                    // common places
+                    commonPlaces={commonPlaces.map(p => ({
+                        id: p.id,
+                        title: p.name,
+                        address: p.address
+                    }))}
                     
                 />
 

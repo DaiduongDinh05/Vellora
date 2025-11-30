@@ -4,6 +4,15 @@ import { FontAwesome } from '@expo/vector-icons'
 
 const MAPBOX_KEY = process.env.EXPO_PUBLIC_API_KEY_MAPBOX_PUBLIC_ACCESS_TOKEN;
 
+//  shape of a common place that gets passed from the parent
+export type CommonPlaceItem = {
+    id: string;
+    title: string;
+    address: string;
+    lat?: number;
+    lng?: number;
+}
+
 // type safety
 type AddressInputProps = {
     label?: string;
@@ -14,6 +23,7 @@ type AddressInputProps = {
     mapboxAccessToken: string;
     icon?: React.ReactNode;
     className?: string;
+    commonPlaces?: CommonPlaceItem[];           // list of common places
 }
 
 const AddressInput: React.FC<AddressInputProps> = ({
@@ -25,10 +35,32 @@ const AddressInput: React.FC<AddressInputProps> = ({
     mapboxAccessToken,
     icon,
     className = '',
+    commonPlaces = [],
 }) => {
 
     const [suggestions, setSuggestions] = useState<any[]>([]);  // suggested addresses based on users input
     const [isLoading, setIsLoading] = useState(false);
+
+
+    // filter common places based on input
+    const getLocalMatches = (query: string) => {
+        if (!query || query.length < 1) {
+            return [];
+        }
+
+        const lowerQuery = query.toLowerCase();
+        return commonPlaces.filter(place =>
+            place.title.toLowerCase().includes(lowerQuery) ||
+            place.address.toLowerCase().includes(lowerQuery)
+        ).map(place => ({
+            id: `common-${place.id}`,
+            place_name: place.title,
+            secondary_text: place.address,
+            center: (place.lng && place.lat) ? [place.lng, place.lat] : null,
+            isCommonPlace: true
+        }));
+
+    };
 
     // wait for 500 ms after typing stops before calling the API for locations
     useEffect(() => {
@@ -39,35 +71,57 @@ const AddressInput: React.FC<AddressInputProps> = ({
             return;
         }
 
+        // immediately show local matches from common places
+        const localResults = getLocalMatches(value);
+        setSuggestions(localResults);
+
+        // if input is short, don't hit the api yet
+        if (value.length < 3) {
+            return;
+        }
+
         // otherwise, fetch suggested addresses
         const timer = setTimeout(() => {
-            fetchAddressSuggestions(value);
+            fetchAddressSuggestions(value, localResults);
         }, 500);
 
         return () => clearTimeout(timer);
     }, [value]);
 
     // mapbox api call
-    const fetchAddressSuggestions = async (query: string) => {
+    const fetchAddressSuggestions = async (query: string, existingLocalResults: any[]) => {
         setIsLoading(true);
 
         try {
             const response = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_KEY}&autocomplete=true&types=address,poi`);
             const data = await response.json();
             if (data.features) {
-                setSuggestions(data.features);
+                // common places are suggested on top, mapbox results bellow
+                setSuggestions([...existingLocalResults, ...data.features]);
+            } else {
+                setSuggestions(existingLocalResults);  // only local results
             }
         } catch (error) {
             console.error("Mapbox geocoding error: ", error);
+
+            // keep showing local results even if api fails:
+            setSuggestions(existingLocalResults);
         } finally {
             setIsLoading(false);
         }
     };
 
     const handleSelect = (item: any) => {       // receive an address object
-        onChangeText(item.place_name);          // update the text in the input box
-        setSuggestions([]);                     // empty suggested addresses
-        onAddressSelect(item);                  // send address details back to the parent page
+
+        // if it is a common place, we use the address. if mapbox, use place_name
+        const finalText = item.isCommonPlace ? item.secondary_text : item.place_name;
+
+        onChangeText(finalText);          // update the text in the input box
+        setSuggestions([]);              // empty suggested addresses
+        onAddressSelect({                // send address details back to the parent page
+            place_name: finalText,
+            center: item.center,
+        });                  
     };
 
     return (
@@ -101,7 +155,28 @@ const AddressInput: React.FC<AddressInputProps> = ({
                                 style={styles.suggestionsItem}
                                 onPress={() => handleSelect(item)}
                             >
-                                <Text style={styles.suggestionText}>{item.place_name}</Text>
+                                <View className='flex-row items-center'>
+
+                                    {/* show different icon for common places */}
+                                    {item.isCommonPlace ? (
+                                        <FontAwesome name="star" size={14} color="#FBBF24" className='mr-2' />
+                                    ) : (
+                                        <FontAwesome name="map-marker" size={14} color="#6B7280" className='mr-2' />
+                                    )}
+
+                                    <View>
+                                        <Text style={styles.suggestionText}>
+                                            {item.place_name}
+                                        </Text>
+
+                                        {/* show address subtitle for common places */}
+                                        {item.isCommonPlace && (
+                                            <Text style={[styles.suggestionText, { fontSize: 12, color: '#6B7280' }]}>
+                                                {item.secondary_text}
+                                            </Text>
+                                        )}
+                                    </View>
+                                </View>
                             </TouchableOpacity>
                         )}
                     />

@@ -12,6 +12,7 @@ import GeometryMap from './components/GeometryMap';
 import { useTripData } from './contexts/TripDataContext';
 import { useRateOptions } from './hooks/useRateOptions';
 import { endTrip, TripStatus } from './services/Trips';
+import { useCommonPlaces } from './hooks/useCommonPlaces';
 
 const MAPBOX_KEY = process.env.EXPO_PUBLIC_API_KEY_MAPBOX_PUBLIC_ACCESS_TOKEN;
 
@@ -21,6 +22,8 @@ const TrackingFinished = () => {
 
     // use rate options hook for dynamic rates
     const { rateItems, categoryItems, loading, error, updateSelectedRate } = useRateOptions();
+
+    const { places: commonPlaces } = useCommonPlaces();
 
     // state variables
     const [notes, setNotes] = useState(tripData.notes);
@@ -341,6 +344,13 @@ const TrackingFinished = () => {
                 vehicleItems={vehicleItems}
                 typeItems={categoryItems}
                 rateItems={rateItems}
+
+                // common places
+                commonPlaces={commonPlaces.map(p => ({
+                    id: p.id,
+                    title: p.name,
+                    address: p.address
+                }))}
                 
             />
 

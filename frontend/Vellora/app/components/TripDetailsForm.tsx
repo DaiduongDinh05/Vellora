@@ -54,6 +54,9 @@ type TripDtailsFormProps = {
     typeItems: any[];
     rateItems: any[];
 
+    // common places
+    commonPlaces?: any[];
+
     // mapbox props
     mapboxAccessToken?: string;
 
@@ -81,6 +84,7 @@ const TripDetailsForm: React.FC<TripDtailsFormProps> = (props) => {
                     onAddressSelect={props.onStartAddressSelect || (() => {})}      // pass the selection callback if provided (if not do nothing)
                     mapboxAccessToken={props.mapboxAccessToken || ""}
                     icon={<FontAwesome name="map-marker" {...iconProps} />}
+                    commonPlaces={props.commonPlaces}
                 />
             )}
             {props.endAddress !== undefined && props.setEndAddress && (
@@ -93,6 +97,7 @@ const TripDetailsForm: React.FC<TripDtailsFormProps> = (props) => {
                     onAddressSelect={props.onStartAddressSelect || (() => {})}      // pass the selection callback if provided (if not do nothing)
                     mapboxAccessToken={props.mapboxAccessToken || ""}
                     icon={<FontAwesome name="map-marker" {...iconProps} />}
+                    commonPlaces={props.commonPlaces}
                 />
             )}
 
