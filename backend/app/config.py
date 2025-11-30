@@ -25,6 +25,13 @@ class Settings(BaseSettings):
     LOCALSTACK_ENDPOINT: str = "http://localhost:4566"
     REPORTS_QUEUE: str = "generate-reports-queue"
     REPORTS_BUCKET: str = "vellora-s3-bucket"
+    
+    #will change later(maybe)
+    EMAIL_SENDER: str = "noreply@resend.dev"
+    EMAIL_ENABLED: bool = True
+    EMAIL_PROVIDER: str = "mock"
+    RESEND_API_KEY: str = ""
+    BACKEND_URL: str = "http://localhost:8000"
 
     JWT_SECRET_KEY: str = Field(
         default="__change_me_in_prod_please_1234567890abcd",

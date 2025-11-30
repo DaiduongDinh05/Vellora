@@ -7,6 +7,7 @@ from app.infra.db import AsyncSessionLocal
 
 from app.modules.reports.repository import ReportRepository
 from app.modules.reports.service import ReportsService
+from app.infra.adapters.email_notification_adapter import EmailNotificationAdapter
 
 from app.modules.reports.models import Report, ReportStatus
 from app.modules.trips.models import Trip
@@ -74,6 +75,19 @@ class ReportWorker:
             if report:
                 report.status = ReportStatus.failed
                 await session.commit()
+                
+                try:
+                    from app.modules.users.models import User
+                    user = await session.get(User, report.user_id)
+                    if user:
+                        notification_service = EmailNotificationAdapter()
+                        await notification_service.notify_report_failed(
+                            user=user,
+                            report=report
+                        )
+                except Exception as email_error:
+                    print(f"Failed to send failure notification for report {report_id}: {email_error}")
+                    
         except Exception as e:
             print(f"Error marking report {report_id} as failed: {e}")
 
@@ -93,7 +107,7 @@ class ReportWorker:
                     print(f"{report_id} already completed - skipping.")
                     return True
 
-                service = ReportsService(session, repo, None, None, None, None)
+                service = ReportsService(session, repo, None, None, None, None, EmailNotificationAdapter())
 
                 report.status = ReportStatus.processing
                 await session.commit()

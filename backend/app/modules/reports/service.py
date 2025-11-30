@@ -15,20 +15,23 @@ from app.modules.reports.exceptions import (
     ReportSystemLimitError, ReportMaxRetriesError, ReportInvalidStateError,
     ReportExpiredError, ReportPersistenceError
 )
-
+from app.modules.reports.ports import NotificationPort
+from app.modules.users.models import User
+import logging
 
 
 class ReportsService:
     SYSTEM_MAX = 50
     MAX_RETRY_ATTEMPTS = 3
 
-    def __init__(self, session: AsyncSession, repo: ReportRepository, data_builder: ReportDataBuilder | None = None, renderer: ReportPDFRenderer | None = None, storage: S3ReportStorage | None = None,queue: ReportQueue | None = None):
+    def __init__(self, session: AsyncSession, repo: ReportRepository, data_builder: ReportDataBuilder | None = None, renderer: ReportPDFRenderer | None = None, storage: S3ReportStorage | None = None, queue: ReportQueue | None = None, notification_service: NotificationPort | None = None):
         self.session = session
         self.repo = repo
         self.data_builder = data_builder or ReportDataBuilder(session)
         self.renderer = renderer or ReportPDFRenderer()
         self.storage = storage or S3ReportStorage()
         self.queue = queue or ReportQueue()
+        self.notification_service = notification_service
 
     async def generate_report(self, user_id: UUID, dto: GenerateReportDTO) -> Report:
         #rate limit stuff. disable when in local dev
@@ -72,6 +75,20 @@ class ReportsService:
 
         await self.session.commit()
         await self.session.refresh(report)
+
+        if self.notification_service:
+            try:
+                user_result = await self.session.get(User, report.user_id)
+                if user_result:
+                    download_url = self.storage.get_signed_url(report.file_name)
+                    await self.notification_service.notify_report_completed(
+                        user=user_result,
+                        report=report,
+                        download_url=download_url
+                    )
+            except Exception as e:
+                logger = logging.getLogger(__name__)
+                logger.warning(f"Failed to send notification for report {report.id}: {str(e)}")
 
         return report
     

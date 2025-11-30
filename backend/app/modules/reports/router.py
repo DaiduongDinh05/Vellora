@@ -14,6 +14,7 @@ from app.modules.reports.storage import S3ReportStorage
 from app.modules.reports.data_builder import ReportDataBuilder
 from app.modules.reports.renderer_fpdf import ReportPDFRenderer
 from app.modules.reports.queue import ReportQueue
+from app.infra.adapters.email_notification_adapter import EmailNotificationAdapter
 from app.core.error_handler import error_handler
 
 
@@ -25,7 +26,8 @@ def get_reports_service(db: AsyncSession = Depends(get_db)):
     renderer = ReportPDFRenderer()
     storage = S3ReportStorage()
     queue = ReportQueue()
-    return ReportsService(db, repo, data_builder, renderer, storage, queue)
+    notification_service = EmailNotificationAdapter()
+    return ReportsService(db, repo, data_builder, renderer, storage, queue, notification_service)
 
 @router.post("", response_model=ReportResponse)
 @error_handler
