@@ -1,12 +1,12 @@
 from uuid import UUID
 from app.container import get_db
 from app.modules.trips.repository import TripRepo
-from app.modules.trips.schemas import CreateTripDTO, EditTripDTO, EndTripDTO, TripResponseDTO, ManualCreateTripDTO
+from app.modules.trips.schemas import CreateTripDTO, EditTripDTO, EndTripDTO, TripResponseDTO, ManualCreateTripDTO, MonthlyTripStatsResponseDTO
 from app.modules.trips.service import TripsService
 from app.core.error_handler  import error_handler
 from app.core.dependencies import get_current_user
 from app.modules.users.models import User
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from app.infra.db import AsyncSession
 from app.modules.rate_categories.repository import RateCategoryRepo
 from app.modules.rate_customizations.repository import RateCustomizationRepo
@@ -73,3 +73,8 @@ async def get_user_trips(svc: TripsService = Depends(get_trips_service), current
     trips = await svc.get_trips_by_userId(current_user.id)
     return [TripResponseDTO.model_validate(trip) for trip in trips]
 
+@router.get("/monthly-stats/{month}/{year}", response_model=MonthlyTripStatsResponseDTO)
+@error_handler
+async def get_monthly_trip_stats(month: int, year: int, svc: TripsService = Depends(get_trips_service), current_user: User = Depends(get_current_user)):
+    stats = await svc.get_monthly_stats(current_user.id, month, year)
+    return MonthlyTripStatsResponseDTO(**stats)

@@ -1,15 +1,20 @@
 import { Stack } from "expo-router";
-import './globals.css';
+import "./globals.css";
 import { TripDataProvider } from "./contexts/TripDataContext";
 export default function RootLayout() {
-  return (
-    <TripDataProvider>
-      <Stack>
-        <Stack.Screen 
-          name="(tabs)"
-          options={{ headerShown: false}}
-        />
-      </Stack>
-    </TripDataProvider>
-  );
+	return (
+		<TripDataProvider>
+			<Stack>
+				<Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+				<Stack.Screen
+					name="report-details"
+					options={{
+						headerShown: true,
+						title: "Reports History",
+						headerBackTitle: "(tabs)",
+					}}
+				/>
+			</Stack>
+		</TripDataProvider>
+	);
 }

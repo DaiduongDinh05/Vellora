@@ -4,6 +4,12 @@ from app.modules.trips.exceptions import InvalidTripDataError, TripAlreadyActive
 from app.modules.expenses.exceptions import ExpenseNotFoundError, ExpensePersistenceError, InvalidExpenseDataError, DuplicateExpenseError
 from app.modules.rate_customizations.exceptions import InvalidRateCustomizationDataError, RateCustomizationNotFoundError, RateCustomizationPersistenceError, DuplicateRateCustomizationError
 from app.modules.rate_categories.exceptions import InvalidRateCategoryDataError, RateCategoryNotFoundError, RateCategoryPersistenceError, DuplicateRateCategoryError
+from app.modules.common_places.exceptions import InvalidCommonPlaceDataError, CommonPlaceNotFoundError, CommonPlacePersistenceError, DuplicateCommonPlaceError, MaxCommonPlacesError
+from app.modules.reports.exceptions import (
+    InvalidReportDataError, ReportNotFoundError, ReportPersistenceError, 
+    ReportPermissionError, ReportRateLimitError, ReportSystemLimitError,
+    ReportExpiredError, ReportMaxRetriesError, ReportInvalidStateError
+)
 from fastapi import HTTPException
 
 
@@ -58,6 +64,38 @@ def error_handler(func):
             raise HTTPException(status_code=500, detail=str(e))
         except RateCategoryNotFoundError as e:
             raise HTTPException(status_code=404, detail=str(e))
+
+        #common_places
+        except InvalidCommonPlaceDataError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        except MaxCommonPlacesError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        except DuplicateCommonPlaceError as e:
+            raise HTTPException(status_code=409, detail=str(e))
+        except CommonPlacePersistenceError as e:
+            raise HTTPException(status_code=500, detail=str(e))
+        except CommonPlaceNotFoundError as e:
+            raise HTTPException(status_code=404, detail=str(e))
+        
+        #reports
+        except InvalidReportDataError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        except ReportNotFoundError as e:
+            raise HTTPException(status_code=404, detail=str(e))
+        except ReportPermissionError as e:
+            raise HTTPException(status_code=403, detail=str(e))
+        except ReportRateLimitError as e:
+            raise HTTPException(status_code=429, detail=str(e))
+        except ReportSystemLimitError as e:
+            raise HTTPException(status_code=503, detail=str(e))
+        except ReportExpiredError as e:
+            raise HTTPException(status_code=410, detail=str(e))
+        except ReportMaxRetriesError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        except ReportInvalidStateError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        except ReportPersistenceError as e:
+            raise HTTPException(status_code=500, detail=str(e))
         
         #all
         except Exception as e:
