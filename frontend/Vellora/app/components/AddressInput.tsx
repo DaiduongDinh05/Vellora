@@ -40,7 +40,7 @@ const AddressInput: React.FC<AddressInputProps> = ({
 
     const [suggestions, setSuggestions] = useState<any[]>([]);  // suggested addresses based on users input
     const [isLoading, setIsLoading] = useState(false);
-
+    const [isFocused, setIsFocused] = useState(false);
 
     // filter common places based on input
     const getLocalMatches = (query: string) => {
@@ -65,6 +65,11 @@ const AddressInput: React.FC<AddressInputProps> = ({
     // wait for 500 ms after typing stops before calling the API for locations
     useEffect(() => {
 
+        // don't search if not focused on the address input
+        if (!isFocused) {
+            return;
+        }
+
         // handle the case when the user did not type in anything yet
         if (!value || value.length < 3) {
             setSuggestions([]);
@@ -86,7 +91,7 @@ const AddressInput: React.FC<AddressInputProps> = ({
         }, 500);
 
         return () => clearTimeout(timer);
-    }, [value]);
+    }, [value, isFocused]);
 
     // mapbox api call
     const fetchAddressSuggestions = async (query: string, existingLocalResults: any[]) => {
@@ -121,7 +126,8 @@ const AddressInput: React.FC<AddressInputProps> = ({
         onAddressSelect({                // send address details back to the parent page
             place_name: finalText,
             center: item.center,
-        });                  
+        });    
+        setIsFocused(false);          // remove focus to hide suggestions              
     };
 
     return (
@@ -139,17 +145,24 @@ const AddressInput: React.FC<AddressInputProps> = ({
                     placeholderTextColor="gray"
                     value={value}
                     onChangeText={onChangeText}
+
+                    // handle focus events
+                    onFocus={() => setIsFocused(true)}
+
+                    // set timeouw to allow the click on the list item to refuster before hiding it
+                    onBlur={() => setTimeout(() => setIsFocused(false), 200)}
                 />
                 {isLoading && <ActivityIndicator size="small" color="#4DBF69" />}
             
             </View>
 
-            {suggestions.length > 0 && (
+            {suggestions.length > 0 && isFocused && (
                 <View style={styles.suggestionsContainer}>
                     <FlatList
                         data={suggestions}
                         keyExtractor={(item) => item.id}
                         scrollEnabled={false}
+                        keyboardShouldPersistTaps="handled"     // tap handling
                         renderItem={({ item }) => (
                             <TouchableOpacity
                                 style={styles.suggestionsItem}

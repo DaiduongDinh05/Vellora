@@ -63,15 +63,39 @@ const AddCommonPlaceScreen = () => {
                     await geocodeAddressString(address);
                 }
             } else {
-                // add: get current GPS location
-                let { status } = await Location.requestForegroundPermissionsAsync();
-                if (status === 'granted') {
-                    let loc = await Location.getCurrentPositionAsync({});
+                
+                // add mode: try to get gps, but don't crash if it fails
+                try {
 
-                    // only set if user hasn't typed anything yet
-                    if (!coordinates) {
-                        setCoordinates([loc.coords.longitude, loc.coords.latitude]);
+                    // add: get current GPS location
+                    let { status } = await Location.requestForegroundPermissionsAsync();
+                    if (status !== 'granted') {
+                        return;
                     }
+
+                    let lastKnown = await Location.getLastKnownPositionAsync({});
+                    if (lastKnown && !coordinates) {
+                        setCoordinates([lastKnown.coords.longitude, lastKnown.coords.latitude]);
+                    }
+
+                    // if we didnt get a location try the current position with a timeout
+                    if (!lastKnown) {
+                        try{
+                            let loc = await Location.getCurrentPositionAsync({
+                                accuracy: Location.Accuracy.Balanced,
+                            });
+                            if (!coordinates) {
+                                setCoordinates([loc.coords.longitude, loc.coords.latitude]);
+                            }
+                        } catch (gpsError) {
+                            // ignore the error. User can still type an address
+                            console.log("GPS signal weak or emulator stuck. Ignoring.");
+
+                        }
+                       
+                    }
+                } catch (e) {
+                    console.log('Location permission/service error: ', e);
                 }
             }
         };
