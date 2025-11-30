@@ -1,4 +1,4 @@
-import { Text, View, Keyboard, TouchableOpacity, TextInput, Alert } from 'react-native'
+import { Text, View, Keyboard, TouchableOpacity, TextInput, Alert, ActivityIndicator } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import Mapbox from '@rnmapbox/maps';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -8,6 +8,7 @@ import { FontAwesome } from '@expo/vector-icons';
 import ScreenLayout from './components/ScreenLayout';
 import AddressInput from './components/AddressInput';
 import Button from './components/Button';
+import { createCommonPlace, updateCommonPlace, deleteCommonPlace } from './services/commonPlaces';
 
 const MAPBOX_TOKEN = process.env.EXPO_PUBLIC_API_KEY_MAPBOX_PUBLIC_ACCESS_TOKEN;
 Mapbox.setAccessToken(`${MAPBOX_TOKEN}`);
@@ -25,41 +26,57 @@ const AddCommonPlaceScreen = () => {
     const [address, setAddress] = useState(isEditing ? (params.address as string) : '');
 
     // parse coordinates if they were passed as dtrings
-    const [coordinates, setCoordinates] = useState<[number, number] | null>(() => {
-        if (params.lng && params.lat) {
-            return [parseFloat(params.lng as string), parseFloat(params.lat as string)];
+    const [coordinates, setCoordinates] = useState<[number, number] | null>(null);
+
+    const [isGeocoding, setIsGeocoding] = useState(false);
+
+    // helper function for geocode address
+    const geocodeAddressString = async (addressText: string) => {
+        if (!addressText) return;
+
+        setIsGeocoding(true);
+
+        try {
+            const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(addressText)}.json?access_token=${MAPBOX_TOKEN}&limit=1`;
+            const response = await fetch(url);
+            const data = await response.json();
+
+            if (data.features && data.features.length > 0) {
+                setCoordinates(data.features[0].center);
+            }
+        } catch (error) {
+            console.error('Failed to geocode address: ', error);
+        } finally {
+            setIsGeocoding(false);
         }
-        return null;
-    });
+    };
 
     // initial location logic
     // make the map show user's current location if they didn't type an address yet
     // RUNS ONLY IF NOT EDITING
     
     useEffect(() => {
-        if (!isEditing){
-            (async () => {
-                try{
-                    let { status } = await Location.requestForegroundPermissionsAsync();
-                    if (status !== 'granted') {
-                        console.log('Permission denied');
-                        return;
-                    }
-                    let loc = await Location.getCurrentPositionAsync({
-                        accuracy: Location.Accuracy.Balanced,
-        
-                    });
-        
-                    // update state only if we haven't selected an address yet
+        const init = async () => {
+            if (isEditing) {
+                // edit: if we have an address but no coordinates yet, fetch them
+                if (address && !coordinates) {
+                    await geocodeAddressString(address);
+                }
+            } else {
+                // add: get current GPS location
+                let { status } = await Location.requestForegroundPermissionsAsync();
+                if (status === 'granted') {
+                    let loc = await Location.getCurrentPositionAsync({});
+
+                    // only set if user hasn't typed anything yet
                     if (!coordinates) {
                         setCoordinates([loc.coords.longitude, loc.coords.latitude]);
                     }
-                } catch (error) {
-                    console.error('Error getting location: ', error);
                 }
-                
-            })();   
-        }
+            }
+        };
+            
+        init();
     }, []);
 
     const handleAddressSelect = (addressData: any) => {
@@ -70,7 +87,7 @@ const AddCommonPlaceScreen = () => {
         }
     };
 
-    const handleSavePlace = () => {
+    const handleSavePlace = async () => {
         
         if (!name || !address || !coordinates) {
             alert('Please provide all details');
@@ -79,13 +96,15 @@ const AddCommonPlaceScreen = () => {
 
         // prepare data payload
         const placePayload = {
-            id: isEditing ? (params.id as string) : undefined,      // send id if editing
-            title: name,
+            // id: isEditing ? (params.id as string) : undefined,      // send id if editing
+            // title: name,
+            // address: address,
+            // geometry: {
+                //     type: 'Point',
+                //     coordinates: coordinates
+                // },
+            name: name,
             address: address,
-            geometry: {
-                type: 'Point',
-                coordinates: coordinates
-            },
         };
 
         // console.log('Saving common place: ', placePayload);
@@ -96,29 +115,36 @@ const AddCommonPlaceScreen = () => {
             
             if (isEditing) {
                 // update existing place logic here
-                console.log('Updating place: ', placePayload);
+                await updateCommonPlace(params.id as string, placePayload);
+                console.log('Updating place with id ', params.id, ' to: ', placePayload);
             } else {
                 // create new place logic here
+                await createCommonPlace(placePayload);
                 console.log('Creating new place: ', placePayload);
             }
             router.back();
-        } catch (error) {
+        } catch (error: any) {
+            alert(`Error: ${error.message}`);
             console.error('Error saving common place: ', error);
-            alert('Failed to save the place. Please try again.');
         }
     };
 
 
-    const handleDeletePlace = () => { 
+    const handleDeletePlace = async () => { 
         Alert.alert(
             "Delete Place",
             "Are you sure you want to delete this place?",
             [
                 { text: "Cancel", style: "cancel" },
-                { text: "Delete", style: "destructive", onPress: () => {
+                { text: "Delete", style: "destructive", onPress: async () => {
                         // deletion logic here
-                        console.log('Deleting place with id: ', params.id);
-                        router.back();
+                        try {
+                            await deleteCommonPlace(params.id as string);
+                            router.back();
+                        } catch (error) {
+                            alert('Error deleting place');
+                        }
+                        
                     } 
                 }
             ]
@@ -193,32 +219,39 @@ const AddCommonPlaceScreen = () => {
 
             {/* map preview */}
             <View className='mt-6 w-full h-80 overflow-hidden'>
-                <Mapbox.MapView
-                    style={{ flex: 1 }}
-                    styleURL={Mapbox.StyleURL.Street}
-                    logoEnabled={false}
-                    attributionEnabled={true}
-                >
 
-                    <Mapbox.Camera
-                        zoomLevel={14}
-                        centerCoordinate={coordinates || [0, 0]}
-                        animationMode='flyTo'
-                        animationDuration={1000}
-                    />
+                {/* show loading if we are fetching the coordinates for the address */}
+                {isGeocoding? (
+                    <ActivityIndicator size="large" color="#404CCF"/>
+                ) : (
+                    <Mapbox.MapView
+                        style={{ flex: 1, width: '100%' }}
+                        styleURL={Mapbox.StyleURL.Street}
+                        logoEnabled={false}
+                        attributionEnabled={true}
+                    >
 
-                    {/* show a pin at the coordinates */}
-                    {coordinates && (
-                        <Mapbox.PointAnnotation
-                            id="selectedLocation"
-                            coordinate={coordinates}
-                        >
-                            <View className='bg-primaryPurple p-2 rounded-full border-2 border-white shadow-sm'>
-                                <FontAwesome name="map-marker" size={20} color="white" />
-                            </View>
-                        </Mapbox.PointAnnotation>
-                    )}
-                </Mapbox.MapView>
+                        <Mapbox.Camera
+                            zoomLevel={14}
+                            centerCoordinate={coordinates || [0, 0]}
+                            animationMode='flyTo'
+                            animationDuration={1000}
+                        />
+
+                        {/* show a pin at the coordinates */}
+                        {coordinates && (
+                            <Mapbox.PointAnnotation
+                                id="selectedLocation"
+                                coordinate={coordinates}
+                            >
+                                <View className='bg-primaryPurple p-2 rounded-full border-2 border-white shadow-sm'>
+                                    <FontAwesome name="map-marker" size={20} color="white" />
+                                </View>
+                            </Mapbox.PointAnnotation>
+                        )}
+                    </Mapbox.MapView>
+
+                )}
             </View>
         </ScreenLayout>
 

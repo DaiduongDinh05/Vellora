@@ -6,6 +6,7 @@ import { FontAwesome } from "@expo/vector-icons";
 import Button from "../components/Button";
 import { useState } from "react";
 
+import { useCommonPlaces } from "../hooks/useCommonPlaces";
 import CommonPlaceCard from "../components/CommonPlaceCard";
 // import Tracking from "../components/tracking";
 
@@ -16,14 +17,16 @@ export default function Index() {
   // state for modal pop up with trip log seelction
   const [shotLogTripModal, setShowLogTripModal] = useState(false);
 
-  // temporary common places data
-  const commonPlaces = [
+  const { places: commonPlaces, loading } = useCommonPlaces();
 
-    { id: '1', title: 'Home', address: '123 Main St, Springfield, IL', lat: 39.7817, lng: -89.6501},
-    { id: '2', title: 'Work', address: '456 Corporate Blvd, Springfield, IL', lat: 39.7990, lng: -89.6436},
-    { id: '3', title: 'Gym', address: '789 Fitness Ave, Springfield, IL', lat: 39.7886, lng: -89.6544},
-    { id: '4', title: 'Grocery Store', address: '101 Market St, Springfield, IL', lat: 39.7833, lng: -89.6550},
-  ];
+  // temporary common places data
+  // const commonPlaces = [
+
+  //   { id: '1', title: 'Home', address: '123 Main St, Springfield, IL', lat: 39.7817, lng: -89.6501},
+  //   { id: '2', title: 'Work', address: '456 Corporate Blvd, Springfield, IL', lat: 39.7990, lng: -89.6436},
+  //   { id: '3', title: 'Gym', address: '789 Fitness Ave, Springfield, IL', lat: 39.7886, lng: -89.6544},
+  //   { id: '4', title: 'Grocery Store', address: '101 Market St, Springfield, IL', lat: 39.7833, lng: -89.6550},
+  // ];
 
 
 
@@ -84,19 +87,23 @@ export default function Index() {
             {/* common places GRID CARDS*/}
             <View className="flex-row flex-wrap gap-4">
 
+              {/* show loading state */}
+              {loading && <Text>Loading common places...</Text>}
+
+              {/* rednder places */}
               {commonPlaces.map((place) => (
                 <CommonPlaceCard
                   key={place.id}
-                  title={place.title}
+                  title={place.name}
                   address={place.address}
                   onPress={() => router.push({
                     pathname: '/AddCommonPlaceScreen',
                     params: {
                       id: place.id,
-                      title: place.title,
-                      address: place.address,
-                      lat: place.lat,
-                      lng: place.lng
+                      title: place.name,
+                      address: place.address
+                      // lat: place.lat,
+                      // lng: place.lng
                     } 
                   })}
                 />
