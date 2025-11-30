@@ -7,15 +7,13 @@ from app.modules.reports.schemas import GenerateReportDTO
 from app.modules.reports.models import Report, ReportStatus
 from app.modules.reports.repository import ReportRepository
 from app.modules.reports.data_builder import ReportDataBuilder
-from app.modules.reports.storage import S3ReportStorage
 from app.modules.reports.renderer_fpdf import ReportPDFRenderer
-from app.modules.reports.queue import ReportQueue
 from app.modules.reports.exceptions import (
     ReportNotFoundError, ReportPermissionError, ReportRateLimitError,
     ReportSystemLimitError, ReportMaxRetriesError, ReportInvalidStateError,
     ReportExpiredError, ReportPersistenceError
 )
-from app.modules.reports.ports import NotificationPort
+from app.modules.reports.ports import NotificationPort, StoragePort, QueuePort
 from app.modules.users.models import User
 import logging
 
@@ -24,13 +22,19 @@ class ReportsService:
     SYSTEM_MAX = 50
     MAX_RETRY_ATTEMPTS = 3
 
-    def __init__(self, session: AsyncSession, repo: ReportRepository, data_builder: ReportDataBuilder | None = None, renderer: ReportPDFRenderer | None = None, storage: S3ReportStorage | None = None, queue: ReportQueue | None = None, notification_service: NotificationPort | None = None):
+    def __init__(self, session: AsyncSession, repo: ReportRepository, data_builder: ReportDataBuilder | None = None, renderer: ReportPDFRenderer | None = None, storage: StoragePort | None = None, queue: QueuePort | None = None, notification_service: NotificationPort | None = None):
         self.session = session
         self.repo = repo
         self.data_builder = data_builder or ReportDataBuilder(session)
         self.renderer = renderer or ReportPDFRenderer()
-        self.storage = storage or S3ReportStorage()
-        self.queue = queue or ReportQueue()
+        
+        if storage is None:
+            raise ValueError("Storage port is required")
+        if queue is None:
+            raise ValueError("Queue port is required")
+            
+        self.storage = storage
+        self.queue = queue
         self.notification_service = notification_service
 
     async def generate_report(self, user_id: UUID, dto: GenerateReportDTO) -> Report:

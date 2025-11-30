@@ -3,9 +3,11 @@ import uuid
 import botocore
 from app.aws_client import get_s3_client
 from app.config import settings
+from app.modules.reports.ports import StoragePort
 
 
-class S3ReportStorage:
+class S3ReportStorageAdapter(StoragePort):
+    
     def __init__(self):
         self.s3 = get_s3_client()
         self.bucket = settings.REPORTS_BUCKET
@@ -22,12 +24,11 @@ class S3ReportStorage:
 
         return file_name
 
-
     def get_signed_url(self, key: str, expires_in: int = 300) -> str:
         return self.s3.generate_presigned_url(
             "get_object",
             Params={"Bucket": self.bucket, "Key": key},
-            ExpiresIn = expires_in
+            ExpiresIn=expires_in
         )
     
     def exists(self, key: str) -> bool:
