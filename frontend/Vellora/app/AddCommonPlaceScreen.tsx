@@ -1,9 +1,8 @@
-import { Text, View } from 'react-native'
+import { Text, View, Keyboard, TouchableOpacity, TextInput, Alert } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import Mapbox from '@rnmapbox/maps';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Location from 'expo-location';
-import { Keyboard, TouchableOpacity, TextInput } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 
 import ScreenLayout from './components/ScreenLayout';
@@ -15,36 +14,52 @@ Mapbox.setAccessToken(`${MAPBOX_TOKEN}`);
 
 const AddCommonPlaceScreen = () => {
     const router = useRouter();
+    const params = useLocalSearchParams();
 
-    const [name, setName] = useState('');
-    const [address, setAddress] = useState('');
-    const [coordinates, setCoordinates] = useState<[number, number] | null>(null);
+    // determine if we are editing the location
+    const isEditing = !!params.id;
+
+
+    // if editing use passed params. if not use empty strings
+    const [name, setName] = useState(isEditing ? (params.title as string) : '');
+    const [address, setAddress] = useState(isEditing ? (params.address as string) : '');
+
+    // parse coordinates if they were passed as dtrings
+    const [coordinates, setCoordinates] = useState<[number, number] | null>(() => {
+        if (params.lng && params.lat) {
+            return [parseFloat(params.lng as string), parseFloat(params.lat as string)];
+        }
+        return null;
+    });
 
     // initial location logic
     // make the map show user's current location if they didn't type an address yet
+    // RUNS ONLY IF NOT EDITING
     
     useEffect(() => {
-        (async () => {
-            try{
-                let { status } = await Location.requestForegroundPermissionsAsync();
-                if (status !== 'granted') {
-                    console.log('Permission denied');
-                    return;
+        if (!isEditing){
+            (async () => {
+                try{
+                    let { status } = await Location.requestForegroundPermissionsAsync();
+                    if (status !== 'granted') {
+                        console.log('Permission denied');
+                        return;
+                    }
+                    let loc = await Location.getCurrentPositionAsync({
+                        accuracy: Location.Accuracy.Balanced,
+        
+                    });
+        
+                    // update state only if we haven't selected an address yet
+                    if (!coordinates) {
+                        setCoordinates([loc.coords.longitude, loc.coords.latitude]);
+                    }
+                } catch (error) {
+                    console.error('Error getting location: ', error);
                 }
-                let loc = await Location.getCurrentPositionAsync({
-                    accuracy: Location.Accuracy.Balanced,
-    
-                });
-    
-                // update state only if we haven't selected an address yet
-                if (!coordinates) {
-                    setCoordinates([loc.coords.longitude, loc.coords.latitude]);
-                }
-            } catch (error) {
-                console.error('Error getting location: ', error);
-            }
-            
-        })();
+                
+            })();   
+        }
     }, []);
 
     const handleAddressSelect = (addressData: any) => {
@@ -64,6 +79,7 @@ const AddCommonPlaceScreen = () => {
 
         // prepare data payload
         const placePayload = {
+            id: isEditing ? (params.id as string) : undefined,      // send id if editing
             title: name,
             address: address,
             geometry: {
@@ -72,12 +88,19 @@ const AddCommonPlaceScreen = () => {
             },
         };
 
-        console.log('Saving common place: ', placePayload);
+        // console.log('Saving common place: ', placePayload);
 
         try {
             // logic to save the common place
             // change to backend API later
-
+            
+            if (isEditing) {
+                // update existing place logic here
+                console.log('Updating place: ', placePayload);
+            } else {
+                // create new place logic here
+                console.log('Creating new place: ', placePayload);
+            }
             router.back();
         } catch (error) {
             console.error('Error saving common place: ', error);
@@ -86,11 +109,27 @@ const AddCommonPlaceScreen = () => {
     };
 
 
+    const handleDeletePlace = () => { 
+        Alert.alert(
+            "Delete Place",
+            "Are you sure you want to delete this place?",
+            [
+                { text: "Cancel", style: "cancel" },
+                { text: "Delete", style: "destructive", onPress: () => {
+                        // deletion logic here
+                        console.log('Deleting place with id: ', params.id);
+                        router.back();
+                    } 
+                }
+            ]
+        );
+    };
+
     return (
         <ScreenLayout
             footer={
                 <Button 
-                    title="Save Place"
+                    title={isEditing ? 'Save Changes' : 'Save Place'}
                     onPress={handleSavePlace}
                     className='py-4 px-5'
                 />
@@ -105,10 +144,21 @@ const AddCommonPlaceScreen = () => {
                     <FontAwesome name="close" size={20} color="#404CCF" />
 
                 </TouchableOpacity>
+
+                {/* show the delete button only in edit mode */}
+                {
+                    isEditing ? (
+                        <TouchableOpacity onPress={handleDeletePlace} className='p-2'>
+                            <FontAwesome name='trash' size={20} color="#ED4444"/>
+                        </TouchableOpacity>
+                    ) : (
+                        <View style={{width: 40}}></View>   // placeholder to keep the title centered
+                    )
+                }
             </View>
 
             <Text className='text-2xl font-bold text-primaryPurple text-center mt-2 mb-8'>
-                Add a Common Place
+                {isEditing ? 'Edit Common Place' : 'Add Common Place'}
             </Text>
 
             {/* form fields */}

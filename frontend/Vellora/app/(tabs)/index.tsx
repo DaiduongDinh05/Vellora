@@ -19,10 +19,10 @@ export default function Index() {
   // temporary common places data
   const commonPlaces = [
 
-    { id: '1', title: 'Home', address: '123 Main St, Springfield, IL'},
-    { id: '2', title: 'Work', address: '456 Corporate Blvd, Springfield, IL'},
-    { id: '3', title: 'Gym', address: '789 Fitness Ave, Springfield, IL'},
-    { id: '4', title: 'Grocery Store', address: '101 Market St, Springfield, IL'},
+    { id: '1', title: 'Home', address: '123 Main St, Springfield, IL', lat: 39.7817, lng: -89.6501},
+    { id: '2', title: 'Work', address: '456 Corporate Blvd, Springfield, IL', lat: 39.7990, lng: -89.6436},
+    { id: '3', title: 'Gym', address: '789 Fitness Ave, Springfield, IL', lat: 39.7886, lng: -89.6544},
+    { id: '4', title: 'Grocery Store', address: '101 Market St, Springfield, IL', lat: 39.7833, lng: -89.6550},
   ];
 
 
@@ -89,7 +89,16 @@ export default function Index() {
                   key={place.id}
                   title={place.title}
                   address={place.address}
-                  onPress={() => {console.log('Pressed place: ', place.title)}}
+                  onPress={() => router.push({
+                    pathname: '/AddCommonPlaceScreen',
+                    params: {
+                      id: place.id,
+                      title: place.title,
+                      address: place.address,
+                      lat: place.lat,
+                      lng: place.lng
+                    } 
+                  })}
                 />
               ))}  
             </View>
