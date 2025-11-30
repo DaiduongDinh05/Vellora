@@ -271,3 +271,26 @@ class ReportsService:
             await self.session.commit()
 
         return reports
+
+    async def delete_report(self, report_id: UUID, user_id: UUID) -> None:
+        report = await self.repo.get_by_id(self.session, report_id)
+        
+        if not report:
+            raise ReportNotFoundError("Report not found")
+            
+        if report.user_id != user_id:
+            raise ReportPermissionError("Not allowed to delete this report")
+        
+        if report.file_name and self.storage.exists(report.file_name):
+            try:
+                self.storage.delete(report.file_name)
+            except Exception as e:
+                logger = logging.getLogger(__name__)
+                logger.warning(f"Failed to delete file {report.file_name} from storage: {str(e)}")
+        
+        try:
+            await self.repo.delete(self.session, report_id)
+            await self.session.commit()
+        except Exception as e:
+            await self.session.rollback()
+            raise ReportPersistenceError("Failed to delete report") from e

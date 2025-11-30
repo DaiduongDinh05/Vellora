@@ -28,3 +28,11 @@ class ReportRepository:
     async def update(self, session: AsyncSession, report: Report) -> Report:
         await session.flush()
         return report
+
+    async def delete(self, session: AsyncSession, report_id: UUID) -> None:
+        result = await session.execute(
+            sa.select(Report).where(Report.id == report_id)
+        )
+        report = result.scalar_one_or_none()
+        if report:
+            await session.delete(report)

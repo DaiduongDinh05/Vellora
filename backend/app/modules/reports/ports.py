@@ -30,6 +30,10 @@ class StoragePort(ABC):
     @abstractmethod
     def exists(self, key: str) -> bool:
         pass
+    
+    @abstractmethod
+    def delete(self, key: str) -> bool:
+        pass
 
 
 class QueuePort(ABC):

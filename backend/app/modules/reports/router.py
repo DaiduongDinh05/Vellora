@@ -74,3 +74,9 @@ async def retry_report(report_id: UUID, service: ReportsService = Depends(get_re
 async def regenerate_report(report_id: UUID,service: ReportsService = Depends(get_reports_service), user=Depends(get_current_user)):
     result = await service.regenerate_report(report_id, user.id)
     return result
+
+@router.delete("/{report_id}")
+@error_handler
+async def delete_report(report_id: UUID, user=Depends(get_current_user), service: ReportsService = Depends(get_reports_service)):
+    await service.delete_report(report_id, user.id)
+    return {"message": "Report deleted successfully"}

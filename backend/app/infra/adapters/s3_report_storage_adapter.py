@@ -39,3 +39,10 @@ class S3ReportStorageAdapter(StoragePort):
             if e.response['Error']['Code'] == '404':
                 return False
             raise
+
+    def delete(self, key: str) -> bool:
+        try:
+            self.s3.delete_object(Bucket=self.bucket, Key=key)
+            return True
+        except botocore.exceptions.ClientError:
+            return False
