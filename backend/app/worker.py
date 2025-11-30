@@ -8,6 +8,8 @@ from app.infra.db import AsyncSessionLocal
 from app.modules.reports.repository import ReportRepository
 from app.modules.reports.service import ReportsService
 from app.infra.adapters.email_notification_adapter import EmailNotificationAdapter
+from app.infra.adapters.s3_report_storage_adapter import S3ReportStorageAdapter
+from app.infra.adapters.sqs_report_queue_adapter import SQSReportQueueAdapter
 
 from app.modules.reports.models import Report, ReportStatus
 from app.modules.trips.models import Trip
@@ -107,7 +109,15 @@ class ReportWorker:
                     print(f"{report_id} already completed - skipping.")
                     return True
 
-                service = ReportsService(session, repo, None, None, None, None, EmailNotificationAdapter())
+                service = ReportsService(
+                    session, 
+                    repo, 
+                    None, 
+                    None, 
+                    S3ReportStorageAdapter(), 
+                    SQSReportQueueAdapter(), 
+                    EmailNotificationAdapter()
+                )
 
                 report.status = ReportStatus.processing
                 await session.commit()

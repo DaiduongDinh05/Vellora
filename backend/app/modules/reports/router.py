@@ -10,10 +10,10 @@ from app.modules.reports.service import ReportsService
 from app.modules.reports.schemas import GenerateReportDTO, ReportResponse, ReportStatusResponse
 from app.core.dependencies import get_current_user
 from app.modules.reports.models import ReportStatus
-from app.modules.reports.storage import S3ReportStorage
 from app.modules.reports.data_builder import ReportDataBuilder
 from app.modules.reports.renderer_fpdf import ReportPDFRenderer
-from app.modules.reports.queue import ReportQueue
+from app.infra.adapters.s3_report_storage_adapter import S3ReportStorageAdapter
+from app.infra.adapters.sqs_report_queue_adapter import SQSReportQueueAdapter
 from app.infra.adapters.email_notification_adapter import EmailNotificationAdapter
 from app.core.error_handler import error_handler
 
@@ -24,8 +24,8 @@ def get_reports_service(db: AsyncSession = Depends(get_db)):
     repo = ReportRepository()
     data_builder = ReportDataBuilder(db)
     renderer = ReportPDFRenderer()
-    storage = S3ReportStorage()
-    queue = ReportQueue()
+    storage = S3ReportStorageAdapter()
+    queue = SQSReportQueueAdapter()
     notification_service = EmailNotificationAdapter()
     return ReportsService(db, repo, data_builder, renderer, storage, queue, notification_service)
 
