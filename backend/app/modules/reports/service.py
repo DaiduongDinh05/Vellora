@@ -294,3 +294,36 @@ class ReportsService:
         except Exception as e:
             await self.session.rollback()
             raise ReportPersistenceError("Failed to delete report") from e
+
+    async def cleanup_stuck_reports(self, timeout_minutes: int = 30) -> int:
+
+        #if its been longer than 30 mins consider it stuck.
+        stuck_reports = await self.repo.get_stuck_reports(self.session, timeout_minutes)
+        
+        count = 0
+        for report in stuck_reports:
+            report.status = ReportStatus.failed
+            count += 1
+            
+            if self.notification_service:
+                try:
+                    user = await self.session.get(User, report.user_id)
+                    if user:
+                        await self.notification_service.notify_report_failed(user, report)
+                except Exception as e:
+                    logger = logging.getLogger(__name__)
+                    logger.warning(f"Failed to send notification for stuck report {report.id}: {str(e)}")
+        
+        if count > 0:
+            await self.session.commit()
+            logger = logging.getLogger(__name__)
+            logger.info(f"Cleaned up {count} stuck reports")
+        
+        return count
+
+    async def mark_processing_started(self, report_id: UUID) -> None:
+        report = await self.repo.get_by_id(self.session, report_id)
+        if report:
+            report.status = ReportStatus.processing
+            report.processing_started_at = datetime.now(timezone.utc)
+            await self.session.commit()

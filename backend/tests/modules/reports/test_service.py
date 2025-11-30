@@ -40,7 +40,7 @@ class TestReportsService:
         storage = MagicMock()
         storage.exists.return_value = True
         storage.get_signed_url.return_value = "http://example.com/report.pdf"
-        storage.save.return_value = "storage_key"
+        storage.save.return_value = "report_file.pdf"
         return storage
 
     @pytest.fixture
@@ -338,14 +338,14 @@ class TestGenerateNow(TestReportsService):
         mock_repo.get_by_id.return_value = sample_report
         mock_data_builder.build.return_value = {"test": "data"}
         mock_renderer.render.return_value = b"pdf_content"
-        mock_storage.save.return_value = "storage_key"
+        mock_storage.save.return_value = "report_file.pdf"
 
         result = await service.generate_now(report_id)
 
         assert result == sample_report
         assert sample_report.status == ReportStatus.completed
-        assert sample_report.file_name == "storage_key"
-        assert sample_report.file_url == "storage_key"
+        assert sample_report.file_name == "report_file.pdf"
+        assert sample_report.file_url == "report_file.pdf"
         assert sample_report.completed_at is not None
         assert sample_report.expires_at is not None
         
