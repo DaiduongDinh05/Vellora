@@ -14,6 +14,7 @@ import { styles } from "../styles/LoginStyles";
 import { getProviderAuthorizeUrl, login } from "../services/auth";
 import { tokenStorage } from "../services/tokenStorage";
 import { router, useLocalSearchParams } from "expo-router";
+import { getOAuthRedirectUri } from "../constants/api";
 
 export default function LoginPage() {
 	const params = useLocalSearchParams();
@@ -65,7 +66,8 @@ export default function LoginPage() {
 		setLoading(true);
 		setError(null);
 		try {
-			const data = await getProviderAuthorizeUrl("google");
+			const redirectUri = getOAuthRedirectUri();
+			const data = await getProviderAuthorizeUrl("google", redirectUri);
 			await Linking.openURL(data.authorization_url);
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Unable to sign in.");

@@ -6,7 +6,10 @@
     "orientation": "portrait",
     "icon": "./app/assets/Vellora_Dark_Logo.png",
     "scheme": "vellora",
-    "deeplinks": ["auth/google/callback"],
+    "onwer": "Vellora",
+    "deeplinks": [
+      "auth/google/callback"
+    ],
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -89,7 +92,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "7a1814f5-9fa7-4919-9f69-4eeaa99339c2"
+        "projectId": "dd057640-0964-417b-bdb7-fa07a0c36f37"
       }
     }
   }

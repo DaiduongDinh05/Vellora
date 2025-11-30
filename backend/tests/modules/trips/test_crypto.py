@@ -153,8 +153,8 @@ class TestRoundTripEncryption:
 
 class TestEncryptGeometry:
 
-    def test_encrypt_geometry_with_valid_string(self):
-        geometry = '{"type":"LineString","coordinates":[[-122.4194,37.7749],[-122.4094,37.7849]]}'
+    def test_encrypt_geometry_with_valid_dict(self):
+        geometry = {"type":"LineString","coordinates":[[-122.4194,37.7749],[-122.4094,37.7849]]}
         
         encrypted = encrypt_geometry(geometry)
         
@@ -162,13 +162,13 @@ class TestEncryptGeometry:
         assert isinstance(encrypted, str)
         assert len(encrypted) > 0
 
-    def test_encrypt_geometry_with_empty_string(self):
-        result = encrypt_geometry("")
+    def test_encrypt_geometry_with_empty_dict(self):
+        result = encrypt_geometry({})
         
         assert result == ""
 
     def test_encrypt_geometry_with_complex_geojson(self):
-        geometry = '{"type":"Polygon","coordinates":[[[-122.4,37.8],[-122.4,37.7],[-122.3,37.7],[-122.3,37.8],[-122.4,37.8]]]}'
+        geometry = {"type":"Polygon","coordinates":[[[-122.4,37.8],[-122.4,37.7],[-122.3,37.7],[-122.3,37.8],[-122.4,37.8]]]}
         
         encrypted = encrypt_geometry(geometry)
         
@@ -177,7 +177,7 @@ class TestEncryptGeometry:
         assert len(encrypted) > 0
 
     def test_encrypt_geometry_is_non_deterministic(self):
-        geometry = '{"type":"Point","coordinates":[-122.4194,37.7749]}'
+        geometry = {"type":"Point","coordinates":[-122.4194,37.7749]}
         
         encrypted1 = encrypt_geometry(geometry)
         encrypted2 = encrypt_geometry(geometry)
@@ -193,7 +193,7 @@ class TestEncryptGeometry:
 class TestDecryptGeometry:
 
     def test_decrypt_geometry_with_valid_token(self):
-        original = '{"type":"LineString","coordinates":[[-122.4194,37.7749],[-122.4094,37.7849]]}'
+        original = {"type":"LineString","coordinates":[[-122.4194,37.7749],[-122.4094,37.7849]]}
         encrypted = encrypt_geometry(original)
         
         decrypted = decrypt_geometry(encrypted)
@@ -203,10 +203,10 @@ class TestDecryptGeometry:
     def test_decrypt_geometry_with_empty_string(self):
         result = decrypt_geometry("")
         
-        assert result == ""
+        assert result == {}
 
     def test_decrypt_geometry_with_complex_geojson(self):
-        original = '{"type":"Polygon","coordinates":[[[-122.4,37.8],[-122.4,37.7],[-122.3,37.7],[-122.3,37.8],[-122.4,37.8]]]}'
+        original = {"type":"Polygon","coordinates":[[[-122.4,37.8],[-122.4,37.7],[-122.3,37.7],[-122.3,37.8],[-122.4,37.8]]]}
         encrypted = encrypt_geometry(original)
         
         decrypted = decrypt_geometry(encrypted)
@@ -220,7 +220,7 @@ class TestDecryptGeometry:
             decrypt_geometry(invalid_token)
 
     def test_decrypt_geometry_with_corrupted_token(self):
-        original = '{"type":"Point","coordinates":[-122.4194,37.7749]}'
+        original = {"type":"Point","coordinates":[-122.4194,37.7749]}
         encrypted = encrypt_geometry(original)
         
         corrupted = encrypted[:-5] + "XXXXX"
@@ -233,11 +233,10 @@ class TestGeometryRoundTripEncryption:
 
     def test_round_trip_geometry_encryption_decryption(self):
         geometries = [
-            '{"type":"Point","coordinates":[-122.4194,37.7749]}',
-            '{"type":"LineString","coordinates":[[-122.4194,37.7749],[-122.4094,37.7849]]}',
-            '{"type":"Polygon","coordinates":[[[-122.4,37.8],[-122.4,37.7],[-122.3,37.7],[-122.3,37.8],[-122.4,37.8]]]}',
-            '{"type":"MultiPoint","coordinates":[[-122.4194,37.7749],[-122.4094,37.7849]]}',
-            '   {"type":"Point","coordinates":[-122.4194,37.7749]}   ',  # with spaces
+            {"type":"Point","coordinates":[-122.4194,37.7749]},
+            {"type":"LineString","coordinates":[[-122.4194,37.7749],[-122.4094,37.7849]]},
+            {"type":"Polygon","coordinates":[[[-122.4,37.8],[-122.4,37.7],[-122.3,37.7],[-122.3,37.8],[-122.4,37.8]]]},
+            {"type":"MultiPoint","coordinates":[[-122.4194,37.7749],[-122.4094,37.7849]]},
         ]
         
         for geometry in geometries:
@@ -246,7 +245,7 @@ class TestGeometryRoundTripEncryption:
             assert decrypted == geometry, f"Round-trip failed for: {geometry}"
 
     def test_multiple_geometry_encryptions_decrypt_to_same_value(self):
-        geometry = '{"type":"Point","coordinates":[-122.4194,37.7749]}'
+        geometry = {"type":"Point","coordinates":[-122.4194,37.7749]}
         
         encrypted1 = encrypt_geometry(geometry)
         encrypted2 = encrypt_geometry(geometry)
@@ -258,7 +257,7 @@ class TestGeometryRoundTripEncryption:
 
     def test_geometry_encryption_handles_large_data(self):
         coordinates = [[-122.4194 + i*0.001, 37.7749 + i*0.001] for i in range(1000)]
-        large_geometry = f'{{"type":"LineString","coordinates":{coordinates}}}'
+        large_geometry = {"type":"LineString","coordinates":coordinates}
         
         encrypted = encrypt_geometry(large_geometry)
         decrypted = decrypt_geometry(encrypted)

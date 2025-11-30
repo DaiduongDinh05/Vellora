@@ -25,7 +25,7 @@ class CreateTripDTO(BaseModel):
 
 class EndTripDTO(BaseModel):
     end_address: str
-    geometry: str
+    geometry: dict
     distance_meters: float
     
     @field_validator('distance_meters')
@@ -59,7 +59,7 @@ class ManualCreateTripDTO(BaseModel):
     purpose: str | None = None
     vehicle: str | None = None
     miles: float
-    geometry: str | None = None
+    geometry: dict | None = None
     started_at: datetime.datetime
     ended_at: datetime.datetime
     rate_customization_id: UUID
@@ -77,7 +77,7 @@ class TripResponseDTO(BaseModel):
     status: TripStatus
     start_address: str
     end_address: str | None = None
-    geometry: str | None = None
+    geometry: dict | None = None
     purpose: str | None = None
     vehicle: str | None = None
     miles: float | None = None
@@ -130,3 +130,10 @@ class TripResponseDTO(BaseModel):
 
     class Config:
         from_attributes = True
+
+class MonthlyTripStatsResponseDTO(BaseModel):
+    month: int
+    year: int
+    total_drives: int
+    total_miles: float
+    total_reimbursement: float
