@@ -17,14 +17,15 @@ interface TripCardProps {
     distance_meters: number;
 }
 
-const router = useRouter();
-
-
-const handleEditTrip = () => {
-    router.push('/pages/editTripPage')
-}
 
 const TripCard: React.FC<TripCardProps> = ({ geometry, start_address, end_address, mileage_reimbursement_total, distance_meters }) => {
+
+    const router = useRouter();
+
+
+    const handleEditTrip = () => {
+        router.push('/pages/editTripPage')
+}
 
     return (
         <View style={styles.cardContainer}>
