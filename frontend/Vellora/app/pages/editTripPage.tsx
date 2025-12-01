@@ -10,6 +10,8 @@ import { useState, useEffect } from "react";
 import EditableNumericDisplay from "../components/EditableNumericDisplay";
 import Button from "../components/Button";
 import * as ImagePicker from 'expo-image-picker';
+import { useCommonPlaces } from "../hooks/useCommonPlaces";
+
 
 const MAPBOX_KEY = process.env.EXPO_PUBLIC_API_KEY_MAPBOX_PUBLIC_ACCESS_TOKEN;
 
@@ -40,6 +42,7 @@ const EditTripPage = () => {
     const [imageName, setImageName] = useState<string | null>(null);
 
     const { rateItems, categoryItems, loading } = useRateOptions();
+    const { places: commonPlaces } = useCommonPlaces();
 
     // Get the trip that will be edited
     const handleGetTrip = async () => {
@@ -206,6 +209,14 @@ const EditTripPage = () => {
             vehicleItems={vehicleItems}
             typeItems={categoryItems}
             rateItems={rateItems}
+
+            commonPlaces={commonPlaces.map((p: { id: string; name: string; address: string }) => ({
+            id: p.id,
+            title: p.name,
+            address: p.address
+  
+        }))}
+
 
             />
             <Button
