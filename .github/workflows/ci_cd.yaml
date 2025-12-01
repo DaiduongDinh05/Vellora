@@ -45,7 +45,7 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           if [ -f requirements-test.txt ]; then pip install -r requirements-test.txt; fi
-      
+
       - name: Run Backend Tests
         working-directory: backend
         run: |
@@ -57,17 +57,17 @@ jobs:
   frontend_basic_checks:
     name: Frontend Basic Checks
     needs: paths
-    if: ${{ (github.base_ref == 'dev' || github.base_ref == 'main') && needs.paths.outputs.backend == 'true' }}
+    if: ${{ (github.base_ref == 'dev' || github.base_ref == 'main') && needs.paths.outputs.frontend == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
-          cache: 'npm'
+          node-version: "24"
+          cache: "npm"
           cache-dependency-path: frontend/Vellora/package-lock.json
-  
+
       # Add any frontend build/test steps if needed.
       - name: Install Frontend Dependencies
         working-directory: frontend/Vellora
@@ -81,7 +81,7 @@ jobs:
       - name: Check TypeScript types
         working-directory: frontend/Vellora
         run: npx tsc --noEmit
-  
+
   regression_tests:
     name: Regression Tests
     if: github.base_ref == 'qa' || github.base_ref == 'main'
@@ -105,13 +105,19 @@ jobs:
             echo "Error: Can only merge to main from qa branch"
             exit 1
           fi
-  
+
   deploy_production:
     name: Deploy to Production
-    needs: [backend_basic_checks, frontend_basic_checks, regression_tests, main_branch_check]
+    needs:
+      [
+        backend_basic_checks,
+        frontend_basic_checks,
+        regression_tests,
+        main_branch_check,
+      ]
     permissions:
-      id-token: write   # This is required for requesting the JWT
-      contents: read    # This is required for actions/checkout
+      id-token: write # This is required for requesting the JWT
+      contents: read # This is required for actions/checkout
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the code
@@ -120,7 +126,7 @@ jobs:
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::260125007066:role/GitHubActions  # Update with correct ARN
+          role-to-assume: arn:aws:iam::260125007066:role/GitHubActions # Update with correct ARN
           aws-region: us-east-2
           role-session-name: gha-${{ github.run_id }}
       - name: Sts GetCallerIdentity
@@ -164,4 +170,3 @@ jobs:
             -e ENV=Production \
             260125007066.dkr.ecr.us-east-2.amazonaws.com/vellora/backend:latest
             docker exec -it vellora-backend alembic upgrade head
-
