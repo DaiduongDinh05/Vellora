@@ -31,7 +31,7 @@ class DummyStorage:
 
 def make_upload(filename: str, content_type: str, data: bytes) -> UploadFile:
     upload = UploadFile(filename=filename, file=io.BytesIO(data))
-    # older Starlette versions take content_type from headers, not constructor
+    
     upload.headers = {"content-type": content_type}
     return upload
 
