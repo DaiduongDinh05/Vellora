@@ -22,7 +22,7 @@ interface TripCardProps {
 const TripCard: React.FC<TripCardProps> = ({ id, geometry, start_address, end_address, mileage_reimbursement_total, distance_meters }) => {
 
 
-    const router = useRouter();
+const router = useRouter();
 
 
     const handleEditTrip = () => {

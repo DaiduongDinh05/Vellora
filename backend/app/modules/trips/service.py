@@ -251,6 +251,15 @@ class TripsService:
     async def get_trips_by_userId(self, user_id: UUID):
         return await self.repo.get_user_trips(user_id)
     
+    async def get_monthly_stats(self, user_id: UUID, month: int, year: int):
+        stats = await self.repo.get_monthly_stats(user_id, month, year)
+        
+        stats['total_reimbursement'] = stats['total_mileage_reimbursement'] + stats['total_expense_reimbursement']
+        stats['month'] = month
+        stats['year'] = year
+        
+        return stats
+    
 
 
     

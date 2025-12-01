@@ -130,3 +130,10 @@ class TripResponseDTO(BaseModel):
 
     class Config:
         from_attributes = True
+
+class MonthlyTripStatsResponseDTO(BaseModel):
+    month: int
+    year: int
+    total_drives: int
+    total_miles: float
+    total_reimbursement: float

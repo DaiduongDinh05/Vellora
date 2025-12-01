@@ -126,6 +126,7 @@ const Tracking = () => {
         <Button 
           title="Retry" 
           onPress={() => window.location.reload()} 
+          className='py-4 px-5'
         />
       </>
     );
@@ -203,7 +204,7 @@ const Tracking = () => {
           title={isGettingLocation ? 'Getting Location...' : 'Start Trip'}
           onPress={handleStartTrip}
           disabled={isGettingLocation}
-          className=''
+          className='py-4 px-5'
         />
       }
     >

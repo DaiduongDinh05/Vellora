@@ -831,3 +831,60 @@ class TestTripsServiceCancelTrip:
         with pytest.raises(InvalidTripDataError) as exc_info:
             await service.cancel_trip(user_id, trip_id)
         assert "Only active trips can be cancelled" in str(exc_info.value)
+
+
+class TestTripsServiceGetMonthlyStats:
+
+    @pytest.fixture
+    def user_id(self):
+        return uuid4()
+
+    @pytest.fixture
+    def trips_service(self):
+        repo = AsyncMock(spec=TripRepo)
+        category_repo = AsyncMock(spec=RateCategoryRepo)
+        customization_repo = AsyncMock(spec=RateCustomizationRepo)
+        expense_service = AsyncMock(spec=ExpensesService)
+        return TripsService(repo, category_repo, customization_repo, expense_service)
+
+    @pytest.mark.asyncio
+    async def test_get_monthly_stats_success(self, trips_service, user_id):
+        # Arrange
+        trips_service.repo.get_monthly_stats.return_value = {
+            'total_drives': 5,
+            'total_miles': 100.5,
+            'total_mileage_reimbursement': 50.0,
+            'total_expense_reimbursement': 25.0
+        }
+
+        # Act
+        result = await trips_service.get_monthly_stats(user_id, 11, 2025)
+
+        # Assert
+        trips_service.repo.get_monthly_stats.assert_called_once_with(user_id, 11, 2025)
+        assert result['month'] == 11
+        assert result['year'] == 2025
+        assert result['total_drives'] == 5
+        assert result['total_miles'] == 100.5
+        assert result['total_reimbursement'] == 75.0
+
+    @pytest.mark.asyncio
+    async def test_get_monthly_stats_no_trips(self, trips_service, user_id):
+        # Arrange
+        trips_service.repo.get_monthly_stats.return_value = {
+            'total_drives': 0,
+            'total_miles': 0,
+            'total_mileage_reimbursement': 0,
+            'total_expense_reimbursement': 0
+        }
+
+        # Act
+        result = await trips_service.get_monthly_stats(user_id, 12, 2025)
+
+        # Assert
+        trips_service.repo.get_monthly_stats.assert_called_once_with(user_id, 12, 2025)
+        assert result['month'] == 12
+        assert result['year'] == 2025
+        assert result['total_drives'] == 0
+        assert result['total_miles'] == 0
+        assert result['total_reimbursement'] == 0.0

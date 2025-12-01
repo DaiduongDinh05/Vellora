@@ -5,7 +5,7 @@ import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.pool import StaticPool
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 
@@ -17,6 +17,22 @@ os.environ.setdefault("GOOGLE_REDIRECT_URI", "http://test/oauth/google/callback"
 os.environ.setdefault("OAUTH_GOOGLE_CLIENT_ID", "test-google-client-id")
 os.environ.setdefault("OAUTH_GOOGLE_CLIENT_SECRET", "test-google-client-secret")
 os.environ.setdefault("OAUTH_GOOGLE_REDIRECT_URI", "http://test/oauth/google/callback")
+
+# AWS environment variables
+os.environ.setdefault("USE_LOCALSTACK", "true")
+os.environ.setdefault("AWS_ACCESS_KEY_ID", "test")
+os.environ.setdefault("AWS_SECRET_ACCESS_KEY", "test")
+os.environ.setdefault("AWS_REGION", "us-east-1")
+os.environ.setdefault("LOCALSTACK_ENDPOINT", "http://localhost:4566")
+os.environ.setdefault("REPORTS_BUCKET", "vellora-s3-bucket")
+os.environ.setdefault("REPORTS_QUEUE", "generate-reports-queue")
+
+# Email environment variables
+os.environ.setdefault("EMAIL_ENABLED", "false")
+os.environ.setdefault("EMAIL_PROVIDER", "resend")
+os.environ.setdefault("EMAIL_SENDER", "noreply@test.com")
+os.environ.setdefault("RESEND_API_KEY", "re_test_key_12345")
+os.environ.setdefault("BACKEND_URL", "http://localhost:8000")
 
 os.environ.setdefault("ENV", "test")
 os.environ.setdefault("JWT_SECRET_KEY", "this_is_a_very_long_test_secret_key_32_chars_min")
@@ -68,6 +84,28 @@ def sample_trip_id():
 def sample_expense_id():
     """Fixture providing a sample expense UUID"""
     return uuid4()
+
+
+@pytest.fixture(autouse=True)
+def mock_aws_clients():
+    """Mock AWS clients for all tests"""
+    with patch('app.aws_client.get_s3_client') as mock_s3, \
+         patch('app.aws_client.get_sqs_client') as mock_sqs:
+        
+        # Mock S3 client
+        s3_client = MagicMock()
+        s3_client.head_object.return_value = {}
+        s3_client.generate_presigned_url.return_value = "http://example.com/signed-url"
+        s3_client.put_object.return_value = {"ETag": "test-etag"}
+        mock_s3.return_value = s3_client
+        
+        # Mock SQS client
+        sqs_client = MagicMock()
+        sqs_client.get_queue_url.return_value = {"QueueUrl": "test-queue-url"}
+        sqs_client.send_message.return_value = {"MessageId": "test-message-id"}
+        mock_sqs.return_value = sqs_client
+        
+        yield {'s3': s3_client, 'sqs': sqs_client}
 
 
 # Event Loop

@@ -121,3 +121,28 @@ If you close your laptop, ngrok stops. When you start it again, you'll get a new
 - Android: Uses ngrok URL from EXPO_PUBLIC_ANDROID_REDIRECT_URI in .env
 - Backend: Single Web OAuth Client ID for both platforms
 - Google Cloud Console: Has both localhost,iOS and ngrok URLs
+
+## PDF Downloads on Android ONLY
+
+PDF downloads from LocalStack S3 also need ngrok on Android. You'll need to switch ngrok between port 8000 (for OAuth) and port 4566 (for PDFs generation).
+
+### For PDF Downloads
+
+Run ngrok on port 4566:
+
+```bash
+ngrok http 4566
+```
+
+Add to your `.env` file:
+
+```
+EXPO_PUBLIC_LOCALSTACK_URL=https://YOUR_NGROK_URL
+```
+
+**Note:** With ngrok free tier you only can run one tunnel at a time. Switch between:
+
+- Port 8000 for OAuth: `ngrok http 8000`
+- Port 4566 for PDFs: `ngrok http 4566`
+
+The ngrok URL stays the same when you switch ports, so you can use the same URL in your `.env` for both.
