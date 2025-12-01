@@ -7,29 +7,29 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 
 const history = () => {
-  const [loading, setIsLoading] = useState(true);
-  const [trips, setTrips] = useState<Trip[]>([]);
-  const [error, setError] = useState<unknown | null>(null);
+  // const [loading, setIsLoading] = useState(true);
+  // const [trips, setTrips] = useState<Trip[]>([]);
+  // const [error, setError] = useState<unknown | null>(null);
 
-  const handleGetAllTrips = async () => { 
-  try {
-    setIsLoading(true);
-    const response = await getTrips();
+  // const handleGetAllTrips = async () => { 
+  // try {
+  //   setIsLoading(true);
+  //   const response = await getTrips();
 
-    if (!response) {
-      alert("Failed to get trip history. Please try again.");
-      return;
-    }
+  //   if (!response) {
+  //     alert("Failed to get trip history. Please try again.");
+  //     return;
+  //   }
 
-    setTrips(response);
-    setIsLoading(false);
+  //   setTrips(response);
+  //   setIsLoading(false);
 
-  } catch (error) {
-    console.error('failed to get trips: ', error);
-    alert("Failed to get trip history. Please try again.");
-    setError(error);
-    return;
-  }
+  // } catch (error) {
+  //   console.error('failed to get trips: ', error);
+  //   alert("Failed to get trip history. Please try again.");
+  //   setError(error);
+  //   return;
+  // }
 }
 
   useEffect(() => {
