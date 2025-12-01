@@ -70,7 +70,7 @@ export default function OnboardingScreen2() {
 									textAlign: "center",
 									opacity: 0.9,
 								}}>
-								Don't miss a single mile with Velora's auto-tracking!
+								Don&apos;t miss a single mile with Velora&apos;s auto-tracking!
 							</Text>
 						</View>
 

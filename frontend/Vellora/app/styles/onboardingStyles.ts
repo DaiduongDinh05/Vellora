@@ -1,4 +1,4 @@
-import { StyleSheet, ViewStyle, TextStyle, ImageStyle } from "react-native";
+import { StyleSheet, ViewStyle } from "react-native";
 
 export const onboardingStyles = StyleSheet.create({
 	safeArea: {
