@@ -6,7 +6,7 @@ import ScreenLayout from '../components/ScreenLayout'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 
-const history = () => {
+const History = () => {
   const [loading, setIsLoading] = useState(true);
   const [trips, setTrips] = useState<Trip[]>([]);
   const [error, setError] = useState<unknown | null>(null);
