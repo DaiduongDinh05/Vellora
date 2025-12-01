@@ -16,8 +16,8 @@ from tests.modules.auth.test_helpers import register, login
 @pytest.fixture
 def mock_aws_services():
     """Mock AWS services to prevent LocalStack dependencies"""
-    with patch('app.modules.reports.storage.get_s3_client') as mock_s3_client, \
-         patch('app.modules.reports.queue.get_sqs_client') as mock_sqs_client, \
+    with patch('app.infra.adapters.s3_report_storage_adapter.get_s3_client') as mock_s3_client, \
+         patch('app.infra.adapters.sqs_report_queue_adapter.get_sqs_client') as mock_sqs_client, \
          patch('app.aws_client.get_s3_client') as mock_aws_s3, \
          patch('app.aws_client.get_sqs_client') as mock_aws_sqs:
         

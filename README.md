@@ -44,9 +44,25 @@ REPORTS_QUEUE=generateReports-queue
 
 # LocalStack Pro Token
 LOCALSTACK_AUTH_TOKEN=your_localstack_token_here
+
+# Email Configuration
+EMAIL_SENDER=noreply@resend.dev
+EMAIL_ENABLED=true
+EMAIL_PROVIDER=resend
+RESEND_API_KEY=your_resend_api_key_here
+
+# Backend URL
+BACKEND_URL=http://localhost:8000
 ```
 
 **For actual credential values, check our Discord documentation.**
+
+### Important Email Testing Note
+**As long as we don't have a verified domain and use the testing/dev email `noreply@resend.dev`, you won't be able to send emails to anyone other than your own account.** If you want to test email functionality, you will need to:
+1. Create your own [Resend account](https://resend.com)
+2. Generate an API key
+3. Update `RESEND_API_KEY` in your `.env` file
+4. Only emails sent to your verified Resend account email will be delivered
 
 3. **Windows Users - Important Step:**
 Before running Docker commands, ensure script files have proper line endings:

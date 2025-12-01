@@ -42,7 +42,23 @@ REPORTS_QUEUE=generateReports-queue
 
 # LocalStack Pro Token
 LOCALSTACK_AUTH_TOKEN=your_localstack_token_here
+
+# Email Configuration
+EMAIL_SENDER=noreply@resend.dev
+EMAIL_ENABLED=true
+EMAIL_PROVIDER=resend
+RESEND_API_KEY=your_resend_api_key_here
+
+# Backend URL
+BACKEND_URL=http://localhost:8000
 ```
+
+### Important Email Testing Note
+**As long as we don't have a verified domain and use the testing/dev email `noreply@resend.dev`, you won't be able to send emails to anyone other than your own account.** If you want to test email functionality, you will need to:
+1. Create your own [Resend account](https://resend.com)
+2. Generate an API key
+3. Update `RESEND_API_KEY` in your `.env` file
+4. Only emails sent to your verified Resend account email will be delivered
 
 **Windows Users:** Before running Docker commands, make sure all `.sh` script files have LF line endings instead of CRLF:
 1. Open `init-resources.sh` and `wait-for-postgres.sh` in VS Code
@@ -135,8 +151,15 @@ services:
       - "./data:/var/lib/localstack"
 
 ```
-4. Configure AWS CLI with profile `localstack`:
+
+4. Run the docker
 ```bash
+docker compose up -d
+```
+5. Configure AWS CLI with profile `localstack`:
+```bash
+aws configure --profile localstack
+
 AWS Access Key ID [None]: test
 AWS Secret Access Key [None]: test
 Default region name [None]: us-east-1
@@ -153,6 +176,7 @@ aws --endpoint-url=http://localhost:4566 sqs create-queue --queue-name generateR
 Create a file named `.env` in the backend root with the environment variables listed above, but change:
 - `LOCALSTACK_ENDPOINT=http://localhost:4566` 
 - Any database connection strings as needed for your local setup ex: `postgresql+asyncpg://postgres:postgres@localhost:5432/Vellora`
+- Update `RESEND_API_KEY` with your own API key if you want to test email functionality (see Email Testing Note above)
 
 #### 6. Run the app
 To run the FastAPI development server:

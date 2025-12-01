@@ -27,6 +27,13 @@ os.environ.setdefault("LOCALSTACK_ENDPOINT", "http://localhost:4566")
 os.environ.setdefault("REPORTS_BUCKET", "vellora-s3-bucket")
 os.environ.setdefault("REPORTS_QUEUE", "generate-reports-queue")
 
+# Email environment variables
+os.environ.setdefault("EMAIL_ENABLED", "false")
+os.environ.setdefault("EMAIL_PROVIDER", "resend")
+os.environ.setdefault("EMAIL_SENDER", "noreply@test.com")
+os.environ.setdefault("RESEND_API_KEY", "re_test_key_12345")
+os.environ.setdefault("BACKEND_URL", "http://localhost:8000")
+
 os.environ.setdefault("ENV", "test")
 os.environ.setdefault("JWT_SECRET_KEY", "this_is_a_very_long_test_secret_key_32_chars_min")
 os.environ.setdefault("JWT_ALGORITHM", "HS256")

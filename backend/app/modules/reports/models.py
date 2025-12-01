@@ -23,10 +23,10 @@ class Report(Base):
     status: Mapped[ReportStatus] = mapped_column(sa.Enum(ReportStatus, name="report_status"), default=ReportStatus.pending, nullable=False)
     file_url: Mapped[str | None] = mapped_column(sa.String(512), nullable=True)
     file_name: Mapped[str | None] = mapped_column(sa.String(100), nullable=True)
-    storage_key: Mapped[str | None] = mapped_column(sa.String(255), nullable=True)
     expires_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
     requested_at: Mapped[sa.DateTime] = mapped_column(sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False)
     completed_at: Mapped[sa.DateTime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
+    processing_started_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
     retry_attempts: Mapped[int] = mapped_column(sa.Integer, nullable=False, server_default="0")
 
 

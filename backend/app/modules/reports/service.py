@@ -7,28 +7,35 @@ from app.modules.reports.schemas import GenerateReportDTO
 from app.modules.reports.models import Report, ReportStatus
 from app.modules.reports.repository import ReportRepository
 from app.modules.reports.data_builder import ReportDataBuilder
-from app.modules.reports.storage import S3ReportStorage
 from app.modules.reports.renderer_fpdf import ReportPDFRenderer
-from app.modules.reports.queue import ReportQueue
 from app.modules.reports.exceptions import (
     ReportNotFoundError, ReportPermissionError, ReportRateLimitError,
     ReportSystemLimitError, ReportMaxRetriesError, ReportInvalidStateError,
     ReportExpiredError, ReportPersistenceError
 )
-
+from app.modules.reports.ports import NotificationPort, StoragePort, QueuePort
+from app.modules.users.models import User
+import logging
 
 
 class ReportsService:
     SYSTEM_MAX = 50
     MAX_RETRY_ATTEMPTS = 3
 
-    def __init__(self, session: AsyncSession, repo: ReportRepository, data_builder: ReportDataBuilder | None = None, renderer: ReportPDFRenderer | None = None, storage: S3ReportStorage | None = None,queue: ReportQueue | None = None):
+    def __init__(self, session: AsyncSession, repo: ReportRepository, data_builder: ReportDataBuilder | None = None, renderer: ReportPDFRenderer | None = None, storage: StoragePort | None = None, queue: QueuePort | None = None, notification_service: NotificationPort | None = None):
         self.session = session
         self.repo = repo
         self.data_builder = data_builder or ReportDataBuilder(session)
         self.renderer = renderer or ReportPDFRenderer()
-        self.storage = storage or S3ReportStorage()
-        self.queue = queue or ReportQueue()
+        
+        if storage is None:
+            raise ValueError("Storage port is required")
+        if queue is None:
+            raise ValueError("Queue port is required")
+            
+        self.storage = storage
+        self.queue = queue
+        self.notification_service = notification_service
 
     async def generate_report(self, user_id: UUID, dto: GenerateReportDTO) -> Report:
         #rate limit stuff. disable when in local dev
@@ -72,6 +79,20 @@ class ReportsService:
 
         await self.session.commit()
         await self.session.refresh(report)
+
+        if self.notification_service:
+            try:
+                user_result = await self.session.get(User, report.user_id)
+                if user_result:
+                    download_url = self.storage.get_signed_url(report.file_name)
+                    await self.notification_service.notify_report_completed(
+                        user=user_result,
+                        report=report,
+                        download_url=download_url
+                    )
+            except Exception as e:
+                logger = logging.getLogger(__name__)
+                logger.warning(f"Failed to send notification for report {report.id}: {str(e)}")
 
         return report
     
@@ -250,3 +271,59 @@ class ReportsService:
             await self.session.commit()
 
         return reports
+
+    async def delete_report(self, report_id: UUID, user_id: UUID) -> None:
+        report = await self.repo.get_by_id(self.session, report_id)
+        
+        if not report:
+            raise ReportNotFoundError("Report not found")
+            
+        if report.user_id != user_id:
+            raise ReportPermissionError("Not allowed to delete this report")
+        
+        if report.file_name and self.storage.exists(report.file_name):
+            try:
+                self.storage.delete(report.file_name)
+            except Exception as e:
+                logger = logging.getLogger(__name__)
+                logger.warning(f"Failed to delete file {report.file_name} from storage: {str(e)}")
+        
+        try:
+            await self.repo.delete(self.session, report_id)
+            await self.session.commit()
+        except Exception as e:
+            await self.session.rollback()
+            raise ReportPersistenceError("Failed to delete report") from e
+
+    async def cleanup_stuck_reports(self, timeout_minutes: int = 30) -> int:
+
+        #if its been longer than 30 mins consider it stuck.
+        stuck_reports = await self.repo.get_stuck_reports(self.session, timeout_minutes)
+        
+        count = 0
+        for report in stuck_reports:
+            report.status = ReportStatus.failed
+            count += 1
+            
+            if self.notification_service:
+                try:
+                    user = await self.session.get(User, report.user_id)
+                    if user:
+                        await self.notification_service.notify_report_failed(user, report)
+                except Exception as e:
+                    logger = logging.getLogger(__name__)
+                    logger.warning(f"Failed to send notification for stuck report {report.id}: {str(e)}")
+        
+        if count > 0:
+            await self.session.commit()
+            logger = logging.getLogger(__name__)
+            logger.info(f"Cleaned up {count} stuck reports")
+        
+        return count
+
+    async def mark_processing_started(self, report_id: UUID) -> None:
+        report = await self.repo.get_by_id(self.session, report_id)
+        if report:
+            report.status = ReportStatus.processing
+            report.processing_started_at = datetime.now(timezone.utc)
+            await self.session.commit()
