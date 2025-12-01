@@ -25,7 +25,6 @@ const TripCard: React.FC<TripCardProps> = ({ geometry, start_address, end_addres
 
     const handleEditTrip = () => {
         router.push('/pages/editTripPage')
-        console.log('hello!')
 }
 
 
