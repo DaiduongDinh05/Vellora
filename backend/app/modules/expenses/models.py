@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import uuid
 import sqlalchemy as sa
 from app.core.base import Base
@@ -53,4 +55,3 @@ class ExpenseReceipt(Base):
     created_at: Mapped[sa.DateTime] = mapped_column(sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False)
 
     expense: Mapped["Expense"] = relationship("Expense", back_populates="receipts")
-from __future__ import annotations
