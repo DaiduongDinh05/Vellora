@@ -1,6 +1,6 @@
 import { View, Text } from "react-native";
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { getTrip, Trip, getTripExpenses, updateTripExpense, editTrip } from "../services/Trips";
+import { getTrip, Trip, getTripExpenses, updateTripExpense, editTrip, Expense, createTripExpense } from "../services/Trips";
 import TripDetailsForm from "../components/TripDetailsForm";
 import { useRateOptions } from "../hooks/useRateOptions";
 import GeometryMap from "../components/GeometryMap";
@@ -22,6 +22,7 @@ const EditTripPage = () => {
 
     // default states before trip is loaded
     const [trip, setTrip] = useState<Trip | null>(null);
+    const [expenses, setExpenses] = useState<Expense[] | null>(null);
     const [isTripLoading, setTripLoading] = useState<boolean>(false);
     const [isExpenseLoading, setExpenseLoading] = useState<boolean>(false);
     const [notes, setNotes] = useState<string>('')
@@ -74,6 +75,9 @@ const EditTripPage = () => {
             setExpenseLoading(false);
             return;
         }
+
+        // Set overall expense for updating later
+        setExpenses(response);
         
         // Set the Parking, toll, and gas based on the response
         setParking(String(response.find(e => e.type === 'Parking' || e.type === 'parking')?.amount ?? 0.00));
@@ -128,20 +132,127 @@ const EditTripPage = () => {
 
            const response = await editTrip(tripId, updatedTripData)
 
-           if(!response) {
+           if (!response) {
             alert("Failed to update trip. Please try again.")
             return;
+           }
 
+            const expenseUpdate = await handleUpdateExpenses();
+
+
+           if (!expenseUpdate) {
+            alert("Trip updated, but error updating expenses. Please try again.");
+            return;
            }
-           else {
+        
             alert("Trip updated successfully.")
-             router.push('/(tabs)/history');
-           }
+            router.push('/(tabs)/history');
 
         } catch (error) {
             console.error("Error updating trip,", error);
             alert("Failed tp update trip. Please try again.")
         }     
+    }
+
+    const handleUpdateExpenses = async () => {
+        const tripId = id as string;
+
+        const expenseUpdates = [];
+        
+        // Find if there's a parking expense, update if amount > 0
+        const parkingExpense = expenses?.find(e => e.type === 'parking' || e.type === 'Parking');
+        const parkingAmount = parseFloat(parking) || 0;
+        if (parkingAmount > 0) {
+            if (parkingExpense) { // add it to the expense updates
+                expenseUpdates.push({
+                    id: parkingExpense.id,
+                    type: parkingExpense.type,
+                    amount: parkingAmount
+                });
+            } else {
+                // Create new parking expense
+                expenseUpdates.push({
+                    id: null, // signals creation, aka empty id and just type/amount
+                    type: 'Parking',
+                    amount: parkingAmount
+                });
+            }
+        }
+
+        // Find toll expense, update if > 0
+        const tollsExpense = expenses?.find(e => e.type === 'tolls' || e.type === 'Tolls');
+        const tollsAmount = parseFloat(tolls) || 0;
+        if (tollsAmount > 0) {
+            if (tollsExpense) {
+                expenseUpdates.push({
+                    id: tollsExpense.id,
+                    type: tollsExpense.type,
+                    amount: tollsAmount
+                });
+            } else { // else add it to create expenses
+                expenseUpdates.push({
+                    id: null,
+                    type: 'Tolls',
+                    amount: tollsAmount
+                });
+            }
+        }
+
+        // find gas expense and add it to the arr if non existant
+        const gasExpense = expenses?.find(e => e.type === 'gas' || e.type === 'Gas');
+        const gasAmount = parseFloat(gas) || 0;
+        if (gasAmount > 0) {
+            if (gasExpense) {
+                expenseUpdates.push({
+                    id: gasExpense.id,
+                    type: gasExpense.type,
+                    amount: gasAmount
+                });
+            } else {
+                expenseUpdates.push({
+                    id: null,
+                    type: 'Gas',
+                    amount: gasAmount
+                });
+            }
+        }
+
+        // if none changed, then don't update
+        if (expenseUpdates.length === 0) {
+            console.log('No expenses to create or update');
+            return true;
+        }
+
+        console.log('Expense updates to send:', expenseUpdates);
+
+            // Ensure for Update / Creation that all promises get settled
+            const results = await Promise.allSettled(
+                expenseUpdates.map((expense) => {
+                    if (expense.id) {
+                        // update expenses
+                        return updateTripExpense(expense.id, tripId, {
+                            type: expense.type,
+                            amount: expense.amount
+                        });
+                    } else { // else create an expense for the trip
+                        return createTripExpense(tripId, {
+                            type: expense.type,
+                            amount: expense.amount
+                        });
+                    }
+                })
+            );
+
+            console.log('Update results:', results);
+            
+            // Check if there were any failures for updating/creating new expenses
+            const failures = results.filter(r => r.status === 'rejected');
+            if (failures.length) {
+                console.warn(`Failure to update ${failures.length} expense(s).`);
+                return false;
+            } 
+        
+        return true;
     }
 
     
@@ -168,7 +279,9 @@ const EditTripPage = () => {
         // checking if the start time is null bc typescript
         const startedAt = trip.started_at ? new Date(trip.started_at as unknown as string) : null;
         setTripDate(startedAt ? startedAt.toUTCString() : '');
-        handleGetExpenses();
+        (async () => {
+            await handleGetExpenses();
+        })();
     }, [trip])
 
     if (isTripLoading) {
