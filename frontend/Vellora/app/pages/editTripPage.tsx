@@ -1,6 +1,6 @@
 import { View, Text } from "react-native";
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { getTrip, Trip, getTripExpenses, updateTripExpense } from "../services/Trips";
+import { getTrip, Trip, getTripExpenses, updateTripExpense, editTrip } from "../services/Trips";
 import TripDetailsForm from "../components/TripDetailsForm";
 import { useRateOptions } from "../hooks/useRateOptions";
 import GeometryMap from "../components/GeometryMap";
@@ -110,7 +110,38 @@ const EditTripPage = () => {
 
     // When the trip is modified, handle update
     const handleUpdateTrip = async () => {
-        // logic here
+
+        const tripId = id as string;
+        try {
+            const updatedTripData = {
+                purpose: notes,
+                vehicle,
+                mileage_reimbursement_total: tripValue,
+                ...(rate ? { rate_customization_id: rate } : {}),
+                ...(type ? { rate_category_id: type } : {}),
+                miles: tripDistance,
+                start_address: startAddress,
+                end_address: endAddress,
+                geometry: tripGeometry,
+                // handle expenses...
+            }
+
+           const response = await editTrip(tripId, updatedTripData)
+
+           if(!response) {
+            alert("Failed to update trip. Please try again.")
+            return;
+
+           }
+           else {
+            alert("Trip updated successfully.")
+             router.push('/(tabs)/history');
+           }
+
+        } catch (error) {
+            console.error("Error updating trip,", error);
+            alert("Failed tp update trip. Please try again.")
+        }     
     }
 
     
@@ -179,7 +210,7 @@ const EditTripPage = () => {
                             unit='mi'
                         />
                     </View>
-                    <Button
+                    <Button className="py-4 px-5"
                         title="Update Trip"
                         onPress={handleUpdateTrip}
                         style={{top: 10}}
@@ -214,16 +245,28 @@ const EditTripPage = () => {
             id: p.id,
             title: p.name,
             address: p.address
-  
         }))}
 
 
             />
-            <Button
-                title="+ Add Receipt"
-                onPress={handleTakePhoto}
-                style={{top: 10}}
-                    />
+        {imageName ? (
+             <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 30}}>
+                <Text style={{marginTop: 40}}>{imageName}</Text>
+                <Button className="py-4 px-5"
+                    title="+ Change Receipt"
+                    onPress={handleTakePhoto}
+                    style={{top: 20}}
+                />
+            </View>
+        ) : (
+            <View>
+                <Button className="py-4 px-5"
+                    title="+ Add Receipt"
+                    onPress={handleTakePhoto}
+                    style={{top: 20}}
+                />
+            </View>
+        )}
         </ScreenLayout>
     );
 }
