@@ -272,13 +272,14 @@ const EditTripPage = () => {
         setTripValue(trip.mileage_reimbursement_total ?? 0.00);
         setRate(trip.rate_customization_id ?? null);
         setType(trip.rate_category_id ?? null);         // THIS WONT SET YET
-        setTripDistance(trip.miles ?? 0);
+        setTripDistance(trip.miles ?? 0);               // wont update yet
         setStartAddress(trip.start_address ?? '');
         setEndAddress(trip.end_address ?? '');
         setTripGeometry(trip.geometry ?? null);
         // checking if the start time is null bc typescript
         const startedAt = trip.started_at ? new Date(trip.started_at as unknown as string) : null;
         setTripDate(startedAt ? startedAt.toUTCString() : '');
+        // await handle expenses to ensure expenses are loaded before update
         (async () => {
             await handleGetExpenses();
         })();
