@@ -42,7 +42,7 @@ const EditTripPage = () => {
     const [image, setImage] = useState<string | null>(null);
     const [imageName, setImageName] = useState<string | null>(null);
 
-    const { rateItems, categoryItems, loading } = useRateOptions();
+    const { rateItems, categoryItems, loading, updateSelectedRate } = useRateOptions();
     const { places: commonPlaces } = useCommonPlaces();
 
     // Get the trip that will be edited
@@ -255,8 +255,20 @@ const EditTripPage = () => {
         return true;
     }
 
-    
-    
+    const handleRateChange = (selectedRateId: string | null) => {
+        setRate(selectedRateId);
+
+        if (selectedRateId !== rate) {
+            setType(null);
+        }
+        updateSelectedRate(selectedRateId);
+    };
+
+    const handleTypeChange = (newType: string | null) => {
+        setType(newType);
+      //  updateTripData({ ...tripData, type: newType });
+    };
+
     // get the trip with passed id
     useEffect(() => {
         if (id) {
@@ -271,8 +283,8 @@ const EditTripPage = () => {
         setVehicle(trip.vehicle ?? null);
         setTripValue(trip.mileage_reimbursement_total ?? 0.00);
         setRate(trip.rate_customization_id ?? null);
-        setType(trip.rate_category_id ?? null);         // THIS WONT SET YET
-        setTripDistance(trip.miles ?? 0);               // wont update yet
+        setType(trip.rate_category_id ?? null);    
+        setTripDistance(trip.miles ?? 0);              
         setStartAddress(trip.start_address ?? '');
         setEndAddress(trip.end_address ?? '');
         setTripGeometry(trip.geometry ?? null);
@@ -343,8 +355,8 @@ const EditTripPage = () => {
 
             notes={notes} setNotes={setNotes}
             vehicle={vehicle} setVehicle={setVehicle}
-            type={type} setType={setType}
-            rate={rate} setRate={setRate}
+            type={type} setType={handleTypeChange}
+            rate={rate} setRate={handleRateChange}
             parking={parking} setParking={setParking}
             gas={gas} setGas={setGas}
             tolls={tolls} setTolls={setTolls}
