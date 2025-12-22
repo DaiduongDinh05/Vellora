@@ -209,8 +209,9 @@ class TripsService:
             if data.purpose is not None:
                 trip.purpose = data.purpose
 
-            if data.vehicle is not None:
-                trip.vehicle = data.vehicle
+            if data.vehicle_id is not None:
+                await self._validate_vehicle_ownership(user_id, data.vehicle_id)
+                trip.vehicle_id = data.vehicle_id
                 
             if data.miles is not None:
                 if data.miles < 0:
