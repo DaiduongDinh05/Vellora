@@ -19,7 +19,7 @@ class Trip(Base):
     start_address_encrypted: Mapped[str] = mapped_column(sa.String(512), nullable=False)
     end_address_encrypted: Mapped[str | None] = mapped_column(sa.String(512), nullable=True)
     purpose: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
-    vehicle: Mapped[str | None] = mapped_column(sa.String(100), nullable=True)
+    vehicle_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), sa.ForeignKey("vehicles.id", ondelete="SET NULL"), nullable=True, index=True)
     reimbursement_rate: Mapped[float | None] = mapped_column(DOUBLE_PRECISION, nullable=True)
     miles: Mapped[float | None] = mapped_column(DOUBLE_PRECISION, nullable=True)
     geometry_encrypted: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
@@ -35,6 +35,7 @@ class Trip(Base):
     updated_at: Mapped[sa.DateTime] = mapped_column(sa.DateTime(timezone=True), server_default=sa.func.now(), onupdate=sa.func.now(), nullable=False)
     
     user: Mapped["User"] = relationship("User", back_populates="trips")
+    vehicle: Mapped["Vehicle"] = relationship("Vehicle", back_populates="trips")
 
 
     
