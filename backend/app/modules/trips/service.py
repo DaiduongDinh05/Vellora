@@ -11,14 +11,28 @@ from app.modules.rate_customizations.exceptions import RateCustomizationNotFound
 from app.modules.rate_categories.exceptions import InvalidRateCategoryDataError, RateCategoryNotFoundError
 from app.modules.expenses.models import Expense
 from app.modules.expenses.repository import ExpenseRepo
+from app.modules.vehicles.repository import VehicleRepository
+from app.modules.vehicles.exceptions import VehicleNotFoundError
 
 
 class TripsService:
-    def __init__(self, repo: TripRepo, category_repo: RateCategoryRepo, customization_repo: RateCustomizationRepo, expense_service=None):
+    def __init__(self, repo: TripRepo, category_repo: RateCategoryRepo, customization_repo: RateCustomizationRepo, vehicle_repo: VehicleRepository = None, expense_service=None):
         self.repo = repo
         self.category_repo = category_repo
         self.customization_repo = customization_repo
+        self.vehicle_repo = vehicle_repo
         self.expense_service = expense_service
+
+    async def _validate_vehicle_ownership(self, user_id: UUID, vehicle_id: UUID):
+        if not self.vehicle_repo:
+            return
+            
+        vehicle = await self.vehicle_repo.get_by_id(vehicle_id, user_id)
+        if not vehicle:
+            raise VehicleNotFoundError("Vehicle not found or not owned by user")
+        
+        if not vehicle.is_active:
+            raise InvalidTripDataError("Cannot use inactive vehicle for trips")
 
     async def start_trip(self, user_id: UUID, data: CreateTripDTO):
 
@@ -54,6 +68,9 @@ class TripsService:
         if category.rate_customization_id != customization.id:
             raise InvalidRateCategoryDataError("Category does not belong to this customization")
         
+        if data.vehicle_id:
+            await self._validate_vehicle_ownership(user_id, data.vehicle_id)
+        
         reimbursement_rate = category.cost_per_mile
 
         try:
@@ -63,7 +80,7 @@ class TripsService:
                 user_id=user_id,
                 start_address_encrypted = encrypted_address,
                 purpose = data.purpose,
-                vehicle = data.vehicle,
+                vehicle_id = data.vehicle_id,
                 reimbursement_rate=reimbursement_rate,
                 rate_customization_id=data.rate_customization_id,
                 rate_category_id=data.rate_category_id,
@@ -98,6 +115,9 @@ class TripsService:
         if category.rate_customization_id != customization.id:
             raise InvalidRateCategoryDataError("Category does not belong to this customization")
         
+        if data.vehicle_id:
+            await self._validate_vehicle_ownership(user_id, data.vehicle_id)
+        
         try:
             encrypted_start_address = encrypt_address(data.start_address)
             encrypted_end_address = encrypt_address(data.end_address)
@@ -112,7 +132,7 @@ class TripsService:
                 start_address_encrypted=encrypted_start_address,
                 end_address_encrypted=encrypted_end_address,
                 purpose=data.purpose,
-                vehicle=data.vehicle,
+                vehicle_id=data.vehicle_id,
                 miles=data.miles,
                 geometry_encrypted=encrypted_geometry,
                 reimbursement_rate=reimbursement_rate,

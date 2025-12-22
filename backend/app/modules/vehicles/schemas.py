@@ -9,17 +9,17 @@ class CreateVehicleDTO(BaseModel):
     name: str
     license_plate: str
     model: str
-    year: int | None
-    color: str | None
+    year: int | None = None
+    color: str | None = None
 
 
 class EditVehicleDTO(BaseModel):
-    name: str | None
-    license_plate: str | None
-    model: str | None
-    year: int | None
-    color: str | None
-    is_active: bool | None
+    name: str | None = None
+    license_plate: str | None = None
+    model: str | None = None
+    year: int | None = None
+    color: str | None = None
+    is_active: bool | None = None
     
 
 
