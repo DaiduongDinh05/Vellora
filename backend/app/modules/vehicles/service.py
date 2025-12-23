@@ -107,6 +107,6 @@ class VehicleService:
         vehicle = await self.get_vehicle(user_id, vehicle_id)
         
         try:
-            await self.repository.soft_delete(vehicle)
+            await self.repository.delete(vehicle)
         except Exception as e:
             raise VehiclePersistenceError("Failed to delete vehicle") from e

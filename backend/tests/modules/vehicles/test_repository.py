@@ -35,11 +35,11 @@ class TestVehicleRepository:
         assert result == mock_vehicle
 
     @pytest.mark.asyncio
-    async def test_soft_delete_vehicle(self, repository, mock_vehicle):
-        result = await repository.soft_delete(mock_vehicle)
+    async def test_delete_vehicle(self, repository, mock_vehicle, mock_session):
+        await repository.delete(mock_vehicle)
         
-        assert mock_vehicle.is_active == False
-        assert result == mock_vehicle
+        mock_session.delete.assert_called_once_with(mock_vehicle)
+        mock_session.commit.assert_called_once()
 
 
 class TestSaveVehicle:

@@ -41,14 +41,14 @@ class VehicleRepository:
     async def get_by_license_plate(self, user_id: UUID, license_plate: str) -> Optional[Vehicle]:
         result = await self.db.execute(
             select(Vehicle)
-            .where(and_(Vehicle.user_id == user_id, Vehicle.license_plate == license_plate))
+            .where(and_(Vehicle.user_id == user_id, Vehicle.license_plate == license_plate, Vehicle.is_active == True))
         )
         return result.scalar_one_or_none()
     
     async def get_by_name(self, user_id: UUID, name: str) -> Optional[Vehicle]:
         result = await self.db.execute(
             select(Vehicle)
-            .where(and_(Vehicle.user_id == user_id, Vehicle.name == name))
+            .where(and_(Vehicle.user_id == user_id, Vehicle.name == name, Vehicle.is_active == True))
         )
         return result.scalar_one_or_none()
     

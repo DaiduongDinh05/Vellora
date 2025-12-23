@@ -291,11 +291,11 @@ class TestVehicleServiceDeleteVehicle:
     @pytest.mark.asyncio
     async def test_delete_vehicle_success(self, service, vehicle_repo, user_id, vehicle_id, mock_vehicle):
         vehicle_repo.get_by_id.return_value = mock_vehicle
-        vehicle_repo.soft_delete.return_value = mock_vehicle
+        vehicle_repo.delete.return_value = None
         
         await service.delete_vehicle(user_id, vehicle_id)
         
-        vehicle_repo.soft_delete.assert_called_once_with(mock_vehicle)
+        vehicle_repo.delete.assert_called_once_with(mock_vehicle)
 
     @pytest.mark.asyncio
     async def test_delete_vehicle_not_found(self, service, vehicle_repo, user_id, vehicle_id):
