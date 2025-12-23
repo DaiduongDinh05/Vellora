@@ -13,15 +13,17 @@ class VehicleService:
         self.repository = repository
     
     async def create_vehicle(self, user_id: UUID, data: CreateVehicleDTO) -> Vehicle:
-
-        if not data.name.strip():
+        if not data.name or not data.name.strip():
             raise InvalidVehicleDataError("Vehicle name is required")
         
-        if not data.license_plate.strip():
+        if not data.license_plate or not data.license_plate.strip():
             raise InvalidVehicleDataError("License plate is required")
         
-        if not data.model.strip():
+        if not data.model or not data.model.strip():
             raise InvalidVehicleDataError("Vehicle model is required")
+        
+        if data.year is not None and (data.year < 1900 or data.year > 2100):
+            raise InvalidVehicleDataError("Vehicle year must be between 1900 and 2100")
         
         cleaned_name = data.name.strip()
         cleaned_license_plate = data.license_plate.strip().upper()
@@ -42,7 +44,7 @@ class VehicleService:
                 license_plate=cleaned_license_plate,
                 model=cleaned_model,
                 year=data.year,
-                color=data.color.strip() if data.color else None,
+                color=data.color.strip() if data.color and data.color.strip() else None,
                 is_active=True
             )
             
@@ -62,8 +64,11 @@ class VehicleService:
     async def update_vehicle(self, user_id: UUID, vehicle_id: UUID, data: EditVehicleDTO) -> Vehicle:
         vehicle = await self.get_vehicle(user_id, vehicle_id)
         
+        if data.year is not None and (data.year < 1900 or data.year > 2100):
+            raise InvalidVehicleDataError("Vehicle year must be between 1900 and 2100")
+        
         if data.name is not None:
-            if not data.name.strip():
+            if not data.name or not data.name.strip():
                 raise InvalidVehicleDataError("Vehicle name cannot be empty")
             
             cleaned_name = data.name.strip()
@@ -74,7 +79,7 @@ class VehicleService:
             vehicle.name = cleaned_name
         
         if data.license_plate is not None:
-            if not data.license_plate.strip():
+            if not data.license_plate or not data.license_plate.strip():
                 raise InvalidVehicleDataError("License plate cannot be empty")
             
             cleaned_license_plate = data.license_plate.strip().upper()
@@ -85,7 +90,7 @@ class VehicleService:
             vehicle.license_plate = cleaned_license_plate
         
         if data.model is not None:
-            if not data.model.strip():
+            if not data.model or not data.model.strip():
                 raise InvalidVehicleDataError("Vehicle model cannot be empty")
             vehicle.model = data.model.strip()
         
@@ -93,7 +98,7 @@ class VehicleService:
             vehicle.year = data.year
         
         if data.color is not None:
-            vehicle.color = data.color.strip() if data.color else None
+            vehicle.color = data.color.strip() if data.color and data.color.strip() else None
         
         if data.is_active is not None:
             vehicle.is_active = data.is_active

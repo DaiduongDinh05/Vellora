@@ -122,6 +122,30 @@ class TestVehicleServiceCreateVehicle:
         call_args = mock_class.call_args[1]
         assert call_args['license_plate'] == 'ABC123'
 
+    @pytest.mark.asyncio
+    async def test_create_vehicle_invalid_year_too_low(self, vehicle_service, user_id):
+        dto = CreateVehicleDTO(name="Test Car", license_plate="ABC123", model="Toyota", year=1800, color="Blue")
+        
+        with pytest.raises(InvalidVehicleDataError) as exc_info:
+            await vehicle_service.create_vehicle(user_id, dto)
+        assert "year must be between 1900 and 2100" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_create_vehicle_invalid_year_too_high(self, vehicle_service, user_id):
+        dto = CreateVehicleDTO(name="Test Car", license_plate="ABC123", model="Toyota", year=2200, color="Blue")
+        
+        with pytest.raises(InvalidVehicleDataError) as exc_info:
+            await vehicle_service.create_vehicle(user_id, dto)
+        assert "year must be between 1900 and 2100" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_create_vehicle_year_zero_invalid(self, vehicle_service, user_id):
+        dto = CreateVehicleDTO(name="Test Car", license_plate="ABC123", model="Toyota", year=0, color="Blue")
+        
+        with pytest.raises(InvalidVehicleDataError) as exc_info:
+            await vehicle_service.create_vehicle(user_id, dto)
+        assert "year must be between 1900 and 2100" in str(exc_info.value)
+
 
 class TestVehicleServiceGetVehicle:
 
