@@ -7,6 +7,7 @@ from app.modules.rate_customizations.models import RateCustomization
 from app.modules.trips.models import Trip, TripStatus
 from app.modules.trips.repository import TripRepo
 from app.modules.users.models import User, UserRole
+from app.modules.vehicles.models import Vehicle
 
 
 @pytest.mark.integration
@@ -49,12 +50,23 @@ class TestTripRepoIntegration:
         test_db_session.add(category)
         await test_db_session.commit()
         
+        # Create a vehicle for the trip
+        vehicle = Vehicle(
+            id=uuid4(),
+            name="Company Car",
+            license_plate="ABC123",
+            model="Toyota Camry",
+            user_id=test_user.id
+        )
+        test_db_session.add(vehicle)
+        await test_db_session.commit()
+        
         trip = Trip(
             id=uuid4(),
             status=TripStatus.active,
             start_address_encrypted="encrypted_start_address",
             purpose="Business meeting",
-            vehicle="Company Car",
+            vehicle_id=vehicle.id,
             geometry_encrypted="gAAAAABhZ6_encrypted_geometry_data_here",
             rate_customization_id=customization.id,
             rate_category_id=category.id,
@@ -110,13 +122,24 @@ class TestTripRepoIntegration:
         test_db_session.add(category)
         await test_db_session.commit()
         
+        # Create a vehicle for the trip
+        vehicle = Vehicle(
+            id=uuid4(),
+            name="Rental Car",
+            license_plate="RNT456",
+            model="Honda Civic",
+            user_id=test_user.id
+        )
+        test_db_session.add(vehicle)
+        await test_db_session.commit()
+        
         trip = Trip(
             id=uuid4(),
             status=TripStatus.completed,
             start_address_encrypted="encrypted_start",
             end_address_encrypted="encrypted_end",
             purpose="Client visit",
-            vehicle="Rental Car",
+            vehicle_id=vehicle.id,
             miles=50.5,
             geometry_encrypted="gAAAAABhZ7_client_visit_geometry_encrypted",
             reimbursement_rate=0.67,
@@ -174,11 +197,22 @@ class TestTripRepoIntegration:
         test_db_session.add(category)
         await test_db_session.commit()
         
+        # Create a vehicle for the trip
+        vehicle = Vehicle(
+            id=uuid4(),
+            name="Personal Vehicle",
+            license_plate="PER789",
+            model="Toyota Prius",
+            user_id=test_user.id
+        )
+        test_db_session.add(vehicle)
+        await test_db_session.commit()
+        
         trip = Trip(
             id=uuid4(),
             status=TripStatus.active,
             start_address_encrypted="encrypted_start",
-            vehicle="Personal Vehicle",
+            vehicle_id=vehicle.id,
             geometry_encrypted="gAAAAABhZ8_travel_geometry_encrypted",
             rate_customization_id=customization.id,
             rate_category_id=category.id,
@@ -228,11 +262,22 @@ class TestTripRepoIntegration:
         test_db_session.add(category)
         await test_db_session.commit()
         
+        # Create a vehicle for the trip
+        vehicle = Vehicle(
+            id=uuid4(),
+            name="Work Truck",
+            license_plate="WRK012",
+            model="Ford F-150",
+            user_id=test_user.id
+        )
+        test_db_session.add(vehicle)
+        await test_db_session.commit()
+        
         trip = Trip(
             id=uuid4(),
             status=TripStatus.active,
             start_address_encrypted="encrypted_start",
-            vehicle="Work Truck",
+            vehicle_id=vehicle.id,
             geometry_encrypted="gAAAAABhZ9_mileage_geometry_encrypted",
             rate_customization_id=customization.id,
             rate_category_id=category.id,

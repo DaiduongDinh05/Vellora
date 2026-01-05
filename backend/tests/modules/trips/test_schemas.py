@@ -20,17 +20,18 @@ class TestCreateTripDTO:
         customization_id = uuid4()
         category_id = uuid4()
 
+        vehicle_id = uuid4()
         dto = CreateTripDTO(
             start_address="123 Main St",
             purpose="Business meeting",
-            vehicle="Toyota Camry",
+            vehicle_id=vehicle_id,
             rate_customization_id=customization_id,
             rate_category_id=category_id
         )
 
         assert dto.start_address == "123 Main St"
         assert dto.purpose == "Business meeting"
-        assert dto.vehicle == "Toyota Camry"
+        assert dto.vehicle_id == vehicle_id
         assert dto.rate_customization_id == customization_id
         assert dto.rate_category_id == category_id
 
@@ -50,7 +51,7 @@ class TestCreateTripDTO:
 
         assert dto.start_address == "123 Main St"
         assert dto.purpose is None
-        assert dto.vehicle is None
+        assert dto.vehicle_id is None
 
 
 class TestEndTripDTO:
@@ -85,28 +86,30 @@ class TestEditTripDTO:
     def test_edit_trip_dto_all_fields(self):
         customization_id = uuid4()
         category_id = uuid4()
+        vehicle_id = uuid4()
 
         dto = EditTripDTO(
             purpose="Updated purpose",
-            vehicle="Honda Civic",
+            vehicle_id=vehicle_id,
             rate_customization_id=customization_id,
             rate_category_id=category_id
         )
 
         assert dto.purpose == "Updated purpose"
-        assert dto.vehicle == "Honda Civic"
+        assert dto.vehicle_id == vehicle_id
         assert dto.rate_customization_id == customization_id
         assert dto.rate_category_id == category_id
 
     def test_edit_trip_dto_partial_fields(self):
+        vehicle_id = uuid4()
         dto1 = EditTripDTO(purpose="Updated")
         dto2 = EditTripDTO(rate_customization_id=uuid4())
         dto3 = EditTripDTO(rate_category_id=uuid4())
-        dto4 = EditTripDTO(vehicle="Ford F150")
+        dto4 = EditTripDTO(vehicle_id=vehicle_id)
 
         assert dto1.purpose == "Updated"
-        assert dto1.vehicle is None
-        assert dto4.vehicle == "Ford F150"
+        assert dto1.vehicle_id is None
+        assert dto4.vehicle_id == vehicle_id
         assert dto4.purpose is None
         assert dto1.rate_customization_id is None
         assert dto1.rate_category_id is None
@@ -132,11 +135,12 @@ class TestManualCreateTripDTO:
         customization_id = uuid4()
         category_id = uuid4()
 
+        vehicle_id = uuid4()
         dto = ManualCreateTripDTO(
             start_address="123 Main St",
             end_address="456 Oak Ave",
             purpose="Client meeting",
-            vehicle="Honda Civic",
+            vehicle_id=vehicle_id,
             miles=25.5,
             geometry={"type":"LineString","coordinates":[[-122.4194,37.7749],[-122.4094,37.7849]]},
             started_at=started_time,
@@ -148,7 +152,7 @@ class TestManualCreateTripDTO:
         assert dto.start_address == "123 Main St"
         assert dto.end_address == "456 Oak Ave"
         assert dto.purpose == "Client meeting"
-        assert dto.vehicle == "Honda Civic"
+        assert dto.vehicle_id == vehicle_id
         assert dto.miles == 25.5
         assert dto.started_at == started_time
         assert dto.ended_at == ended_time
@@ -170,7 +174,7 @@ class TestManualCreateTripDTO:
         )
 
         assert dto.purpose is None
-        assert dto.vehicle is None
+        assert dto.vehicle_id is None
         assert dto.geometry is None
 
     def test_manual_create_trip_dto_with_expenses(self):
@@ -254,6 +258,13 @@ class TestTripResponseDTO:
     def test_trip_response_dto_from_orm(self):
         from unittest.mock import MagicMock, patch
         from app.modules.trips.models import Trip
+        from app.modules.vehicles.models import Vehicle
+        
+        mock_vehicle = MagicMock(spec=Vehicle)
+        mock_vehicle.id = uuid4()
+        mock_vehicle.name = "Honda Civic"
+        mock_vehicle.license_plate = "ABC123"
+        mock_vehicle.model = "Civic"
         
         mock_trip = MagicMock(spec=Trip)
         mock_trip.id = uuid4()
@@ -261,7 +272,8 @@ class TestTripResponseDTO:
         mock_trip.start_address_encrypted = "encrypted_start"
         mock_trip.end_address_encrypted = None
         mock_trip.purpose = "Business"
-        mock_trip.vehicle = "Honda Civic"
+        mock_trip.vehicle_id = mock_vehicle.id
+        mock_trip.vehicle = mock_vehicle
         mock_trip.miles = None
         mock_trip.reimbursement_rate = 0.65
         mock_trip.mileage_reimbursement_total = None
@@ -286,6 +298,13 @@ class TestTripResponseDTO:
         from unittest.mock import MagicMock, patch
         from app.modules.trips.models import Trip
         from app.modules.expenses.models import Expense
+        from app.modules.vehicles.models import Vehicle
+        
+        mock_vehicle = MagicMock(spec=Vehicle)
+        mock_vehicle.id = uuid4()
+        mock_vehicle.name = "Toyota Prius"
+        mock_vehicle.license_plate = "XYZ789"
+        mock_vehicle.model = "Prius"
         
         mock_expense1 = MagicMock(spec=Expense)
         mock_expense1.id = uuid4()
@@ -305,7 +324,8 @@ class TestTripResponseDTO:
         mock_trip.start_address_encrypted = "encrypted_start"
         mock_trip.end_address_encrypted = "encrypted_end"
         mock_trip.purpose = "Business"
-        mock_trip.vehicle = "Toyota Prius"
+        mock_trip.vehicle_id = mock_vehicle.id
+        mock_trip.vehicle = mock_vehicle
         mock_trip.miles = 50.0
         mock_trip.reimbursement_rate = 0.65
         mock_trip.mileage_reimbursement_total = 32.50

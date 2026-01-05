@@ -10,6 +10,7 @@ from app.modules.expenses.models import Expense
 from app.modules.rate_categories.models import RateCategory
 from app.modules.rate_customizations.models import RateCustomization
 from app.modules.reports.models import Report, ReportStatus
+from app.modules.vehicles.models import Vehicle
 from tests.modules.auth.test_helpers import register, login
 
 
@@ -87,6 +88,16 @@ class TestReportsIntegration:
         )
         test_db_session.add(rate_category)
         
+        # Create a vehicle for the trip
+        vehicle = Vehicle(
+            id=uuid4(),
+            name="Honda Civic",
+            license_plate="RPT123",
+            model="Honda Civic",
+            user_id=user_id
+        )
+        test_db_session.add(vehicle)
+        
         trip = Trip(
             id=uuid4(),
             user_id=user_id,
@@ -94,7 +105,7 @@ class TestReportsIntegration:
             start_address_encrypted="NYC Office",
             end_address_encrypted="Client Site",
             purpose="Business meetings",
-            vehicle="Honda Civic",
+            vehicle_id=vehicle.id,
             miles=250.5,
             mileage_reimbursement_total=150.30,
             expense_reimbursement_total=125.75,

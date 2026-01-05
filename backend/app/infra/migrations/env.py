@@ -12,6 +12,7 @@ load_dotenv()
 from app.modules.users import models
 from app.modules.auth import models
 from app.modules.trips import models
+from app.modules.vehicles import models
 from app.modules.expenses import models
 from app.modules.rate_customizations import models
 from app.modules.rate_categories import models
