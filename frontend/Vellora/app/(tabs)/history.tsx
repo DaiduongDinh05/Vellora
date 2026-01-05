@@ -1,5 +1,5 @@
-import { View, Text, ScrollView, Pressable } from 'react-native'
-import React, { useState, useEffect } from 'react'
+import { View, Text, ScrollView, Button, SectionList } from 'react-native'
+import React, { useState, useEffect, useCallback } from 'react'
 import TripCard from '../components/TripCard'
 import { getTrips, Trip } from '../services/Trips'
 import ScreenLayout from '../components/ScreenLayout'
@@ -10,6 +10,9 @@ const History = () => {
   const [loading, setIsLoading] = useState(true);
   const [trips, setTrips] = useState<Trip[]>([]);
   const [error, setError] = useState<unknown | null>(null);
+  
+
+
 
   const handleGetAllTrips = async () => { 
   try {
@@ -32,6 +35,29 @@ const History = () => {
   }
 }
 
+const groupTripsByDate = (trips: Trip[]) => {
+  const grouped = trips.reduce((acc, trip) => {
+    const date = new Date(trip.started_at);
+    const dateKey = date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      weekday: 'short'
+    });
+
+    if (!acc[dateKey]) {
+      acc[dateKey] = [];
+    }
+    acc[dateKey].push(trip);
+    return acc;
+  }, {} as Record<string, Trip[]>);
+  
+  return Object.keys(grouped).map(date => ({
+    title: date,
+    data: grouped[date]
+  }));
+}
+
   useEffect(() => {
     handleGetAllTrips();
   }, []);
@@ -49,30 +75,35 @@ const History = () => {
   }
 
   return (
-  <View>
-    <ScrollView>
-      <View style={{alignItems: 'center', justifyContent: 'center', height: 200, backgroundColor: 'white', marginBottom: 10}}>
-        <Text className='text-3xl text-primaryPurple font-bold p-6'>History</Text>
-      </View>
-      {trips.length === 0 ? (
-        <Text>No Trips Found.</Text>
-      ) : (
-        <View style={{flex: 1, width:'100%', height: '100%' }}>
-          {trips.map((trip, idx) => (
-            <TripCard
-              key={trip.id ?? idx}
-              id={trip.id}
-              geometry={trip.geometry ?? null}
-              start_address={trip.start_address ?? ''}
-              end_address={trip.end_address ?? ''}
-              mileage_reimbursement_total={trip.mileage_reimbursement_total ?? 0}
-              distance_meters={trip.miles ?? 0}
-            />
-          ))}
+  <SafeAreaView style={{flex: 1}}>
+    <SectionList
+      sections={groupTripsByDate(trips)}
+      keyExtractor={(item) => item.id}
+      renderItem={({ item }) => (
+        <TripCard
+          id={item.id}
+          geometry={item.geometry ?? null}
+          start_address={item.start_address ?? ''}
+          end_address={item.end_address ?? ''}
+          mileage_reimbursement_total={item.mileage_reimbursement_total ?? 0}
+          distance_meters={item.miles ?? 0}
+        />
+      )}
+      renderSectionHeader={({ section: { title } }) => (
+        <View style={{backgroundColor: '#ffffffff', padding: 12, marginTop: 20}}>
+          <Text style={{fontSize: 14}}>{title}</Text>
         </View>
       )}
-    </ScrollView>
-  </View>
+      ListHeaderComponent={
+        <View style={{alignContent: 'center', justifyContent: 'center', backgroundColor: 'white', marginBottom: 10, height: 200}}>
+          
+        </View>
+      }
+      ListEmptyComponent={
+        <Text style={{textAlign: 'center', marginTop: 20}}>No Trips Found.</Text>
+      }
+    />
+  </SafeAreaView>
   )
 }
 

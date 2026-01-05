@@ -27,7 +27,7 @@ export type Trip = {
     mileage_reimbursement_total?: number | null;
     expense_reimbursement_total?: number | null;
     started_at: Date;
-    endeded_at?: Date | undefined;
+    ended_at?: Date | undefined;
     updated_at: Date;
     rate_customization_id: string;
     rate_category_id: string;

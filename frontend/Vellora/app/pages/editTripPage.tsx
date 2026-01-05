@@ -266,7 +266,6 @@ const EditTripPage = () => {
 
     const handleTypeChange = (newType: string | null) => {
         setType(newType);
-      //  updateTripData({ ...tripData, type: newType });
     };
 
     // get the trip with passed id
