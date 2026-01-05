@@ -5,6 +5,7 @@ from app.modules.expenses.exceptions import ExpenseNotFoundError, ExpensePersist
 from app.modules.rate_customizations.exceptions import InvalidRateCustomizationDataError, RateCustomizationNotFoundError, RateCustomizationPersistenceError, DuplicateRateCustomizationError
 from app.modules.rate_categories.exceptions import InvalidRateCategoryDataError, RateCategoryNotFoundError, RateCategoryPersistenceError, DuplicateRateCategoryError
 from app.modules.common_places.exceptions import InvalidCommonPlaceDataError, CommonPlaceNotFoundError, CommonPlacePersistenceError, DuplicateCommonPlaceError, MaxCommonPlacesError
+from app.modules.vehicles.exceptions import VehicleNotFoundError, DuplicateVehicleError, InvalidVehicleDataError, VehiclePersistenceError, VehicleInUseError
 from app.modules.reports.exceptions import (
     InvalidReportDataError, ReportNotFoundError, ReportPersistenceError, 
     ReportPermissionError, ReportRateLimitError, ReportSystemLimitError,
@@ -75,6 +76,18 @@ def error_handler(func):
         except CommonPlacePersistenceError as e:
             raise HTTPException(status_code=500, detail=str(e))
         except CommonPlaceNotFoundError as e:
+            raise HTTPException(status_code=404, detail=str(e))
+        
+        #vehicles
+        except InvalidVehicleDataError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        except DuplicateVehicleError as e:
+            raise HTTPException(status_code=409, detail=str(e))
+        except VehicleInUseError as e:
+            raise HTTPException(status_code=409, detail=str(e))
+        except VehiclePersistenceError as e:
+            raise HTTPException(status_code=500, detail=str(e))
+        except VehicleNotFoundError as e:
             raise HTTPException(status_code=404, detail=str(e))
         
         #reports
