@@ -10,13 +10,15 @@ from pydantic import BaseModel, Field, field_validator, ValidationError
 class CreateTripDTO(BaseModel):
     start_address: str
     purpose: str | None = None
-    vehicle: str | None = None
+    vehicle_id: UUID | None = None
     rate_customization_id: UUID
     rate_category_id: UUID
     
-    @field_validator('rate_customization_id', 'rate_category_id')
+    @field_validator('rate_customization_id', 'rate_category_id', 'vehicle_id')
     @classmethod
     def validate_uuids(cls, v):
+        if v is None:
+            return v
         if isinstance(v, str):
             v = v.strip()
             if len(v) > 36:
@@ -41,7 +43,7 @@ class EndTripDTO(BaseModel):
 
 class EditTripDTO(BaseModel):
     purpose: str | None = None
-    vehicle: str | None = None
+    vehicle_id: UUID | None = None
     miles: float | None = None
     rate_customization_id: UUID | None = None
     rate_category_id: UUID | None = None
@@ -57,7 +59,7 @@ class ManualCreateTripDTO(BaseModel):
     start_address: str
     end_address: str
     purpose: str | None = None
-    vehicle: str | None = None
+    vehicle_id: UUID | None = None
     miles: float
     geometry: dict | None = None
     started_at: datetime.datetime
@@ -72,6 +74,16 @@ class ExpenseResponseDTO(BaseModel):
     amount: float
     created_at: datetime.datetime
 
+class VehicleInfo(BaseModel):
+    id: UUID
+    name: str
+    license_plate: str
+    model: str
+    
+    class Config:
+        from_attributes = True
+
+
 class TripResponseDTO(BaseModel):
     id: str
     status: TripStatus
@@ -79,7 +91,8 @@ class TripResponseDTO(BaseModel):
     end_address: str | None = None
     geometry: dict | None = None
     purpose: str | None = None
-    vehicle: str | None = None
+    vehicle_id: UUID | None = None
+    vehicle: VehicleInfo | None = None
     miles: float | None = None
     reimbursement_rate: float | None = None
     mileage_reimbursement_total: float | None = None
@@ -102,7 +115,8 @@ class TripResponseDTO(BaseModel):
             "start_address": decrypt_address(trip.start_address_encrypted),
             "end_address": decrypt_address(trip.end_address_encrypted) if trip.end_address_encrypted else None,
             "purpose": trip.purpose,
-            "vehicle": trip.vehicle,
+            "vehicle_id": trip.vehicle_id,
+            "vehicle": VehicleInfo.model_validate(trip.vehicle) if trip.vehicle else None,
             "miles": trip.miles,
             "reimbursement_rate": trip.reimbursement_rate,
             "geometry": decrypt_geometry(trip.geometry_encrypted) if trip.geometry_encrypted else None,

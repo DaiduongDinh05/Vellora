@@ -19,6 +19,7 @@ class TripRepo:
                 selectinload(Trip.expenses),
                 selectinload(Trip.rate_customization),
                 selectinload(Trip.rate_category),
+                selectinload(Trip.vehicle),
             )
             .where(Trip.id == trip.id)
         )
@@ -29,6 +30,7 @@ class TripRepo:
             selectinload(Trip.expenses),
             selectinload(Trip.rate_customization),
             selectinload(Trip.rate_category),
+            selectinload(Trip.vehicle),
         ).where(Trip.id == trip_id)
         
         if user_id is not None:
@@ -44,6 +46,7 @@ class TripRepo:
                 selectinload(Trip.expenses),
                 selectinload(Trip.rate_customization),
                 selectinload(Trip.rate_category),
+                selectinload(Trip.vehicle),
             )
             .where(Trip.user_id == user_id)
             .order_by(Trip.started_at.desc())
@@ -57,6 +60,7 @@ class TripRepo:
                 selectinload(Trip.expenses),
                 selectinload(Trip.rate_customization),
                 selectinload(Trip.rate_category),
+                selectinload(Trip.vehicle),
             )
             .where(Trip.user_id == user_id, Trip.status == "active")
         )
