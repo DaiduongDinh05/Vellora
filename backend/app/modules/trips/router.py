@@ -12,6 +12,8 @@ from app.modules.rate_categories.repository import RateCategoryRepo
 from app.modules.rate_customizations.repository import RateCustomizationRepo
 from app.modules.expenses.repository import ExpenseRepo
 from app.modules.expenses.service import ExpensesService
+from app.modules.audit_trail.repository import AuditTrailRepo
+from app.modules.audit_trail.service import AuditTrailService
 
 
 router = APIRouter(prefix="/trips", tags=["Trips"])
@@ -20,7 +22,8 @@ def get_trips_service(db: AsyncSession = Depends(get_db)):
     trip_repo = TripRepo(db)
     expense_repo = ExpenseRepo(db)
     expense_service = ExpensesService(expense_repo, trip_repo)
-    return TripsService(trip_repo, RateCategoryRepo(db), RateCustomizationRepo(db), expense_service)
+    audit_service = AuditTrailService(AuditTrailRepo(db))
+    return TripsService(trip_repo, RateCategoryRepo(db), RateCustomizationRepo(db), expense_service, audit_service)
 
 @router.post("/", response_model = TripResponseDTO)
 @error_handler

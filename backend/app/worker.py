@@ -93,6 +93,11 @@ class ReportWorker:
             try:
                 await asyncio.sleep(600)
                 async with AsyncSessionLocal() as session:
+                    from app.modules.audit_trail.service import AuditTrailService
+                    from app.modules.audit_trail.repository import AuditTrailRepo
+                    
+                    audit_service = AuditTrailService(AuditTrailRepo(session))
+                    
                     service = ReportsService(
                         session,
                         ReportRepository(),
@@ -100,7 +105,8 @@ class ReportWorker:
                         None,
                         S3ReportStorageAdapter(),
                         SQSReportQueueAdapter(),
-                        EmailNotificationAdapter()
+                        EmailNotificationAdapter(),
+                        audit_service
                     )
                     
                     count = await service.cleanup_stuck_reports(timeout_minutes=30)
@@ -180,6 +186,11 @@ class ReportWorker:
                     self.sqs.delete_message(QueueUrl=self.queue_url, ReceiptHandle=receipt_handle)
                     return True
 
+                from app.modules.audit_trail.service import AuditTrailService
+                from app.modules.audit_trail.repository import AuditTrailRepo
+                
+                audit_service = AuditTrailService(AuditTrailRepo(session))
+                
                 service = ReportsService(
                     session, 
                     repo, 
@@ -187,7 +198,8 @@ class ReportWorker:
                     None, 
                     S3ReportStorageAdapter(), 
                     SQSReportQueueAdapter(), 
-                    EmailNotificationAdapter()
+                    EmailNotificationAdapter(),
+                    audit_service
                 )
 
                 #mark as processing with timestamp

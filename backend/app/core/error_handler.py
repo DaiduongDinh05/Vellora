@@ -5,6 +5,7 @@ from app.modules.expenses.exceptions import ExpenseNotFoundError, ExpensePersist
 from app.modules.rate_customizations.exceptions import InvalidRateCustomizationDataError, RateCustomizationNotFoundError, RateCustomizationPersistenceError, DuplicateRateCustomizationError
 from app.modules.rate_categories.exceptions import InvalidRateCategoryDataError, RateCategoryNotFoundError, RateCategoryPersistenceError, DuplicateRateCategoryError
 from app.modules.common_places.exceptions import InvalidCommonPlaceDataError, CommonPlaceNotFoundError, CommonPlacePersistenceError, DuplicateCommonPlaceError, MaxCommonPlacesError
+from app.modules.audit_trail.exceptions import AuditTrailNotFoundError, AuditTrailPersistenceError
 from app.modules.reports.exceptions import (
     InvalidReportDataError, ReportNotFoundError, ReportPersistenceError, 
     ReportPermissionError, ReportRateLimitError, ReportSystemLimitError,
@@ -95,6 +96,12 @@ def error_handler(func):
         except ReportInvalidStateError as e:
             raise HTTPException(status_code=400, detail=str(e))
         except ReportPersistenceError as e:
+            raise HTTPException(status_code=500, detail=str(e))
+        
+        #audit trails
+        except AuditTrailNotFoundError as e:
+            raise HTTPException(status_code=404, detail=str(e))
+        except AuditTrailPersistenceError as e:
             raise HTTPException(status_code=500, detail=str(e))
         
         #all

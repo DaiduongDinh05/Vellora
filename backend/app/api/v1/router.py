@@ -5,6 +5,7 @@ from app.modules.rate_customizations.router import router as rate_customizations
 from app.modules.rate_categories.router import router as rate_categories_router
 from app.modules.common_places.router import router as common_places_router
 from app.modules.reports.router import router as reports_router
+from app.modules.audit_trail.router import router as audit_trail_router
 
 from app.modules.auth.router import router as auth_router
 
@@ -18,3 +19,4 @@ router.include_router(rate_categories_router)
 router.include_router(common_places_router)
 router.include_router(auth_router)
 router.include_router(reports_router)
+router.include_router(audit_trail_router)
