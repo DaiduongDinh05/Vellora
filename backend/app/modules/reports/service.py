@@ -224,7 +224,7 @@ class ReportsService:
         if recent_count >= 1:
             raise ReportRateLimitError("Too many requests please try again in a minute")
 
-        if daily_count >= 5:
+        if daily_count >= 10:
             raise ReportRateLimitError("Daily report limit reached")
         
     async def validate_global_limit(self):

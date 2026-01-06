@@ -19,6 +19,7 @@ from app.modules.rate_customizations.models import RateCustomization
 from app.modules.reports.models import Report, ReportStatus
 from app.modules.trips.models import Trip
 from app.modules.users.models import User
+from app.modules.vehicles.models import Vehicle
 
 VISIBILITY_TIMEOUT = 60 
 MAX_RECEIVE_COUNT = 3 
