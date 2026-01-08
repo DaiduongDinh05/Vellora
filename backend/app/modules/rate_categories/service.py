@@ -6,13 +6,16 @@ from app.modules.rate_categories.exceptions import DuplicateRateCategoryError
 from app.modules.rate_categories.models import RateCategory
 from app.modules.rate_customizations.repository import RateCustomizationRepo
 from app.modules.rate_customizations.exceptions import RateCustomizationNotFoundError
+from app.modules.audit_trail.service import AuditTrailService
+from app.modules.audit_trail.models import AuditAction
 from sqlalchemy.exc import IntegrityError
 
 
 class RateCategoriesService:
-    def __init__(self, category_repo: RateCategoryRepo, customization_repo: RateCustomizationRepo):
+    def __init__(self, category_repo: RateCategoryRepo, customization_repo: RateCustomizationRepo, audit_service: AuditTrailService = None):
         self.category_repo = category_repo
         self.customization_repo = customization_repo
+        self.audit_service = audit_service
 
     async def create_rate_category(self, user_id: UUID, customization_id: UUID, data: CreateRateCategoryDTO):
         
@@ -42,7 +45,19 @@ class RateCategoriesService:
                 rate_customization_id=customization_id
             )
 
-            return await self.category_repo.save(rate_category)
+            saved_category = await self.category_repo.save(rate_category)
+            
+            #log audit
+            if self.audit_service:
+                await self.audit_service.log_action(
+                    user_id=user_id,
+                    action=AuditAction.RATE_CATEGORY_CREATED,
+                    resource="rate_category",
+                    resource_id=str(saved_category.id),
+                    details=f"Created rate category '{cleaned_name}' with cost ${data.cost_per_mile:.2f} per mile"
+                )
+                
+            return saved_category
         except IntegrityError as e:
             raise DuplicateRateCategoryError("A rate category with this name already exists for this customization") from e
         except Exception as e:
@@ -106,7 +121,19 @@ class RateCategoriesService:
             rate_category.cost_per_mile = data.cost_per_mile
 
         try:
-            return await self.category_repo.save(rate_category)
+            saved_category = await self.category_repo.save(rate_category)
+            
+            #log audit trail
+            if self.audit_service:
+                await self.audit_service.log_action(
+                    user_id=user_id,
+                    action=AuditAction.RATE_CATEGORY_UPDATED,
+                    resource="rate_category",
+                    resource_id=str(category_id),
+                    details=f"Updated rate category '{rate_category.name}' with cost ${rate_category.cost_per_mile:.2f} per mile"
+                )
+                
+            return saved_category
         except Exception as e:
             raise RateCategoryPersistenceError("Unexpected error occurred while updating rate category") from e
     
@@ -116,6 +143,18 @@ class RateCategoriesService:
         if await self.customization_repo.is_irs_customization(rate_category.rate_customization_id):
             raise InvalidRateCategoryDataError("Cannot delete IRS standard rate categories")
             
-        return await self.category_repo.delete(rate_category)
+        result = await self.category_repo.delete(rate_category)
+        
+        #log audit trail
+        if self.audit_service:
+            await self.audit_service.log_action(
+                user_id=user_id,
+                action=AuditAction.RATE_CATEGORY_DELETED,
+                resource="rate_category",
+                resource_id=str(category_id),
+                details=f"Deleted rate category '{rate_category.name}'"
+            )
+            
+        return result
     
 

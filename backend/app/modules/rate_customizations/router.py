@@ -8,13 +8,16 @@ from app.modules.rate_customizations.schemas import CreateRateCustomizationDTO, 
 from app.core.error_handler import error_handler
 from app.core.dependencies import get_current_user
 from app.modules.users.models import User
+from app.modules.audit_trail.service import AuditTrailService
 
 
 
 router = APIRouter(prefix="/rate-customizations", tags=["Rate Customizations"])
 
 def get_rate_customizations_service(db: AsyncSession = Depends(get_db)):
-    return RateCustomizationsService(RateCustomizationRepo(db))
+    from app.modules.audit_trail.repository import AuditTrailRepo
+    audit_service = AuditTrailService(AuditTrailRepo(db))
+    return RateCustomizationsService(RateCustomizationRepo(db), audit_service)
 
 @router.post("/", response_model=RateCustomizationResponseDTO)
 @error_handler

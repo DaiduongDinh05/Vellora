@@ -19,6 +19,7 @@ from app.modules.rate_customizations.models import RateCustomization
 from app.modules.reports.models import Report, ReportStatus
 from app.modules.trips.models import Trip
 from app.modules.users.models import User
+from app.modules.vehicles.models import Vehicle
 
 VISIBILITY_TIMEOUT = 60 
 MAX_RECEIVE_COUNT = 3 
@@ -93,6 +94,11 @@ class ReportWorker:
             try:
                 await asyncio.sleep(600)
                 async with AsyncSessionLocal() as session:
+                    from app.modules.audit_trail.service import AuditTrailService
+                    from app.modules.audit_trail.repository import AuditTrailRepo
+                    
+                    audit_service = AuditTrailService(AuditTrailRepo(session))
+                    
                     service = ReportsService(
                         session,
                         ReportRepository(),
@@ -100,7 +106,8 @@ class ReportWorker:
                         None,
                         S3ReportStorageAdapter(),
                         SQSReportQueueAdapter(),
-                        EmailNotificationAdapter()
+                        EmailNotificationAdapter(),
+                        audit_service
                     )
                     
                     count = await service.cleanup_stuck_reports(timeout_minutes=30)
@@ -180,6 +187,11 @@ class ReportWorker:
                     self.sqs.delete_message(QueueUrl=self.queue_url, ReceiptHandle=receipt_handle)
                     return True
 
+                from app.modules.audit_trail.service import AuditTrailService
+                from app.modules.audit_trail.repository import AuditTrailRepo
+                
+                audit_service = AuditTrailService(AuditTrailRepo(session))
+                
                 service = ReportsService(
                     session, 
                     repo, 
@@ -187,7 +199,8 @@ class ReportWorker:
                     None, 
                     S3ReportStorageAdapter(), 
                     SQSReportQueueAdapter(), 
-                    EmailNotificationAdapter()
+                    EmailNotificationAdapter(),
+                    audit_service
                 )
 
                 #mark as processing with timestamp
