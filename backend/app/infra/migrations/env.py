@@ -18,6 +18,7 @@ from app.modules.rate_customizations import models
 from app.modules.rate_categories import models
 from app.modules.common_places import models
 from app.modules.reports import models
+from app.modules.audit_trail import models
 
 config = context.config
 if config.config_file_name is not None:

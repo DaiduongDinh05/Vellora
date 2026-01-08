@@ -15,6 +15,7 @@ from app.modules.reports.renderer_fpdf import ReportPDFRenderer
 from app.infra.adapters.s3_report_storage_adapter import S3ReportStorageAdapter
 from app.infra.adapters.sqs_report_queue_adapter import SQSReportQueueAdapter
 from app.infra.adapters.email_notification_adapter import EmailNotificationAdapter
+from app.modules.audit_trail.service import AuditTrailService
 from app.core.error_handler import error_handler
 
 
@@ -27,7 +28,9 @@ def get_reports_service(db: AsyncSession = Depends(get_db)):
     storage = S3ReportStorageAdapter()
     queue = SQSReportQueueAdapter()
     notification_service = EmailNotificationAdapter()
-    return ReportsService(db, repo, data_builder, renderer, storage, queue, notification_service)
+    from app.modules.audit_trail.repository import AuditTrailRepo
+    audit_service = AuditTrailService(AuditTrailRepo(db))
+    return ReportsService(db, repo, data_builder, renderer, storage, queue, notification_service, audit_service)
 
 @router.post("", response_model=ReportResponse)
 @error_handler

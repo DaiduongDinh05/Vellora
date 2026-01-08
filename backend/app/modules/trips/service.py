@@ -13,15 +13,29 @@ from app.modules.expenses.models import Expense
 from app.modules.expenses.repository import ExpenseRepo
 from app.modules.vehicles.repository import VehicleRepository
 from app.modules.vehicles.exceptions import VehicleNotFoundError
+from app.modules.audit_trail.service import AuditTrailService
+from app.modules.audit_trail.models import AuditAction
 
 
 class TripsService:
-    def __init__(self, repo: TripRepo, category_repo: RateCategoryRepo, customization_repo: RateCustomizationRepo, vehicle_repo: VehicleRepository = None, expense_service=None):
+    def __init__(self, repo: TripRepo, category_repo: RateCategoryRepo, customization_repo: RateCustomizationRepo, vehicle_repo: VehicleRepository = None, expense_service=None, audit_service: AuditTrailService = None):
         self.repo = repo
         self.category_repo = category_repo
         self.customization_repo = customization_repo
         self.vehicle_repo = vehicle_repo
         self.expense_service = expense_service
+        self.audit_service = audit_service
+
+    async def _validate_vehicle_ownership(self, user_id: UUID, vehicle_id: UUID):
+        if not self.vehicle_repo:
+            return
+            
+        vehicle = await self.vehicle_repo.get_by_id(vehicle_id, user_id)
+        if not vehicle:
+            raise VehicleNotFoundError("Vehicle not found or not owned by user")
+        
+        if not vehicle.is_active:
+            raise InvalidTripDataError("Cannot use inactive vehicle for trips")
 
     async def _validate_vehicle_ownership(self, user_id: UUID, vehicle_id: UUID):
         if not self.vehicle_repo:
@@ -86,7 +100,19 @@ class TripsService:
                 rate_category_id=data.rate_category_id,
             )
                     
-            return await self.repo.save(trip)
+            saved_trip = await self.repo.save(trip)
+            
+            #log audit trail
+            if self.audit_service:
+                await self.audit_service.log_action(
+                    user_id=user_id,
+                    action=AuditAction.TRIP_STARTED,
+                    resource="trip",
+                    resource_id=str(saved_trip.id),
+                    details=f"Started trip to {data.start_address[:50]}..."
+                )
+                
+            return saved_trip
 
         except Exception as e:
             raise TripPersistenceError(f"Unexpected error occurred while saving trip: {e}") from e
@@ -146,6 +172,16 @@ class TripsService:
             
             saved_trip = await self.repo.save(trip)
             
+            #log audit trail
+            if self.audit_service:
+                await self.audit_service.log_action(
+                    user_id=user_id,
+                    action=AuditAction.TRIP_MANUAL_CREATED,
+                    resource="trip",
+                    resource_id=str(saved_trip.id),
+                    details=f"Manual trip created: {saved_trip.miles} miles, ${saved_trip.mileage_reimbursement_total:.2f} reimbursement"
+                )
+            
             if data.expenses and self.expense_service:
                 for expense_data in data.expenses:
                     await self.expense_service.create_expense(user_id, saved_trip.id, expense_data)
@@ -193,7 +229,19 @@ class TripsService:
             trip.end_address_encrypted = encrypt_address(data.end_address)
             trip.ended_at = datetime.now(timezone.utc)
 
-            return await self.repo.save(trip)
+            saved_trip = await self.repo.save(trip)
+            
+            #log audit trail
+            if self.audit_service:
+                await self.audit_service.log_action(
+                    user_id=trip.user_id,
+                    action=AuditAction.TRIP_COMPLETED,
+                    resource="trip",
+                    resource_id=str(trip.id),
+                    details=f"Trip completed: {miles:.2f} miles, ${trip.mileage_reimbursement_total:.2f} reimbursement"
+                )
+
+            return saved_trip
                
         except Exception as e:
             await self.repo.db.rollback()
