@@ -9,13 +9,16 @@ from app.core.error_handler import error_handler
 from app.core.dependencies import get_current_user
 from app.modules.users.models import User
 from app.modules.rate_customizations.repository import RateCustomizationRepo
+from app.modules.audit_trail.service import AuditTrailService
 
 
 
 router = APIRouter(prefix="/rate-customizations/{customization_id}/categories", tags=["Rate Categories"])
 
 def get_rate_category_service(db: AsyncSession = Depends(get_db)):
-    return RateCategoriesService(RateCategoryRepo(db), RateCustomizationRepo(db))
+    from app.modules.audit_trail.repository import AuditTrailRepo
+    audit_service = AuditTrailService(AuditTrailRepo(db))
+    return RateCategoriesService(RateCategoryRepo(db), RateCustomizationRepo(db), audit_service)
 
 @router.post("/", response_model=RateCategoryResponseDTO)
 @error_handler

@@ -58,6 +58,7 @@ class User(Base):
     rate_customizations = relationship("RateCustomization", back_populates="user", cascade="all, delete-orphan")
     common_places = relationship("CommonPlace", back_populates="user", cascade="all, delete-orphan")
     reports= relationship("Report", back_populates="user", cascade="all, delete-orphan")
+    audit_trails = relationship("AuditTrail", back_populates="user")
     vehicles = relationship("Vehicle", back_populates="user", cascade="all, delete-orphan")
 
     def __repr__(self) -> str:

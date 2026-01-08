@@ -4,12 +4,15 @@ from app.modules.rate_customizations.schemas import CreateRateCustomizationDTO, 
 from app.modules.rate_customizations.exceptions import InvalidRateCustomizationDataError, RateCustomizationPersistenceError, RateCustomizationNotFoundError
 from app.modules.rate_customizations.exceptions import DuplicateRateCustomizationError
 from app.modules.rate_customizations.models import RateCustomization
+from app.modules.audit_trail.service import AuditTrailService
+from app.modules.audit_trail.models import AuditAction
 from sqlalchemy.exc import IntegrityError
 
 
 class RateCustomizationsService:
-    def __init__(self, repo: RateCustomizationRepo):
+    def __init__(self, repo: RateCustomizationRepo, audit_service: AuditTrailService = None):
         self.repo = repo
+        self.audit_service = audit_service
 
     async def create_rate_customization(self, user_id: UUID, data: CreateRateCustomizationDTO):
         if not data.name.strip():
@@ -31,7 +34,19 @@ class RateCustomizationsService:
                 year = data.year 
             )
 
-            return await self.repo.save(rate_customization)
+            saved_customization = await self.repo.save(rate_customization)
+            
+            #log audit trail
+            if self.audit_service:
+                await self.audit_service.log_action(
+                    user_id=user_id,
+                    action=AuditAction.RATE_CUSTOMIZATION_CREATED,
+                    resource="rate_customization",
+                    resource_id=str(saved_customization.id),
+                    details=f"Created rate customization '{cleaned_name}' for year {data.year}"
+                )
+                
+            return saved_customization
         except Exception as e:
             raise RateCustomizationPersistenceError("Unexpected error occured while saving customziation") from e
         
@@ -76,7 +91,19 @@ class RateCustomizationsService:
                 raise InvalidRateCustomizationDataError("Year is required")
             customization.year = data.year
         
-        return await self.repo.save(customization)
+        saved_customization = await self.repo.save(customization)
+        
+        #log audit trail
+        if self.audit_service:
+            await self.audit_service.log_action(
+                user_id=user_id,
+                action=AuditAction.RATE_CUSTOMIZATION_UPDATED,
+                resource="rate_customization",
+                resource_id=str(customization.id),
+                details=f"Updated rate customization '{customization.name}'"
+            )
+            
+        return saved_customization
     
     async def delete_customization(self, user_id: UUID, customization_id: UUID):
         customization = await self.get_customization(user_id, customization_id)
@@ -84,5 +111,17 @@ class RateCustomizationsService:
         if await self.repo.is_irs_customization(customization_id):
             raise InvalidRateCustomizationDataError("IRS standard rates cannot be deleted")
             
-        return await self.repo.delete(customization)
+        result = await self.repo.delete(customization)
+        
+        #log audit trail
+        if self.audit_service:
+            await self.audit_service.log_action(
+                user_id=user_id,
+                action=AuditAction.RATE_CUSTOMIZATION_DELETED,
+                resource="rate_customization",
+                resource_id=str(customization_id),
+                details=f"Deleted rate customization '{customization.name}'"
+            )
+            
+        return result
 

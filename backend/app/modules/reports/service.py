@@ -15,6 +15,8 @@ from app.modules.reports.exceptions import (
 )
 from app.modules.reports.ports import NotificationPort, StoragePort, QueuePort
 from app.modules.users.models import User
+from app.modules.audit_trail.service import AuditTrailService
+from app.modules.audit_trail.models import AuditAction
 import logging
 
 
@@ -22,7 +24,7 @@ class ReportsService:
     SYSTEM_MAX = 50
     MAX_RETRY_ATTEMPTS = 3
 
-    def __init__(self, session: AsyncSession, repo: ReportRepository, data_builder: ReportDataBuilder | None = None, renderer: ReportPDFRenderer | None = None, storage: StoragePort | None = None, queue: QueuePort | None = None, notification_service: NotificationPort | None = None):
+    def __init__(self, session: AsyncSession, repo: ReportRepository, data_builder: ReportDataBuilder | None = None, renderer: ReportPDFRenderer | None = None, storage: StoragePort | None = None, queue: QueuePort | None = None, notification_service: NotificationPort | None = None, audit_service: AuditTrailService | None = None):
         self.session = session
         self.repo = repo
         self.data_builder = data_builder or ReportDataBuilder(session)
@@ -36,6 +38,7 @@ class ReportsService:
         self.storage = storage
         self.queue = queue
         self.notification_service = notification_service
+        self.audit_service = audit_service or AuditTrailService(session)
 
     async def generate_report(self, user_id: UUID, dto: GenerateReportDTO) -> Report:
         #rate limit stuff. disable when in local dev
@@ -51,6 +54,13 @@ class ReportsService:
         try:
             created_report = await self.repo.create(self.session, report)
             await self.session.commit()
+            
+            #log audit trail
+            await self.audit_service.log_report_requested(
+                user_id=user_id,
+                report_id=str(created_report.id),
+                details=f"Report requested for date range {dto.start_date} to {dto.end_date}"
+            )
             
             self.queue.send(str(created_report.id))
             
@@ -79,6 +89,13 @@ class ReportsService:
 
         await self.session.commit()
         await self.session.refresh(report)
+        
+        #log audit trail
+        await self.audit_service.log_report_generated(
+            user_id=report.user_id,
+            report_id=str(report.id),
+            details=f"Report generated successfully with file key: {key}"
+        )
 
         if self.notification_service:
             try:
@@ -251,6 +268,13 @@ class ReportsService:
             await self.session.commit()
             raise ReportExpiredError("Report no longer available and must be regenerated")
 
+        #log audit trail
+        await self.audit_service.log_report_downloaded(
+            user_id=user_id,
+            report_id=str(report.id),
+            details=f"Report download URL generated for file: {report.file_name}"
+        )
+
         return self.storage.get_signed_url(report.file_name)
 
     async def list_user_reports(self, user_id: UUID) -> list[Report]:
@@ -304,6 +328,14 @@ class ReportsService:
         for report in stuck_reports:
             report.status = ReportStatus.failed
             count += 1
+            
+            #log audit trail
+            await self.audit_service.log_report_failed(
+                user_id=report.user_id,
+                report_id=str(report.id),
+                error_message="Report generation timed out",
+                details=f"Report was stuck in processing for over {timeout_minutes} minutes"
+            )
             
             if self.notification_service:
                 try:
