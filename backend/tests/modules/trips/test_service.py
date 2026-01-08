@@ -8,11 +8,13 @@ from app.modules.trips.repository import TripRepo
 from app.modules.rate_categories.repository import RateCategoryRepo
 from app.modules.rate_customizations.repository import RateCustomizationRepo
 from app.modules.expenses.repository import ExpenseRepo
+from app.modules.vehicles.repository import VehicleRepository
 from app.modules.expenses.service import ExpensesService
 from app.modules.trips.schemas import CreateTripDTO, EditTripDTO, EndTripDTO, ManualCreateTripDTO
 from app.modules.trips.models import Trip, TripStatus
 from app.modules.rate_categories.models import RateCategory
 from app.modules.rate_customizations.models import RateCustomization
+from app.modules.vehicles.models import Vehicle
 from app.modules.trips.exceptions import (
     InvalidTripDataError,
     TripNotFoundError,
@@ -20,6 +22,7 @@ from app.modules.trips.exceptions import (
 )
 from app.modules.rate_customizations.exceptions import RateCustomizationNotFoundError
 from app.modules.rate_categories.exceptions import InvalidRateCategoryDataError, RateCategoryNotFoundError
+from app.modules.vehicles.exceptions import VehicleNotFoundError
 
 
 class TestTripsServiceStartTrip:
@@ -45,8 +48,12 @@ class TestTripsServiceStartTrip:
         return AsyncMock(spec=ExpenseRepo)
 
     @pytest.fixture
-    def service(self, trip_repo, category_repo, customization_repo, expense_repo):
-        return TripsService(trip_repo, category_repo, customization_repo, expense_repo)
+    def vehicle_repo(self):
+        return AsyncMock(spec=VehicleRepository)
+
+    @pytest.fixture
+    def service(self, trip_repo, category_repo, customization_repo, expense_repo, vehicle_repo):
+        return TripsService(trip_repo, category_repo, customization_repo, vehicle_repo=vehicle_repo, expense_service=expense_repo)
 
     @pytest.fixture
     def mock_customization(self):
@@ -63,6 +70,15 @@ class TestTripsServiceStartTrip:
         return category
 
     @pytest.fixture
+    def mock_vehicle(self):
+        vehicle = MagicMock(spec=Vehicle)
+        vehicle.id = uuid4()
+        vehicle.name = "My Car"
+        vehicle.license_plate = "ABC123"
+        vehicle.model = "Toyota Camry"
+        return vehicle
+
+    @pytest.fixture
     def mock_trip(self):
         trip = MagicMock(spec=Trip)
         trip.id = uuid4()
@@ -72,19 +88,20 @@ class TestTripsServiceStartTrip:
 
     @pytest.mark.asyncio
     async def test_start_trip_success(
-        self, service, trip_repo, category_repo, customization_repo, 
-        mock_customization, mock_category, mock_trip, user_id
+        self, service, trip_repo, category_repo, customization_repo, vehicle_repo,
+        mock_customization, mock_category, mock_vehicle, mock_trip, user_id
     ):
         mock_category.rate_customization_id = mock_customization.id
         dto = CreateTripDTO(
             start_address="123 Main St",
             purpose="Business meeting",
-            vehicle="Toyota Camry",
+            vehicle_id=mock_vehicle.id,
             rate_customization_id=mock_customization.id,
             rate_category_id=mock_category.id
         )
         customization_repo.get.return_value = mock_customization
         category_repo.get.return_value = mock_category
+        vehicle_repo.get_by_id = AsyncMock(return_value=mock_vehicle)
         trip_repo.get_active_trip.return_value = None
         trip_repo.save.return_value = mock_trip
 
@@ -97,6 +114,7 @@ class TestTripsServiceStartTrip:
         trip_repo.save.assert_called_once()
         customization_repo.get.assert_called_once_with(mock_customization.id, user_id)
         category_repo.get.assert_called_once_with(mock_category.id)
+        vehicle_repo.get_by_id.assert_called_once_with(mock_vehicle.id, user_id)
         trip_repo.get_active_trip.assert_called_once_with(user_id)
 
     @pytest.mark.asyncio
@@ -104,7 +122,7 @@ class TestTripsServiceStartTrip:
         dto = CreateTripDTO(
             start_address="   ",
             purpose="Business",
-            vehicle="Honda Civic",
+            vehicle_id=uuid4(),
             rate_customization_id=uuid4(),
             rate_category_id=uuid4()
         )
@@ -120,7 +138,7 @@ class TestTripsServiceStartTrip:
         dto = CreateTripDTO(
             start_address="123 Main St",
             purpose="Business",
-            vehicle="Nissan Altima",
+            vehicle_id=uuid4(),
             rate_customization_id=uuid4(),
             rate_category_id=uuid4()
         )         
@@ -128,18 +146,42 @@ class TestTripsServiceStartTrip:
         trip_repo.get_active_trip.return_value = None
 
         with pytest.raises(RateCustomizationNotFoundError):
-            await service.start_trip(user_id, dto)    @pytest.mark.asyncio
+            await service.start_trip(user_id, dto)
+
+    @pytest.mark.asyncio
+    async def test_start_trip_vehicle_not_found(
+        self, service, customization_repo, category_repo, vehicle_repo, trip_repo, 
+        mock_customization, mock_category, user_id
+    ):
+        mock_category.rate_customization_id = mock_customization.id
+        dto = CreateTripDTO(
+            start_address="123 Main St",
+            purpose="Business",
+            vehicle_id=uuid4(),
+            rate_customization_id=mock_customization.id,
+            rate_category_id=mock_category.id
+        )
+        customization_repo.get.return_value = mock_customization
+        category_repo.get.return_value = mock_category
+        vehicle_repo.get_by_id = AsyncMock(return_value=None)
+        trip_repo.get_active_trip.return_value = None
+
+        with pytest.raises(VehicleNotFoundError):
+            await service.start_trip(user_id, dto)
+
+    @pytest.mark.asyncio
     async def test_start_trip_category_not_found(
-        self, service, customization_repo, category_repo, trip_repo, mock_customization, user_id
+        self, service, customization_repo, category_repo, vehicle_repo, trip_repo, mock_customization, mock_vehicle, user_id
     ):
         dto = CreateTripDTO(
             start_address="123 Main St",
             purpose="Business",
-            vehicle="Chevy Malibu",
+            vehicle_id=mock_vehicle.id,
             rate_customization_id=mock_customization.id,
             rate_category_id=uuid4()
         )
         customization_repo.get.return_value = mock_customization
+        vehicle_repo.get_by_id = AsyncMock(return_value=mock_vehicle)
         category_repo.get.return_value = None
         trip_repo.get_active_trip.return_value = None
 
@@ -148,19 +190,20 @@ class TestTripsServiceStartTrip:
 
     @pytest.mark.asyncio
     async def test_start_trip_category_mismatch(
-        self, service, customization_repo, category_repo, trip_repo,
-        mock_customization, mock_category, user_id
+        self, service, customization_repo, category_repo, vehicle_repo, trip_repo,
+        mock_customization, mock_category, mock_vehicle, user_id
     ):
         different_customization_id = uuid4()
         mock_category.rate_customization_id = different_customization_id
         dto = CreateTripDTO(
             start_address="123 Main St",
             purpose="Business",
-            vehicle="BMW X3",
+            vehicle_id=mock_vehicle.id,
             rate_customization_id=mock_customization.id,
             rate_category_id=mock_category.id
         )
         customization_repo.get.return_value = mock_customization
+        vehicle_repo.get_by_id = AsyncMock(return_value=mock_vehicle)
         category_repo.get.return_value = mock_category
         trip_repo.get_active_trip.return_value = None
 
@@ -192,8 +235,12 @@ class TestTripsServiceManualCreateTrip:
         return AsyncMock(spec=ExpenseRepo)
 
     @pytest.fixture
-    def service(self, trip_repo, category_repo, customization_repo, expense_repo):
-        return TripsService(trip_repo, category_repo, customization_repo, expense_repo)
+    def vehicle_repo(self):
+        return AsyncMock(spec=VehicleRepository)
+
+    @pytest.fixture
+    def service(self, trip_repo, category_repo, customization_repo, expense_repo, vehicle_repo):
+        return TripsService(trip_repo, category_repo, customization_repo, vehicle_repo=vehicle_repo, expense_service=expense_repo)
 
     @pytest.fixture
     def mock_customization(self):
@@ -210,6 +257,15 @@ class TestTripsServiceManualCreateTrip:
         return category
 
     @pytest.fixture
+    def mock_vehicle(self):
+        vehicle = MagicMock(spec=Vehicle)
+        vehicle.id = uuid4()
+        vehicle.name = "My Car"
+        vehicle.license_plate = "ABC123"
+        vehicle.model = "Toyota Camry"
+        return vehicle
+
+    @pytest.fixture
     def mock_trip(self):
         trip = MagicMock(spec=Trip)
         trip.id = uuid4()
@@ -218,8 +274,8 @@ class TestTripsServiceManualCreateTrip:
 
     @pytest.mark.asyncio
     async def test_manual_create_trip_success(
-        self, service, trip_repo, category_repo, customization_repo, 
-        mock_customization, mock_category, mock_trip, user_id
+        self, service, trip_repo, category_repo, customization_repo, vehicle_repo,
+        mock_customization, mock_category, mock_vehicle, mock_trip, user_id
     ):
         started_time = datetime.now(timezone.utc)
         ended_time = started_time + timedelta(hours=2)
@@ -229,7 +285,7 @@ class TestTripsServiceManualCreateTrip:
             start_address="123 Main St",
             end_address="456 Oak Ave",
             purpose="Business meeting",
-            vehicle="Honda Civic",
+            vehicle_id=mock_vehicle.id,
             miles=25.5,
             geometry={"type":"LineString"},
             started_at=started_time,
@@ -240,6 +296,7 @@ class TestTripsServiceManualCreateTrip:
         
         customization_repo.get.return_value = mock_customization
         category_repo.get.return_value = mock_category
+        vehicle_repo.get_by_id = AsyncMock(return_value=mock_vehicle)
         trip_repo.save.return_value = mock_trip
 
         with patch('app.modules.trips.service.encrypt_address', return_value="encrypted") as mock_encrypt_addr:
@@ -434,8 +491,8 @@ class TestTripsServiceManualCreateTrip:
 
     @pytest.mark.asyncio
     async def test_manual_create_trip_with_expenses(
-        self, service, trip_repo, category_repo, customization_repo, expense_repo,
-        mock_customization, mock_category, mock_trip, user_id
+        self, service, trip_repo, category_repo, customization_repo, vehicle_repo, expense_repo,
+        mock_customization, mock_category, mock_vehicle, mock_trip, user_id
     ):
         started_time = datetime.now(timezone.utc)
         ended_time = started_time + timedelta(hours=2)
@@ -450,7 +507,7 @@ class TestTripsServiceManualCreateTrip:
             start_address="123 Main St",
             end_address="456 Oak Ave",
             purpose="Business meeting",
-            vehicle="Honda Civic",
+            vehicle_id=mock_vehicle.id,
             miles=25.5,
             geometry={"type":"LineString"},
             started_at=started_time,
@@ -462,6 +519,7 @@ class TestTripsServiceManualCreateTrip:
         
         customization_repo.get.return_value = mock_customization
         category_repo.get.return_value = mock_category
+        vehicle_repo.get_by_id = AsyncMock(return_value=mock_vehicle)
         trip_repo.save.return_value = mock_trip
 
         service.expense_service.create_expense = AsyncMock()
@@ -625,8 +683,21 @@ class TestTripsServiceEditTrip:
         return AsyncMock(spec=ExpenseRepo)
 
     @pytest.fixture
-    def service(self, trip_repo, category_repo, customization_repo, expense_repo):
-        return TripsService(trip_repo, category_repo, customization_repo, expense_repo)
+    def vehicle_repo(self):
+        return AsyncMock(spec=VehicleRepository)
+
+    @pytest.fixture
+    def service(self, trip_repo, category_repo, customization_repo, expense_repo, vehicle_repo):
+        return TripsService(trip_repo, category_repo, customization_repo, vehicle_repo=vehicle_repo, expense_service=expense_repo)
+
+    @pytest.fixture
+    def mock_vehicle(self):
+        vehicle = MagicMock(spec=Vehicle)
+        vehicle.id = uuid4()
+        vehicle.name = "My Car"
+        vehicle.license_plate = "ABC123"
+        vehicle.model = "Toyota Camry"
+        return vehicle
 
     @pytest.fixture
     def mock_trip(self):
@@ -653,16 +724,18 @@ class TestTripsServiceEditTrip:
         trip_repo.save.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_edit_trip_vehicle_only(self, service, trip_repo, mock_trip, user_id):
+    async def test_edit_trip_vehicle_only(self, service, trip_repo, vehicle_repo, mock_trip, mock_vehicle, user_id):
         trip_id = uuid4()
-        dto = EditTripDTO(vehicle="Tesla Model 3")
+        dto = EditTripDTO(vehicle_id=mock_vehicle.id)
         trip_repo.get.return_value = mock_trip
+        vehicle_repo.get_by_id = AsyncMock(return_value=mock_vehicle)
         trip_repo.save.return_value = mock_trip
 
         result = await service.edit_trip(user_id, trip_id, dto)
 
         assert result == mock_trip
-        assert mock_trip.vehicle == "Tesla Model 3"
+        assert mock_trip.vehicle_id == mock_vehicle.id
+        vehicle_repo.get_by_id.assert_called_once_with(mock_vehicle.id, user_id)
         trip_repo.save.assert_called_once()
 
     @pytest.mark.asyncio
@@ -831,3 +904,60 @@ class TestTripsServiceCancelTrip:
         with pytest.raises(InvalidTripDataError) as exc_info:
             await service.cancel_trip(user_id, trip_id)
         assert "Only active trips can be cancelled" in str(exc_info.value)
+
+
+class TestTripsServiceGetMonthlyStats:
+
+    @pytest.fixture
+    def user_id(self):
+        return uuid4()
+
+    @pytest.fixture
+    def trips_service(self):
+        repo = AsyncMock(spec=TripRepo)
+        category_repo = AsyncMock(spec=RateCategoryRepo)
+        customization_repo = AsyncMock(spec=RateCustomizationRepo)
+        expense_service = AsyncMock(spec=ExpensesService)
+        return TripsService(repo, category_repo, customization_repo, expense_service)
+
+    @pytest.mark.asyncio
+    async def test_get_monthly_stats_success(self, trips_service, user_id):
+        # Arrange
+        trips_service.repo.get_monthly_stats.return_value = {
+            'total_drives': 5,
+            'total_miles': 100.5,
+            'total_mileage_reimbursement': 50.0,
+            'total_expense_reimbursement': 25.0
+        }
+
+        # Act
+        result = await trips_service.get_monthly_stats(user_id, 11, 2025)
+
+        # Assert
+        trips_service.repo.get_monthly_stats.assert_called_once_with(user_id, 11, 2025)
+        assert result['month'] == 11
+        assert result['year'] == 2025
+        assert result['total_drives'] == 5
+        assert result['total_miles'] == 100.5
+        assert result['total_reimbursement'] == 75.0
+
+    @pytest.mark.asyncio
+    async def test_get_monthly_stats_no_trips(self, trips_service, user_id):
+        # Arrange
+        trips_service.repo.get_monthly_stats.return_value = {
+            'total_drives': 0,
+            'total_miles': 0,
+            'total_mileage_reimbursement': 0,
+            'total_expense_reimbursement': 0
+        }
+
+        # Act
+        result = await trips_service.get_monthly_stats(user_id, 12, 2025)
+
+        # Assert
+        trips_service.repo.get_monthly_stats.assert_called_once_with(user_id, 12, 2025)
+        assert result['month'] == 12
+        assert result['year'] == 2025
+        assert result['total_drives'] == 0
+        assert result['total_miles'] == 0
+        assert result['total_reimbursement'] == 0.0

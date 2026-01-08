@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 from app.modules.expenses.models import Expense
+from sqlalchemy import func, extract
 from app.modules.trips.models import Trip
 
 class TripRepo:
@@ -19,6 +20,7 @@ class TripRepo:
                 selectinload(Trip.expenses).selectinload(Expense.receipts),
                 selectinload(Trip.rate_customization),
                 selectinload(Trip.rate_category),
+                selectinload(Trip.vehicle),
             )
             .where(Trip.id == trip.id)
         )
@@ -29,6 +31,7 @@ class TripRepo:
             selectinload(Trip.expenses).selectinload(Expense.receipts),
             selectinload(Trip.rate_customization),
             selectinload(Trip.rate_category),
+            selectinload(Trip.vehicle),
         ).where(Trip.id == trip_id)
         
         if user_id is not None:
@@ -44,6 +47,7 @@ class TripRepo:
                 selectinload(Trip.expenses).selectinload(Expense.receipts),
                 selectinload(Trip.rate_customization),
                 selectinload(Trip.rate_category),
+                selectinload(Trip.vehicle),
             )
             .where(Trip.user_id == user_id)
             .order_by(Trip.started_at.desc())
@@ -57,7 +61,32 @@ class TripRepo:
                 selectinload(Trip.expenses).selectinload(Expense.receipts),
                 selectinload(Trip.rate_customization),
                 selectinload(Trip.rate_category),
+                selectinload(Trip.vehicle),
             )
             .where(Trip.user_id == user_id, Trip.status == "active")
         )
         return result.scalar_one_or_none()
+
+    async def get_monthly_stats(self, user_id: UUID, month: int, year: int):
+        result = await self.db.execute(
+            select(Trip)
+            .where(
+                Trip.user_id == user_id,
+                Trip.status == "completed",
+                extract('year', Trip.started_at) == year,
+                extract('month', Trip.started_at) == month
+            )
+        )
+        trips = result.scalars().all()
+        
+        total_drives = len(trips)
+        total_miles = sum(trip.miles or 0 for trip in trips)
+        total_mileage_reimbursement = sum(trip.mileage_reimbursement_total or 0 for trip in trips)
+        total_expense_reimbursement = sum(trip.expense_reimbursement_total or 0 for trip in trips)
+        
+        return {
+            'total_drives': total_drives,
+            'total_miles': total_miles,
+            'total_mileage_reimbursement': total_mileage_reimbursement,
+            'total_expense_reimbursement': total_expense_reimbursement
+        }

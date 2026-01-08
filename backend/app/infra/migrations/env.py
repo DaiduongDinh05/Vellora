@@ -12,9 +12,12 @@ load_dotenv()
 from app.modules.users import models
 from app.modules.auth import models
 from app.modules.trips import models
+from app.modules.vehicles import models
 from app.modules.expenses import models
 from app.modules.rate_customizations import models
 from app.modules.rate_categories import models
+from app.modules.common_places import models
+from app.modules.reports import models
 
 config = context.config
 if config.config_file_name is not None:
