@@ -1,7 +1,16 @@
 import logging
 from functools import wraps
 from app.modules.trips.exceptions import InvalidTripDataError, TripAlreadyActiveError, TripNotFoundError, TripPersistenceError
-from app.modules.expenses.exceptions import ExpenseNotFoundError, ExpensePersistenceError, InvalidExpenseDataError, DuplicateExpenseError
+from app.modules.expenses.exceptions import (
+    DuplicateExpenseError,
+    ExpenseNotFoundError,
+    ExpensePersistenceError,
+    InvalidExpenseDataError,
+    ReceiptNotFoundError,
+    ReceiptStorageConfigError,
+    ReceiptUploadError,
+    ReceiptValidationError,
+)
 from app.modules.rate_customizations.exceptions import InvalidRateCustomizationDataError, RateCustomizationNotFoundError, RateCustomizationPersistenceError, DuplicateRateCustomizationError
 from app.modules.rate_categories.exceptions import InvalidRateCategoryDataError, RateCategoryNotFoundError, RateCategoryPersistenceError, DuplicateRateCategoryError
 from app.modules.common_places.exceptions import InvalidCommonPlaceDataError, CommonPlaceNotFoundError, CommonPlacePersistenceError, DuplicateCommonPlaceError, MaxCommonPlacesError
@@ -46,6 +55,14 @@ def error_handler(func):
             raise HTTPException(status_code=500, detail=str(e))
         except ExpenseNotFoundError as e:
             raise HTTPException(status_code=404, detail=str(e))
+        except ReceiptValidationError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        except ReceiptNotFoundError as e:
+            raise HTTPException(status_code=404, detail=str(e))
+        except ReceiptStorageConfigError as e:
+            raise HTTPException(status_code=500, detail=str(e))
+        except ReceiptUploadError as e:
+            raise HTTPException(status_code=500, detail=str(e))
         
         #rateCustomizations
         except InvalidRateCustomizationDataError as e:

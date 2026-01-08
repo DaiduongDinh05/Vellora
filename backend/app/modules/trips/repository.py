@@ -2,6 +2,7 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
+from app.modules.expenses.models import Expense
 from sqlalchemy import func, extract
 from app.modules.trips.models import Trip
 
@@ -16,7 +17,7 @@ class TripRepo:
         result = await self.db.execute(
             select(Trip)
             .options(
-                selectinload(Trip.expenses),
+                selectinload(Trip.expenses).selectinload(Expense.receipts),
                 selectinload(Trip.rate_customization),
                 selectinload(Trip.rate_category),
                 selectinload(Trip.vehicle),
@@ -27,7 +28,7 @@ class TripRepo:
     
     async def get(self, trip_id: UUID, user_id: UUID = None):
         query = select(Trip).options(
-            selectinload(Trip.expenses),
+            selectinload(Trip.expenses).selectinload(Expense.receipts),
             selectinload(Trip.rate_customization),
             selectinload(Trip.rate_category),
             selectinload(Trip.vehicle),
@@ -43,7 +44,7 @@ class TripRepo:
         result = await self.db.execute(
             select(Trip)
             .options(
-                selectinload(Trip.expenses),
+                selectinload(Trip.expenses).selectinload(Expense.receipts),
                 selectinload(Trip.rate_customization),
                 selectinload(Trip.rate_category),
                 selectinload(Trip.vehicle),
@@ -57,7 +58,7 @@ class TripRepo:
         result = await self.db.execute(
             select(Trip)
             .options(
-                selectinload(Trip.expenses),
+                selectinload(Trip.expenses).selectinload(Expense.receipts),
                 selectinload(Trip.rate_customization),
                 selectinload(Trip.rate_category),
                 selectinload(Trip.vehicle),

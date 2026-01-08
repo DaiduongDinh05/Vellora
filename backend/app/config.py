@@ -42,6 +42,12 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
     OAUTH_STATE_TTL_SECONDS: int = 600
     OAUTH_PROVIDERS: OAuthProviders = OAuthProviders()
+    AWS_S3_BUCKET: str | None = None
+    AWS_REGION: str | None = None
+    AWS_S3_ENDPOINT_URL: str | None = None
+    AWS_ACCESS_KEY_ID: str | None = None
+    AWS_SECRET_ACCESS_KEY: str | None = None
+    RECEIPT_URL_EXPIRES_SECONDS: int = 900
 
     model_config = SettingsConfigDict(
         env_file=".env",
