@@ -30,6 +30,22 @@ class ExpenseRepo:
         result = await self.db.execute(query)
         return result.scalars().all()
 
+    async def get_by_trip_and_type(
+        self,
+        trip_id: UUID,
+        expense_type: str,
+        user_id: UUID | None = None,
+    ) -> Expense | None:
+        normalized = expense_type.strip().lower()
+        query = select(Expense).where(
+            Expense.trip_id == trip_id,
+            func.lower(Expense.type) == normalized,
+        )
+        if user_id is not None:
+            query = query.where(Expense.user_id == user_id)
+        result = await self.db.execute(query)
+        return result.scalar_one_or_none()
+
     async def delete_expense(self, expense: Expense) -> None:       
         await self.db.delete(expense)
         await self.db.commit()

@@ -1,7 +1,12 @@
 from uuid import UUID
 from app.modules.expenses.repository import ExpenseRepo
 from app.modules.expenses.schemas import CreateExpenseDTO, EditExpenseDTO
-from app.modules.expenses.exceptions import ExpenseNotFoundError, ExpensePersistenceError, InvalidExpenseDataError
+from app.modules.expenses.exceptions import (
+    DuplicateExpenseError,
+    ExpenseNotFoundError,
+    ExpensePersistenceError,
+    InvalidExpenseDataError,
+)
 from app.modules.trips.repository import TripRepo
 from app.modules.expenses.models import Expense
 from app.modules.trips.exceptions import TripNotFoundError
@@ -34,6 +39,9 @@ class ExpensesService:
             raise InvalidExpenseDataError("Amount must be positive")
         
         cleaned_type = data.type.strip().capitalize()
+        existing = await self.expense_repo.get_by_trip_and_type(trip_id, cleaned_type, user_id)
+        if existing:
+            raise DuplicateExpenseError("Expense type already exists for this trip")
 
         try:
             expense = Expense(
@@ -73,6 +81,9 @@ class ExpensesService:
             if not data.type.strip():
                 raise InvalidExpenseDataError("Type cannot be empty")
             cleaned = data.type.strip().capitalize()
+            existing = await self.expense_repo.get_by_trip_and_type(expense.trip_id, cleaned, user_id)
+            if existing and existing.id != expense.id:
+                raise DuplicateExpenseError("Expense type already exists for this trip")
             expense.type = cleaned
 
         if data.amount is not None:
