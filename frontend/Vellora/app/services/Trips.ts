@@ -1,6 +1,7 @@
 import { API_BASE_URL } from "../constants/api";
 import { ApiError, handleResponse, checkToken } from "./helpers";
 import { fetch } from 'expo/fetch';
+import { File } from "expo-file-system";
 
 
 export type Expense = {
@@ -68,6 +69,18 @@ export type createExpensePayload = {
     amount: number;
 }
 
+export type expenseReceipt = {
+    id?: string,
+    trip_id: string,
+    user_id: string, 
+    bucket?: string,
+    object_key?: string,
+    file_name: string,
+    content_type?: string,
+    size_bytes?: string,
+    created_at?: Date
+}
+
 
 export async function getTrips(token?: string): Promise<Trip[]> {
     const authToken = await checkToken();
@@ -132,7 +145,7 @@ export async function createManualTrip(payload: createManualTripPayload, token?:
 export async function getActiveTrip(token?: string): Promise<Trip | null> {
     const authToken = await checkToken();
 
-    const response = await fetch(`${API_BASE_URL}/trips/active`, {
+    const response = await globalThis.fetch(`${API_BASE_URL}/trips/active`, {
         method: 'GET',
         headers: {
             "Content-Type": "application/json",
@@ -256,4 +269,43 @@ export async function deleteTripExpense(expenseId: string, tripId: string, token
     })
 
     return handleResponse<Expense>(response);
+}
+
+export async function addReceipt(expenseId: string, tripId: string, receipt: FormData, token?: string): Promise<expenseReceipt> {
+  
+    const authToken = token || await checkToken();
+  
+    const response = await globalThis.fetch(`${API_BASE_URL}/trips/${tripId}/expenses/${expenseId}/receipts`, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${authToken}`
+        },
+        body: receipt
+    });
+
+    if (!response.ok) {
+        const errortxt = await response.text();
+        console.error('Upload failed:', {
+            status: response.status,
+            statusText: response.statusText,
+            body: errortxt
+        });
+        throw new Error(`Upload failed: ${response.status} ${errortxt}`);
+    }
+
+    return handleResponse<expenseReceipt>(response);    
+}
+
+export async function getReceipts(expenseId: string, tripId: string, token?: string): Promise<expenseReceipt> {
+    const authToken = token || await checkToken();
+
+    const response = await fetch(`${API_BASE_URL}/trips/${tripId}/expenses/${expenseId}/receipts`, {
+        method: "GET",
+        headers: {
+            "Content-Type": ``,
+            Authorization: `Bearer ${authToken}`
+        }
+    });
+
+    return handleResponse<expenseReceipt>(response);
 }

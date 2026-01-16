@@ -1,6 +1,6 @@
 import { View, Text } from "react-native";
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { getTrip, Trip, getTripExpenses, updateTripExpense, editTrip, Expense, createTripExpense } from "../services/Trips";
+import { getTrip, Trip, getTripExpenses, updateTripExpense, editTrip, Expense, createTripExpense, addReceipt, getReceipts} from "../services/Trips";
 import TripDetailsForm from "../components/TripDetailsForm";
 import { useRateOptions } from "../hooks/useRateOptions";
 import GeometryMap from "../components/GeometryMap";
@@ -11,7 +11,8 @@ import EditableNumericDisplay from "../components/EditableNumericDisplay";
 import Button from "../components/Button";
 import * as ImagePicker from 'expo-image-picker';
 import { useCommonPlaces } from "../hooks/useCommonPlaces";
-
+import * as FileSystem from 'expo-file-system/legacy';
+import * as MediaLibrary from "expo-media-library";
 
 const MAPBOX_KEY = process.env.EXPO_PUBLIC_API_KEY_MAPBOX_PUBLIC_ACCESS_TOKEN;
 
@@ -80,9 +81,9 @@ const EditTripPage = () => {
         setExpenses(response);
         
         // Set the Parking, toll, and gas based on the response
-        setParking(String(response.find(e => e.type === 'Parking' || e.type === 'parking')?.amount ?? 0.00));
-        setTolls(String(response.find(e => e.type === 'tolls' || e.type === 'Tolls')?.amount ?? 0.00));
-        setGas(String(response.find(e => e.type === 'gas' || e.type === 'Gas')?.amount ?? 0.00));
+        setParking(String(response.find(e => e.type === 'Parking')?.amount ?? 0.00));
+        setTolls(String(response.find(e => e.type === 'Tolls')?.amount ?? 0.00));
+        setGas(String(response.find(e => e.type === 'Gas')?.amount ?? 0.00));
         setExpenseLoading(false);
     }
 
@@ -96,19 +97,81 @@ const EditTripPage = () => {
             }
 
             // let the user pick a picture from the media library
-            let picture = await ImagePicker.launchImageLibraryAsync({
+            const picture = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: ['images'],
                 allowsEditing: true,
                 aspect: [4,3],
                 quality: 1 // high quality
-            })
+            });
 
-            if (!picture.canceled) {    // if picture wasn't cancelled, set the image to picture uri
-                setImage(picture.assets[0].uri ?? null); 
-                setImageName(picture.assets[0].fileName ?? null);
+            if (!picture.canceled && picture.assets?.length) {
+                const asset = picture.assets[0];
+                const filename = asset.fileName || `receipt-${Date.now()}.jpg`;
+
+                setImage(asset.uri ?? null);
+                setImageName(filename);
+
+                await handleUploadImage(asset);
             }
+
         } catch (error) {
             console.error("Error getting photo: ", error);
+        }
+    }
+
+    const handleUploadImage = async (asset: ImagePicker.ImagePickerAsset) => {
+        try {
+            // Get Expense and Trip Id
+            const expenseId = expenses?.find(e => e.type === 'Tolls')?.id ?? ""  // hard coded for testing purposes
+            const tripId = trip?.id ?? "";
+
+            let uri = asset.uri;
+            if (!uri) {
+                console.warn("Selected asset is missing a URI");
+                return;
+            }
+
+            const name = asset.fileName || `receipt-${Date.now()}.jpg`;
+            const type = asset.mimeType || "image/jpeg";
+
+            // Resolve iOS library URIs to a file path Expo can read the bytes
+            if (uri.startsWith("ph://") && asset.assetId) {
+                const info = await MediaLibrary.getAssetInfoAsync(asset.assetId);
+                if (info.localUri) {
+                    uri = info.localUri;
+                }
+            }
+
+            // Copy Android content URIs into the cache directory for read access
+            if (uri.startsWith("content://")) {
+                const cachePath = `${FileSystem.cacheDirectory}${name}`;
+                try {
+                    await FileSystem.copyAsync({ from: uri, to: cachePath });
+                    uri = cachePath;
+                } catch (copyError) {
+                    console.warn("Unable to copy receipt to cache", copyError);
+                }
+            }
+
+            // Check if the file:// is present for proper upload
+            if (!uri.startsWith("file://")) {
+                console.warn("Receipt URI is not a file path; upload may fail", uri);
+            }
+
+            const formData = new FormData();
+            formData.append('file', {
+                // Expo's fetch/FormData requires a file:// URI
+                uri: uri.startsWith("file://") ? uri : `file://${uri}`,
+                name,
+                type,
+            } as any);
+
+            await addReceipt(expenseId, tripId, formData);
+
+
+        } catch (error) {
+            console.error("Error uploading photo: ", error);
+            alert("Error uploading receipt. Please try again");
         }
     }
 

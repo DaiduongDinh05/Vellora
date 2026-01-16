@@ -83,7 +83,8 @@
           "RNMapboxAccessToken": "process.env.EXPO_PUBLIC_API_KEY_MAPBOX_PUBLIC_ACCESS"
         }
       ],
-      "expo-font"
+      "expo-font",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
