@@ -17,8 +17,8 @@ class ExpenseReceiptRepo:
         await self.db.refresh(receipt)
         return receipt
 
-    async def list_for_expense(self, expense_id: UUID, user_id: UUID | None = None) -> list[ExpenseReceipt]:
-        query = select(ExpenseReceipt).where(ExpenseReceipt.expense_id == expense_id)
+    async def list_for_trip(self, trip_id: UUID, user_id: UUID | None = None) -> list[ExpenseReceipt]:
+        query = select(ExpenseReceipt).where(ExpenseReceipt.trip_id == trip_id)
         if user_id is not None:
             query = query.where(ExpenseReceipt.user_id == user_id)
         result = await self.db.execute(query)
@@ -26,7 +26,7 @@ class ExpenseReceiptRepo:
 
     async def get(self, receipt_id: UUID, user_id: UUID | None = None) -> ExpenseReceipt | None:
         query = select(ExpenseReceipt).where(ExpenseReceipt.id == receipt_id).options(
-            selectinload(ExpenseReceipt.expense)
+            selectinload(ExpenseReceipt.trip)
         )
         if user_id is not None:
             query = query.where(ExpenseReceipt.user_id == user_id)

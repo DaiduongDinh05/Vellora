@@ -113,6 +113,7 @@ class TripResponseDTO(BaseModel):
     rate_customization_id: UUID
     rate_category_id: UUID
     expenses: List[ExpenseResponseDTO] = []
+    receipts: List[TripExpenseReceiptDTO] = []
 
     @classmethod
     def model_validate(cls, trip: Trip):
@@ -155,6 +156,16 @@ class TripResponseDTO(BaseModel):
                     ],
                 )
                 for e in getattr(trip, "expenses", [])
+            ],
+            "receipts": [
+                TripExpenseReceiptDTO(
+                    id=str(r.id),
+                    file_name=r.file_name,
+                    content_type=r.content_type,
+                    size_bytes=r.size_bytes,
+                    created_at=r.created_at,
+                )
+                for r in getattr(trip, "receipts", [])
             ],
         }
 

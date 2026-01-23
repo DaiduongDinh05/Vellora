@@ -18,21 +18,16 @@ class Expense(Base):
 
     trip: Mapped["Trip"] = relationship("Trip", back_populates="expenses")
     user: Mapped["User"] = relationship("User", back_populates="expenses")
-    receipts: Mapped[list["ExpenseReceipt"]] = relationship(
-        "ExpenseReceipt",
-        back_populates="expense",
-        cascade="all, delete-orphan",
-    )
 
 
 class ExpenseReceipt(Base):
     __tablename__ = "expense_receipts"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
-    expense_id: Mapped[uuid.UUID] = mapped_column(
+    expense_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
-        sa.ForeignKey("expenses.id", ondelete="CASCADE"),
-        nullable=False,
+        sa.ForeignKey("expenses.id", ondelete="SET NULL"),
+        nullable=True,
         index=True,
     )
     trip_id: Mapped[uuid.UUID] = mapped_column(
@@ -54,4 +49,4 @@ class ExpenseReceipt(Base):
     size_bytes: Mapped[int] = mapped_column(sa.BigInteger, nullable=False)
     created_at: Mapped[sa.DateTime] = mapped_column(sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False)
 
-    expense: Mapped["Expense"] = relationship("Expense", back_populates="receipts")
+    trip: Mapped["Trip"] = relationship("Trip", back_populates="receipts")
