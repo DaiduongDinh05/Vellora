@@ -11,6 +11,7 @@ class NotificationType(str, enum.Enum):
     TRIP_STARTED = "trip_started"
     TRIP_ENDED = "trip_ended"
     TRIP_STOP_REMINDER = "trip_stop_reminder"
+    TRIP_START_REMINDER = "trip_start_reminder"
     #for when scheduled trips are implemented
     SCHEDULED_TRIP_STARTED = "scheduled_trip_started"
     SCHEDULED_TRIP_ENDED = "scheduled_trip_ended"
