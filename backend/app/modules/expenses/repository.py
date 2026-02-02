@@ -2,8 +2,6 @@ from uuid import UUID
 from sqlalchemy import func
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
-
 from app.modules.expenses.models import Expense
 
 class ExpenseRepo:
@@ -18,13 +16,13 @@ class ExpenseRepo:
         return expense
     
     async def get_expense(self, expense_id: UUID, user_id: UUID = None) -> Expense:
-        query = select(Expense).where(Expense.id == expense_id).options(selectinload(Expense.receipts))
+        query = select(Expense).where(Expense.id == expense_id)
         if user_id is not None:
             query = query.where(Expense.user_id == user_id)
         return await self.db.scalar(query)
     
     async def get_expenses_by_trip_id(self, trip_id: UUID, user_id: UUID = None):
-        query = select(Expense).where(Expense.trip_id == trip_id).options(selectinload(Expense.receipts))
+        query = select(Expense).where(Expense.trip_id == trip_id)
         if user_id is not None:
             query = query.where(Expense.user_id == user_id)
         result = await self.db.execute(query)

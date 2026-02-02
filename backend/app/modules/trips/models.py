@@ -28,6 +28,11 @@ class Trip(Base):
     started_at: Mapped[sa.DateTime] = mapped_column(sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False)
     ended_at: Mapped[sa.DateTime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
     expenses: Mapped[list["Expense"]] = relationship("Expense", back_populates="trip", cascade="all, delete-orphan")
+    receipts: Mapped[list["ExpenseReceipt"]] = relationship(
+        "ExpenseReceipt",
+        back_populates="trip",
+        cascade="all, delete-orphan",
+    )
     rate_customization_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), sa.ForeignKey("rate_customizations.id", ondelete="RESTRICT"), nullable=False)
     rate_customization: Mapped["RateCustomization"] = relationship("RateCustomization", back_populates="trips")
     rate_category_id : Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), sa.ForeignKey("rate_categories.id", ondelete="RESTRICT"), nullable=False)
