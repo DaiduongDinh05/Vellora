@@ -8,6 +8,7 @@ import { useState } from "react";
 
 import { useCommonPlaces } from "../hooks/useCommonPlaces";
 import CommonPlaceCard from "../components/CommonPlaceCard";
+import CustomCalendar from "../components/CustomCalendar";
 // import Tracking from "../components/tracking";
 
 export default function Index() {
@@ -108,6 +109,10 @@ export default function Index() {
                   })}
                 />
               ))}  
+            </View>
+
+            <View>
+              <CustomCalendar />
             </View>
               
           </View>
