@@ -62,7 +62,7 @@ class ExpenseReceiptsService:
         self,
         user_id: UUID,
         trip_id: UUID,
-        expense_id: UUID,
+        expense_id: UUID | None,
         upload: UploadFile,
     ) -> ExpenseReceiptDTO:
         await self._ensure_trip(user_id, trip_id)
@@ -121,7 +121,7 @@ class ExpenseReceiptsService:
         self,
         user_id: UUID,
         trip_id: UUID,
-        expense_id: UUID,
+        expense_id: UUID | None,
     ) -> list[ExpenseReceiptDTO]:
         await self._ensure_trip(user_id, trip_id)
         receipts = await self.receipt_repo.list_for_trip(trip_id, user_id)
