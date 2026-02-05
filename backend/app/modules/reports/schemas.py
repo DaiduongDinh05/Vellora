@@ -40,3 +40,8 @@ class ReportStatusResponse(BaseModel):
     id: UUID
     status: ReportStatus
     file_url: str | None
+
+class AnalyticsResponse(BaseModel):
+    category_counts: dict[str, int]
+    total_miles: float
+    grand_total: float

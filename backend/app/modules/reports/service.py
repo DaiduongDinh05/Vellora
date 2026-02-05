@@ -1,9 +1,11 @@
-from datetime import datetime, timedelta, timezone
+from datetime import date,datetime, timedelta, timezone
+from calendar import monthrange
+from collections import Counter
 from uuid import UUID
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 import sqlalchemy as sa
-from app.modules.reports.schemas import GenerateReportDTO
+from app.modules.reports.schemas import GenerateReportDTO, AnalyticsResponse
 from app.modules.reports.models import Report, ReportStatus
 from app.modules.reports.repository import ReportRepository
 from app.modules.reports.data_builder import ReportDataBuilder
@@ -11,7 +13,8 @@ from app.modules.reports.renderer_fpdf import ReportPDFRenderer
 from app.modules.reports.exceptions import (
     ReportNotFoundError, ReportPermissionError, ReportRateLimitError,
     ReportSystemLimitError, ReportMaxRetriesError, ReportInvalidStateError,
-    ReportExpiredError, ReportPersistenceError
+    ReportExpiredError, ReportPersistenceError, InvalidMonthAnalyticsError,
+    InvalidDataAnalyticsError
 )
 from app.modules.reports.ports import NotificationPort, StoragePort, QueuePort
 from app.modules.users.models import User
@@ -359,3 +362,34 @@ class ReportsService:
             report.status = ReportStatus.processing
             report.processing_started_at = datetime.now(timezone.utc)
             await self.session.commit()
+
+    async def get_analytics(self, user: User, month: str) -> AnalyticsResponse:
+        year = date.today().year
+        current_month = date.today().month
+
+        try:
+            month_num = datetime.strptime(month.capitalize(), "%B").month
+        except ValueError:
+            raise InvalidMonthAnalyticsError("Invalid Month")
+
+        start_date = date(year, month_num, 1)
+        end_date = date(year, month_num, monthrange(year, month_num)[1])
+
+        try:
+            temp_report = Report(
+            user = user,
+            user_id=user.id,
+            start_date=start_date,
+            end_date=end_date
+        )
+            data = await self.data_builder.build(temp_report)
+        except Exception as e:
+            raise InvalidDataAnalyticsError("Failed to gather data") from e
+
+        category_counts = Counter(trip.category_name for trip in data.trips)
+        
+        return AnalyticsResponse(
+            category_counts=dict(category_counts),
+            total_miles=data.total_miles,
+            grand_total=data.grand_total
+        )
