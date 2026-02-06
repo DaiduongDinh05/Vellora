@@ -28,7 +28,7 @@ def get_expense_receipts_service(
     db: AsyncSession = Depends(get_db),
     storage=Depends(get_receipt_storage),
 ):
-    return ExpenseReceiptsService(ExpenseRepo(db), TripRepo(db), ExpenseReceiptRepo(db), storage)
+    return ExpenseReceiptsService(TripRepo(db), ExpenseReceiptRepo(db), storage)
 
 
 @router.post("/", response_model= ExpenseResponseDTO)
