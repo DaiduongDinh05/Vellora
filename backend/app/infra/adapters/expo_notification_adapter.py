@@ -3,6 +3,7 @@ from typing import List, Optional
 from uuid import UUID
 import httpx
 from app.config import settings
+from app.config import settings
 from app.modules.notifications.exceptions import NotificationDeliveryError
 from app.modules.notifications.ports import PushNotificationPort
 from app.modules.notifications.repository import DeviceTokenRepository
@@ -89,9 +90,9 @@ class ExpoNotificationAdapter(PushNotificationPort):
         return valid_tokens
     
     def _is_valid_expo_token(self, token: str) -> bool:
+        if not token or not isinstance(token, str):
+            return False
         return (
-            token and
-            isinstance(token, str) and
             (token.startswith("ExponentPushToken[") or token.startswith("ExpoPushToken[")) and
             token.endswith("]")
         )
