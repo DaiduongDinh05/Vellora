@@ -1,6 +1,6 @@
 import { View, Text } from "react-native";
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { getTrip, Trip, getTripExpenses, updateTripExpense, editTrip, Expense, createTripExpense, addReceipt, getReceipts} from "../services/Trips";
+import { getTrip, Trip, getTripExpenses, updateTripExpense, editTrip, Expense, createTripExpense, addReceipt, getReceipts, expenseReceipt } from "../services/Trips";
 import TripDetailsForm from "../components/TripDetailsForm";
 import { useRateOptions } from "../hooks/useRateOptions";
 import GeometryMap from "../components/GeometryMap";
@@ -42,6 +42,8 @@ const EditTripPage = () => {
     const [error, setError] = useState<string | null>(null);
     const [image, setImage] = useState<string | null>(null);
     const [imageName, setImageName] = useState<string | null>(null);
+    const [receipt, setReceipt] = useState<expenseReceipt[] | null>(null);
+    const [isReceiptLoading, setIsReceiptLoading] = useState<boolean>(false);
 
     const { rateItems, categoryItems, loading, updateSelectedRate } = useRateOptions();
     const { places: commonPlaces } = useCommonPlaces();
@@ -85,6 +87,34 @@ const EditTripPage = () => {
         setTolls(String(response.find(e => e.type === 'Tolls')?.amount ?? 0.00));
         setGas(String(response.find(e => e.type === 'Gas')?.amount ?? 0.00));
         setExpenseLoading(false);
+    }
+
+    const handleGetReceipt = async () => {
+        const tripId = id as string | undefined;
+
+        if (!tripId) return;
+
+        setIsReceiptLoading(true);
+        const response = await getReceipts(tripId);
+
+        if (!response) {
+            setIsReceiptLoading(false);
+            setReceipt(null);
+            alert('Failed to get receipts, please try again.')
+            return;
+        }
+
+        if (response === undefined) {
+            setIsReceiptLoading(false);
+            setReceipt(null);
+            return; // no receipt
+            
+        }
+
+        setReceipt(response);
+        console.log(response); 
+        setIsReceiptLoading(false);
+       
     }
 
     const handleTakePhoto = async () => {
@@ -166,8 +196,11 @@ const EditTripPage = () => {
                 type,
             } as any);
 
-            await addReceipt(expenseId, tripId, formData);
-
+            const response = await addReceipt(tripId, formData);
+            alert("Receipt uploaded successfully.")
+            setReceipt(response);
+            
+            
 
         } catch (error) {
             console.error("Error uploading photo: ", error);
@@ -356,6 +389,7 @@ const EditTripPage = () => {
         // await handle expenses to ensure expenses are loaded before update
         (async () => {
             await handleGetExpenses();
+            await handleGetReceipt();
         })();
     }, [trip])
 
@@ -437,9 +471,9 @@ const EditTripPage = () => {
 
 
             />
-        {imageName ? (
+        {receipt && receipt.length > 0 ? (
              <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 30}}>
-                <Text style={{marginTop: 40}}>{imageName}</Text>
+                <Text style={{marginTop: 40}}>{receipt[0]?.file_name}</Text>
                 <Button className="py-4 px-5"
                     title="+ Change Receipt"
                     onPress={handleTakePhoto}

@@ -36,6 +36,7 @@ export type Trip = {
     vehicle?: string | null;
 }
 
+
  // Types for payloads for Backend API calls
 export type createTripPayload = {
     start_address: string;
@@ -72,7 +73,7 @@ export type createExpensePayload = {
 export type expenseReceipt = {
     id?: string,
     trip_id: string,
-    user_id: string, 
+    user_id?: string, 
     bucket?: string,
     object_key?: string,
     file_name: string,
@@ -271,11 +272,11 @@ export async function deleteTripExpense(expenseId: string, tripId: string, token
     return handleResponse<Expense>(response);
 }
 
-export async function addReceipt(expenseId: string, tripId: string, receipt: FormData, token?: string): Promise<expenseReceipt> {
+export async function addReceipt(tripId: string, receipt: FormData, token?: string): Promise<expenseReceipt[]> {
   
     const authToken = token || await checkToken();
   
-    const response = await globalThis.fetch(`${API_BASE_URL}/trips/${tripId}/expenses/${expenseId}/receipts`, {
+    const response = await globalThis.fetch(`${API_BASE_URL}/trips/${tripId}/receipts`, {
         method: "POST",
         headers: {
             Authorization: `Bearer ${authToken}`
@@ -293,13 +294,13 @@ export async function addReceipt(expenseId: string, tripId: string, receipt: For
         throw new Error(`Upload failed: ${response.status} ${errortxt}`);
     }
 
-    return handleResponse<expenseReceipt>(response);    
+    return handleResponse<expenseReceipt[]>(response);    
 }
 
-export async function getReceipts(expenseId: string, tripId: string, token?: string): Promise<expenseReceipt> {
+export async function getReceipts(tripId: string, token?: string): Promise<expenseReceipt[]> {
     const authToken = token || await checkToken();
 
-    const response = await fetch(`${API_BASE_URL}/trips/${tripId}/expenses/${expenseId}/receipts`, {
+    const response = await fetch(`${API_BASE_URL}/trips/${tripId}/receipts`, {
         method: "GET",
         headers: {
             "Content-Type": ``,
@@ -307,5 +308,5 @@ export async function getReceipts(expenseId: string, tripId: string, token?: str
         }
     });
 
-    return handleResponse<expenseReceipt>(response);
+    return handleResponse<expenseReceipt[]>(response);
 }
