@@ -86,6 +86,55 @@ def sample_expense_id():
     return uuid4()
 
 
+@pytest.fixture
+def sample_notification_id():
+    """Fixture providing a sample notification UUID"""
+    return uuid4()
+
+
+@pytest.fixture
+def sample_device_token():
+    """Fixture providing a sample Expo device token"""
+    return "ExponentPushToken[sample-test-token-123]"
+
+
+@pytest.fixture
+def mock_notification():
+    """Fixture providing a mock notification object"""
+    from app.modules.notifications.models import Notification, NotificationType
+    notification = MagicMock(spec=Notification)
+    notification.id = uuid4()
+    notification.user_id = uuid4()
+    notification.title = "Test Notification"
+    notification.message = "Test message"
+    notification.type = NotificationType.TRIP_STOP_REMINDER
+    notification.is_read = False
+    return notification
+
+
+@pytest.fixture
+def mock_device_token_obj():
+    """Fixture providing a mock device token object"""
+    from app.modules.notifications.models import UserDeviceToken
+    token = MagicMock(spec=UserDeviceToken)
+    token.id = uuid4()
+    token.user_id = uuid4()
+    token.device_token = "ExponentPushToken[test-token-123]"
+    token.device_type = "ios"
+    token.is_active = True
+    return token
+
+
+@pytest.fixture
+def mock_expo_adapter():
+    """Fixture providing a mock Expo notification adapter"""
+    from app.infra.adapters.expo_notification_adapter import ExpoNotificationAdapter
+    adapter = AsyncMock(spec=ExpoNotificationAdapter)
+    adapter.send_notification.return_value = True
+    adapter.send_to_user.return_value = True
+    return adapter
+
+
 @pytest.fixture(autouse=True)
 def mock_aws_clients():
     """Mock AWS clients for all tests"""

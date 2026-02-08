@@ -16,11 +16,10 @@ from app.modules.rate_categories.exceptions import InvalidRateCategoryDataError,
 from app.modules.common_places.exceptions import InvalidCommonPlaceDataError, CommonPlaceNotFoundError, CommonPlacePersistenceError, DuplicateCommonPlaceError, MaxCommonPlacesError
 from app.modules.audit_trail.exceptions import AuditTrailNotFoundError, AuditTrailPersistenceError
 from app.modules.vehicles.exceptions import VehicleNotFoundError, DuplicateVehicleError, InvalidVehicleDataError, VehiclePersistenceError, VehicleInUseError
-from app.modules.reports.exceptions import (
-    InvalidReportDataError, ReportNotFoundError, ReportPersistenceError, 
-    ReportPermissionError, ReportRateLimitError, ReportSystemLimitError,
-    ReportExpiredError, ReportMaxRetriesError, ReportInvalidStateError
-)
+from app.modules.reports.exceptions import InvalidReportDataError, ReportNotFoundError, ReportPersistenceError, ReportPermissionError, ReportRateLimitError, ReportSystemLimitError,ReportExpiredError, ReportMaxRetriesError, ReportInvalidStateError
+
+from app.modules.notifications.exceptions import NotificationNotFoundError, NotificationPersistenceError, InvalidNotificationDataError,NotificationDeliveryError, DeviceTokenError, DuplicateDeviceTokenError
+
 from fastapi import HTTPException
 
 
@@ -132,6 +131,20 @@ def error_handler(func):
         except AuditTrailNotFoundError as e:
             raise HTTPException(status_code=404, detail=str(e))
         except AuditTrailPersistenceError as e:
+            raise HTTPException(status_code=500, detail=str(e))
+        
+        #notifications
+        except InvalidNotificationDataError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        except NotificationNotFoundError as e:
+            raise HTTPException(status_code=404, detail=str(e))
+        except DuplicateDeviceTokenError as e:
+            raise HTTPException(status_code=409, detail=str(e))
+        except DeviceTokenError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        except NotificationDeliveryError as e:
+            raise HTTPException(status_code=502, detail=str(e))
+        except NotificationPersistenceError as e:
             raise HTTPException(status_code=500, detail=str(e))
         
         #all
