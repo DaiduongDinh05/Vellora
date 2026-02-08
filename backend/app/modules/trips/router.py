@@ -18,6 +18,9 @@ from app.modules.expenses.service import ExpensesService
 from app.modules.vehicles.repository import VehicleRepository
 from app.modules.audit_trail.repository import AuditTrailRepo
 from app.modules.audit_trail.service import AuditTrailService
+from app.modules.notifications.repository import NotificationRepository, DeviceTokenRepository
+from app.modules.notifications.service import NotificationService
+from app.infra.adapters.expo_notification_adapter import ExpoNotificationAdapter
 
 
 router = APIRouter(prefix="/trips", tags=["Trips"])
@@ -27,8 +30,13 @@ def get_trips_service(db: AsyncSession = Depends(get_db)):
     expense_repo = ExpenseRepo(db)
     expense_service = ExpensesService(expense_repo, trip_repo)
     vehicle_repo = VehicleRepository(db)
-    audit_service = AuditTrailService(AuditTrailRepo(db))
-    return TripsService(trip_repo, RateCategoryRepo(db), RateCustomizationRepo(db), vehicle_repo, expense_service, audit_service)
+    audit_service = AuditTrailService(AuditTrailRepo(db))   
+    notification_repo = NotificationRepository(db)
+    device_token_repo = DeviceTokenRepository(db)
+    expo_adapter = ExpoNotificationAdapter(device_token_storage=device_token_repo)
+    notification_service = NotificationService(notification_repo=notification_repo, device_token_repo=device_token_repo, push_adapter=expo_adapter, trip_repo=trip_repo)
+    
+    return TripsService(trip_repo, RateCategoryRepo(db), RateCustomizationRepo(db), vehicle_repo, expense_service, audit_service, notification_service)
 
 def get_trip_receipts_service(
     db: AsyncSession = Depends(get_db),
