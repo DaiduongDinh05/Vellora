@@ -112,7 +112,6 @@ const EditTripPage = () => {
         }
 
         setReceipt(response);
-        console.log(response); 
         setIsReceiptLoading(false);
        
     }
