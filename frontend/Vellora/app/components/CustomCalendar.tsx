@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import { Calendar, DateData } from 'react-native-calendars';
+import { FontAwesome } from '@expo/vector-icons';
 
 // define the shape of a single trip item
 interface AgendaItem {
@@ -9,22 +10,37 @@ interface AgendaItem {
   purpose: string;
   address: string;
   type: string;
+  status: 'pending' | 'completed';
 }
 
 // define the shape of your schedule data object
 const MOCK_SCHEDULES: Record<string, AgendaItem[]> = {
   '2026-02-08': [
-    { id: '1', time: '09:00 AM', purpose: 'Meeting with Client X', address: '123 Tech Blvd', type: 'Business' },
-    { id: '2', time: '02:00 PM', purpose: 'Site Visit', address: '456 Construction Rd', type: 'Business' }
+    { id: '1', time: '09:00 AM', purpose: 'Meeting with Client X', address: '123 Tech Blvd', type: 'Business', status: 'pending' },
+    { id: '2', time: '02:00 PM', purpose: 'Site Visit', address: '456 Construction Rd', type: 'Business', status: 'pending' }
   ],
   '2026-02-10': [
-    { id: '3', time: '11:30 AM', purpose: 'Lunch with Mentor', address: '789 Downtown Ave', type: 'Personal' }
+    { id: '3', time: '11:30 AM', purpose: 'Lunch with Mentor', address: '789 Downtown Ave', type: 'Personal', status: 'pending' }
   ]
 };
 
 const CustomCalendar = () => {
   const [selected, setSelected] = useState('');
   const today = new Date().toISOString().split('T')[0]; // get today's date in YYYY-MM-DD format
+
+
+  // ACTION HANDLERS
+  const handleEdit = (id: string) => {
+    
+  };
+
+  const handleStartTracking = (trip: AgendaItem) => {
+
+  };
+
+  const handleMarkComplete = (id: string) => {
+
+  };
 
   const getMarkedDates = () => {
     const marks: any = {};
@@ -82,16 +98,52 @@ const CustomCalendar = () => {
 
   const renderAgendaItem = (item: AgendaItem ) => (
     <View key={item.id} style={styles.card}>
-      <View style={styles.cardTimeContainer}>
-        <Text style={styles.cardTime}>{item.time}</Text>
-        <View style={styles.verticalLine} />
-      </View>
-      <View style={styles.cardContent}>
-        <Text style={styles.cardPurpose}>{item.purpose}</Text>
-        <Text style={styles.cardAddress}>{item.address}</Text>
-        <View style={styles.badgeContainer}>
-          <Text style={styles.badgeText}>{item.type}</Text>
+
+      {/* trip info section */}
+      <View style={styles.cardTopRow}>
+        <View style={styles.cardTimeContainer}>
+          <Text style={styles.cardTime}>{item.time}</Text>
+          <View style={styles.verticalLine} />
         </View>
+        <View style={styles.cardContent}>
+          <Text style={styles.cardPurpose}>{item.purpose}</Text>
+          <Text style={styles.cardAddress}>{item.address}</Text>
+          <View style={styles.badgeContainer}>
+            <Text style={styles.badgeText}>{item.type}</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* action buttons */}
+      <View style={styles.actionRow}>
+
+        {/* edit */}
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => handleEdit(item.id)}
+        >
+          <FontAwesome name="pencil" size={14} color="#666" />
+          <Text style={styles.actionText}>Edit</Text>
+
+        </TouchableOpacity>
+
+        {/* start tracking */}
+        <TouchableOpacity
+          style={[styles.actionButton, styles.primaryAction]}
+          onPress={() => handleStartTracking(item)}
+        >
+          <FontAwesome name="play" size={14} color="#666" />
+          <Text style={[styles.actionText, styles.primaryActionText]}>Start</Text>
+        </TouchableOpacity>
+
+        {/* mark complete */}
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => handleMarkComplete(item.id)}
+        >
+          <FontAwesome name="check-circle" size={14} color="#666" />
+          <Text style={styles.actionText}>Complete</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -137,11 +189,11 @@ const CustomCalendar = () => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    // flex: 1,
     backgroundColor: '#F5F5F5',
   },
   agendaContainer: {
-    flex: 1,
+    // flex: 1,
     padding: 16,
   },
   headerTitle: {
@@ -156,7 +208,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   card: {
-    flexDirection: 'row',
+    // flexDirection: 'row',
     backgroundColor: 'white',
     borderRadius: 12,
     marginBottom: 12,
@@ -166,6 +218,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
+  },
+  cardTopRow:{
+    flexDirection: 'row',
+    marginBottom: 12,
   },
   cardTimeContainer: {
     alignItems: 'center',
@@ -210,6 +266,38 @@ const styles = StyleSheet.create({
     color: '#404CCF',
     fontSize: 12,
     fontWeight: '600',
+  },
+
+  actionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+    paddingTop: 12,
+  },
+
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    backgroundColor: '#F9FAFB',
+  },
+
+  actionText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#666',
+    marginLeft: 6,
+  },
+
+  primaryAction: {
+    backgroundColor: '#404CCF',
+  },
+  primaryActionText: {
+    color: 'white',
+    fontWeight: 'bold',
   }
 });
 
