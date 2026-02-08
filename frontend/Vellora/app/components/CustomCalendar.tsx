@@ -13,7 +13,7 @@ interface AgendaItem {
 
 // define the shape of your schedule data object
 const MOCK_SCHEDULES: Record<string, AgendaItem[]> = {
-  '2026-02-07': [
+  '2026-02-08': [
     { id: '1', time: '09:00 AM', purpose: 'Meeting with Client X', address: '123 Tech Blvd', type: 'Business' },
     { id: '2', time: '02:00 PM', purpose: 'Site Visit', address: '456 Construction Rd', type: 'Business' }
   ],
@@ -28,6 +28,7 @@ const CustomCalendar = () => {
 
   const getMarkedDates = () => {
     const marks: any = {};
+    const CIRCLE_SIZE = 40;
 
     // add dots for days with scheduled trips
     Object.keys(MOCK_SCHEDULES).forEach(date => {
@@ -40,9 +41,11 @@ const CustomCalendar = () => {
       customStyles: {
         container: {
           backgroundColor: '#404CCF',
-          borderRadius: 20,
+          borderRadius: CIRCLE_SIZE / 2,
           justifyContent: 'center',
-          alignItems: 'center'
+          alignItems: 'center',
+          width: CIRCLE_SIZE,
+          height: CIRCLE_SIZE,
         },
         text: {
           color: 'white',
@@ -60,9 +63,11 @@ const CustomCalendar = () => {
             backgroundColor: 'white',
             borderColor: '#404CCF',
             borderWidth: 2,
-            borderRadius: 20,
+            borderRadius: CIRCLE_SIZE / 2,
             justifyContent: 'center',
-            alignItems: 'center'
+            alignItems: 'center',
+            width: CIRCLE_SIZE,
+            height: CIRCLE_SIZE,
           },
           text: {
             color: '#404CCF',
