@@ -17,13 +17,63 @@ const MOCK_SCHEDULES: Record<string, AgendaItem[]> = {
     { id: '1', time: '09:00 AM', purpose: 'Meeting with Client X', address: '123 Tech Blvd', type: 'Business' },
     { id: '2', time: '02:00 PM', purpose: 'Site Visit', address: '456 Construction Rd', type: 'Business' }
   ],
-  '2026-02-08': [
+  '2026-02-10': [
     { id: '3', time: '11:30 AM', purpose: 'Lunch with Mentor', address: '789 Downtown Ave', type: 'Personal' }
   ]
 };
 
 const CustomCalendar = () => {
   const [selected, setSelected] = useState('');
+  const today = new Date().toISOString().split('T')[0]; // get today's date in YYYY-MM-DD format
+
+  const getMarkedDates = () => {
+    const marks: any = {};
+
+    // add dots for days with scheduled trips
+    Object.keys(MOCK_SCHEDULES).forEach(date => {
+      marks[date] = { marked: true, dotColor: '#404CCF' };
+    });
+
+    // style "today"
+    marks[today] = {
+      ...(marks[today] || {}),
+      customStyles: {
+        container: {
+          backgroundColor: '#404CCF',
+          borderRadius: 20,
+          justifyContent: 'center',
+          alignItems: 'center'
+        },
+        text: {
+          color: 'white',
+          fontWeight: 'bold'
+        }
+      }   
+    };
+
+    // style the selected day
+    if (selected) {
+      marks[selected] = {
+        ...(marks[selected] || {}),
+        customStyles: {
+          container: {
+            backgroundColor: 'white',
+            borderColor: '#404CCF',
+            borderWidth: 2,
+            borderRadius: 20,
+            justifyContent: 'center',
+            alignItems: 'center'
+          },
+          text: {
+            color: '#404CCF',
+            fontWeight: 'bold'
+          }
+        }
+      };
+    }
+
+    return marks;
+  };
 
   const renderAgendaItem = (item: AgendaItem ) => (
     <View key={item.id} style={styles.card}>
@@ -47,19 +97,14 @@ const CustomCalendar = () => {
     <View style={styles.container}>
       
       <Calendar
+        markingType={'custom'}      // enable custom styling
         onDayPress={(day: DateData) => {
           setSelected(day.dateString);
         }}
-        markedDates={{
-          [selected]: {
-            selected: true, 
-            disableTouchEvent: true, 
-            selectedColor: '#404CCF',
-            selectedTextColor: 'white'
-          },
-          '2026-02-07': { marked: true, dotColor: '#404CCF' },
-          '2026-02-08': { marked: true, dotColor: '#404CCF' }
-        }}
+
+        // dynamic marks
+        markedDates={getMarkedDates()}
+
         theme={{
           todayTextColor: '#404CCF',
           arrowColor: '#404CCF',
