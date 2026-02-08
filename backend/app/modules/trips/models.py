@@ -41,6 +41,7 @@ class Trip(Base):
     
     user: Mapped["User"] = relationship("User", back_populates="trips")
     vehicle: Mapped["Vehicle"] = relationship("Vehicle", back_populates="trips")
+    notifications: Mapped[list["Notification"]] = relationship("Notification", back_populates="trip", cascade="all, delete-orphan", lazy="select")
 
 
     
