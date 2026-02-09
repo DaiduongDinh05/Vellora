@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import { Calendar, DateData } from 'react-native-calendars';
 import { FontAwesome } from '@expo/vector-icons';
-
+import Button from './Button';
 // define the shape of a single trip item
 interface AgendaItem {
   id: string;
@@ -25,8 +25,8 @@ const MOCK_SCHEDULES: Record<string, AgendaItem[]> = {
 };
 
 const CustomCalendar = () => {
-  const [selected, setSelected] = useState('');
   const today = new Date().toISOString().split('T')[0]; // get today's date in YYYY-MM-DD format
+  const [selected, setSelected] = useState(today);
 
 
   // ACTION HANDLERS
@@ -181,6 +181,11 @@ const CustomCalendar = () => {
               <Text style={styles.emptyText}>No trips scheduled for this day.</Text>
             ) : null
           )}
+          <Button
+              title="Schedule a Trip"
+              onPress={() => {}}
+              className="w-full py-4 px-5" 
+            />
         </View> 
       </View>
     </View>
@@ -206,6 +211,7 @@ const styles = StyleSheet.create({
     color: '#999',
     fontStyle: 'italic',
     marginTop: 10,
+    marginBottom: 20
   },
   card: {
     // flexDirection: 'row',
