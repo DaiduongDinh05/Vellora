@@ -3,7 +3,7 @@ from datetime import date, datetime
 from uuid import uuid4
 from pydantic import ValidationError
 
-from app.modules.reports.schemas import GenerateReportDTO, ReportResponse, ReportStatusResponse
+from app.modules.reports.schemas import GenerateReportDTO, ReportResponse, ReportStatusResponse, AnalyticsResponse
 from app.modules.reports.models import ReportStatus
 
 
@@ -62,3 +62,37 @@ class TestReportStatusResponse:
         )
         assert response.status == ReportStatus.pending
         assert response.file_url is None
+
+
+class TestAnalyticsResponse:
+
+    def test_valid_analytics_response(self):
+        response = AnalyticsResponse(
+            category_counts={"Business": 5, "Personal": 3},
+            total_miles=250.5,
+            grand_total=158.75
+        )
+        assert response.category_counts == {"Business": 5, "Personal": 3}
+        assert response.total_miles == 250.5
+        assert response.grand_total == 158.75
+
+    def test_invalid_analytics_response_missing_fields(self):
+        with pytest.raises(ValidationError):
+            AnalyticsResponse(category_counts={"Business": 5})
+
+    def test_category_counts_is_dict(self):
+        response = AnalyticsResponse(
+            category_counts={"Work": 10},
+            total_miles=100.0,
+            grand_total=65.0
+        )
+        assert isinstance(response.category_counts, dict)
+
+    def test_integers_converted_to_floats(self):
+        response = AnalyticsResponse(
+            category_counts={"Work": 10},
+            total_miles=100,
+            grand_total=65
+        )
+        assert response.total_miles == 100.0
+        assert response.grand_total == 65.0

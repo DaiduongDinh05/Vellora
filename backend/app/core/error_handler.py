@@ -128,10 +128,13 @@ def error_handler(func):
             raise HTTPException(status_code=400, detail=str(e))
         except ReportPersistenceError as e:
             raise HTTPException(status_code=500, detail=str(e))
+        
+        #analytics
         except InvalidMonthAnalyticsError as e:
             raise HTTPException(status_code=400, detail=str(e))
         except InvalidDataAnalyticsError as e:
             raise HTTPException(status_code=500, detail=str(e))
+    
         #audit trails
         except AuditTrailNotFoundError as e:
             raise HTTPException(status_code=404, detail=str(e))

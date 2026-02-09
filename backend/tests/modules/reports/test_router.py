@@ -8,9 +8,10 @@ from fastapi import HTTPException
 from app.modules.reports.router import router
 from app.modules.reports.service import ReportsService
 from app.modules.reports.models import Report, ReportStatus
-from app.modules.reports.schemas import GenerateReportDTO
+from app.modules.reports.schemas import GenerateReportDTO, AnalyticsResponse
 from app.modules.reports.exceptions import (
-    ReportNotFoundError, ReportPermissionError, ReportRateLimitError
+    ReportNotFoundError, ReportPermissionError, ReportRateLimitError,
+    InvalidMonthAnalyticsError, InvalidDataAnalyticsError
 )
 
 
@@ -205,3 +206,53 @@ class TestRegenerateReport:
 
         mock_service.regenerate_report.assert_called_once_with(report_id, mock_user.id)
         assert result["status"] == "regenerating"
+
+
+class TestGetAnalytics:
+
+    @pytest.fixture
+    def mock_analytics_response(self):
+        return AnalyticsResponse(
+            category_counts={"Business": 5, "Personal": 3},
+            total_miles=250.5,
+            grand_total=158.75
+        )
+
+    @pytest.mark.asyncio
+    async def test_get_analytics_success(self, mock_service, mock_user, mock_analytics_response):
+        from app.modules.reports.router import get_analytics
+        
+        mock_service.get_analytics.return_value = mock_analytics_response
+
+        result = await get_analytics("January", mock_user, mock_service)
+
+        mock_service.get_analytics.assert_called_once_with(mock_user, "January")
+        assert result.total_miles == 250.5
+        assert result.grand_total == 158.75
+        assert result.category_counts == {"Business": 5, "Personal": 3}
+
+    @pytest.mark.asyncio
+    async def test_get_analytics_invalid_month(self, mock_service, mock_user):
+        from app.modules.reports.router import get_analytics
+        from fastapi import HTTPException
+        
+        mock_service.get_analytics.side_effect = InvalidMonthAnalyticsError("Invalid Month")
+
+        with pytest.raises(HTTPException) as exc_info:
+            await get_analytics("InvalidMonth", mock_user, mock_service)
+        
+        assert exc_info.value.status_code == 400
+        assert "Invalid Month" in str(exc_info.value.detail)
+
+    @pytest.mark.asyncio
+    async def test_get_analytics_data_error(self, mock_service, mock_user):
+        from app.modules.reports.router import get_analytics
+        from fastapi import HTTPException
+        
+        mock_service.get_analytics.side_effect = InvalidDataAnalyticsError("Failed to gather data")
+
+        with pytest.raises(HTTPException) as exc_info:
+            await get_analytics("January", mock_user, mock_service)
+        
+        assert exc_info.value.status_code == 500
+        assert "Failed to gather data" in str(exc_info.value.detail)
