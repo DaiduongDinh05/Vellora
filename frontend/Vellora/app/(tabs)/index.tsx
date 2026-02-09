@@ -4,11 +4,11 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { getProviderAuthorizeUrl, login } from "../services/auth";
 import { FontAwesome } from "@expo/vector-icons";
 import Button from "../components/Button";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import * as Notifications from 'expo-notifications';
 
 import { useCommonPlaces } from "../hooks/useCommonPlaces";
 import CommonPlaceCard from "../components/CommonPlaceCard";
-// import Tracking from "../components/tracking";
 
 export default function Index() {
   const insets = useSafeAreaInsets();
@@ -19,16 +19,27 @@ export default function Index() {
 
   const { places: commonPlaces, loading } = useCommonPlaces();
 
-  // temporary common places data
-  // const commonPlaces = [
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+  });
 
-  //   { id: '1', title: 'Home', address: '123 Main St, Springfield, IL', lat: 39.7817, lng: -89.6501},
-  //   { id: '2', title: 'Work', address: '456 Corporate Blvd, Springfield, IL', lat: 39.7990, lng: -89.6436},
-  //   { id: '3', title: 'Gym', address: '789 Fitness Ave, Springfield, IL', lat: 39.7886, lng: -89.6544},
-  //   { id: '4', title: 'Grocery Store', address: '101 Market St, Springfield, IL', lat: 39.7833, lng: -89.6550},
-  // ];
-
-
+  async function registerForPushNotificationsAsync() {
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+    if (finalStatus !== 'granted') {
+      alert('Failed to get push token!');
+      return;
+    }
+  }
 
   // modal button handlers
   const handleManualLogPress = () => {
@@ -40,6 +51,10 @@ export default function Index() {
     setShowLogTripModal(false);   // close modal
     router.push('/tracking');    // navigate to live tracking screen
   };
+
+  useEffect(() => {
+    registerForPushNotificationsAsync();
+  })
 
   return (
 
