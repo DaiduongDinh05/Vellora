@@ -47,12 +47,24 @@ class EditTripDTO(BaseModel):
     miles: float | None = None
     rate_customization_id: UUID | None = None
     rate_category_id: UUID | None = None
+    scheduled_start_at: datetime.datetime | None = None
+    scheduled_end_at: datetime.datetime | None = None
     
     @field_validator('miles')
     @classmethod
     def validate_miles(cls, v: float | None) -> float | None:
         if v is not None and v < 0:
             raise ValueError("Miles must be non-negative")
+        return v
+
+    @field_validator('scheduled_end_at')
+    @classmethod
+    def validate_scheduled_end(cls, v: datetime.datetime | None, info):
+        if v is None:
+            return v
+        start = info.data.get('scheduled_start_at')
+        if start is not None and v <= start:
+            raise ValueError("Scheduled end time must be after start time")
         return v
 
 class ManualCreateTripDTO(BaseModel):
@@ -67,6 +79,16 @@ class ManualCreateTripDTO(BaseModel):
     rate_customization_id: UUID
     rate_category_id: UUID
     expenses: List[CreateExpenseDTO] | None = None 
+
+class ScheduleTripDTO(BaseModel):
+    start_address: str
+    end_address: str | None = None
+    purpose: str | None = None
+    vehicle_id: UUID | None = None
+    rate_customization_id: UUID
+    rate_category_id: UUID
+    scheduled_start_at: datetime.datetime
+    scheduled_end_at: datetime.datetime
 
 class TripExpenseReceiptDTO(BaseModel):
     id: str
@@ -108,6 +130,8 @@ class TripResponseDTO(BaseModel):
     expense_reimbursement_total: float | None = None
     total_reimbursement: float | None = None
     started_at: datetime.datetime
+    scheduled_start_at: datetime.datetime | None = None
+    scheduled_end_at: datetime.datetime | None = None
     ended_at: datetime.datetime | None = None
     updated_at: datetime.datetime
     rate_customization_id: UUID
@@ -134,6 +158,8 @@ class TripResponseDTO(BaseModel):
             "expense_reimbursement_total": trip.expense_reimbursement_total,
             "total_reimbursement": (trip.mileage_reimbursement_total or 0) + (trip.expense_reimbursement_total or 0),
             "started_at": trip.started_at,
+            "scheduled_start_at": trip.scheduled_start_at,
+            "scheduled_end_at": trip.scheduled_end_at,
             "ended_at": trip.ended_at,
             "updated_at": trip.updated_at,
             "rate_customization_id": trip.rate_customization_id,

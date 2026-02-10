@@ -8,6 +8,7 @@ from app.core.base import Base
 
 class TripStatus(str, enum.Enum):
     active = "active"
+    scheduled = "scheduled"
     completed = "completed"
     cancelled = "cancelled"
 
@@ -26,6 +27,8 @@ class Trip(Base):
     mileage_reimbursement_total: Mapped[float | None] = mapped_column(DOUBLE_PRECISION, nullable=True)
     expense_reimbursement_total: Mapped[float | None] = mapped_column(DOUBLE_PRECISION, nullable=True)
     started_at: Mapped[sa.DateTime] = mapped_column(sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False)
+    scheduled_start_at: Mapped[sa.DateTime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
+    scheduled_end_at: Mapped[sa.DateTime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
     ended_at: Mapped[sa.DateTime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
     expenses: Mapped[list["Expense"]] = relationship("Expense", back_populates="trip", cascade="all, delete-orphan")
     receipts: Mapped[list["ExpenseReceipt"]] = relationship(
