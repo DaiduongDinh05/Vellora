@@ -19,24 +19,22 @@ tests/
 │       ├── test_service.py
 │       ├── test_repository.py
 │       ├── test_router.py
-│       ├── test_distance.py  # Distance conversion utilities
-│       └── test_crypto.py    # Address encryption utilities
+│       ├── test_distance.py 
+│       └── test_crypto.py 
 ├── integration/       # Integration tests (real database, slower)
 │   ├── conftest.py   # Test database fixtures (SQLite in-memory)
 │   └── test_trip_repository.py
 └── conftest.py       # Shared test fixtures
-
+```
 
 ## Running Tests
 
 ### Install Test Dependencies
 
 ```bash
-# Install production dependencies
+# Install dependencies
 pip install -r requirements.txt
 
-# Install test dependencies (includes pytest, pytest-asyncio, pytest-cov, pytest-mock, aiosqlite)
-pip install -r requirements-test.txt
 ```
 
 ### Run Unit Tests Only (Fast, Default)
@@ -79,46 +77,6 @@ pytest -x
 
 # Run with verbose output and show print statements
 pytest -v -s
-```
-
-## Test Design Principles
-
-### 1. AAA Pattern
-All tests follow the **Arrange-Act-Assert** pattern:
-```python
-@pytest.mark.asyncio
-async def test_create_expense_success(self, service, mock_expense):
-    # Arrange: Set up test data and mocks
-    trip_id = uuid4()
-    expense_repo.get_by_trip_and_type.return_value = None
-    
-    # Act: Execute the function under test
-    result = await service.create_expense(trip_id, valid_dto)
-    
-    # Assert: Verify the results
-    assert result == mock_expense
-    expense_repo.save.assert_called_once()
-```
-
-### 2. Isolation via Mocking
-Unit tests mock all external dependencies (database, repositories, external services):
-```python
-@pytest.fixture
-def mock_trip_repo(mocker):
-    return mocker.AsyncMock(spec=TripRepo)
-
-@pytest.fixture
-def service(mock_trip_repo, mock_expense_repo):
-    return TripsService(trip_repo=mock_trip_repo, expense_repo=mock_expense_repo)
-```
-
-### 3. Descriptive Names
-Test names follow the pattern: `test_<method>_<scenario>`
-```python
-test_create_expense_success
-test_create_expense_trip_not_found
-test_create_expense_duplicate_type
-test_create_expense_negative_amount
 ```
 
 ## Maintenance
