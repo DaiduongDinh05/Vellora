@@ -1,7 +1,15 @@
 from uuid import UUID
 from app.container import get_db
 from app.modules.trips.repository import TripRepo
-from app.modules.trips.schemas import CreateTripDTO, EditTripDTO, EndTripDTO, TripResponseDTO, ManualCreateTripDTO, MonthlyTripStatsResponseDTO
+from app.modules.trips.schemas import (
+    CreateTripDTO,
+    EditTripDTO,
+    EndTripDTO,
+    TripResponseDTO,
+    ManualCreateTripDTO,
+    MonthlyTripStatsResponseDTO,
+    ScheduleTripDTO,
+)
 from app.modules.trips.service import TripsService
 from app.core.error_handler  import error_handler
 from app.core.dependencies import get_current_user, get_receipt_storage
@@ -54,6 +62,12 @@ async def start_trip(body: CreateTripDTO, svc: TripsService = Depends(get_trips_
 @error_handler
 async def manual_create_trip(body: ManualCreateTripDTO, svc: TripsService = Depends(get_trips_service), current_user: User = Depends(get_current_user)):
     trip = await svc.manual_create_trip(current_user.id, body)
+    return TripResponseDTO.model_validate(trip)
+
+@router.post("/scheduled", response_model=TripResponseDTO)
+@error_handler
+async def schedule_trip(body: ScheduleTripDTO, svc: TripsService = Depends(get_trips_service), current_user: User = Depends(get_current_user)):
+    trip = await svc.schedule_trip(current_user.id, body)
     return TripResponseDTO.model_validate(trip)
 
 @router.patch("/{trip_id}", response_model=TripResponseDTO)
