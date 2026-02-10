@@ -10,7 +10,7 @@ from app.modules.rate_customizations.repository import RateCustomizationRepo
 from app.modules.expenses.repository import ExpenseRepo
 from app.modules.vehicles.repository import VehicleRepository
 from app.modules.expenses.service import ExpensesService
-from app.modules.trips.schemas import CreateTripDTO, EditTripDTO, EndTripDTO, ManualCreateTripDTO
+from app.modules.trips.schemas import CreateTripDTO, EditTripDTO, EndTripDTO, ManualCreateTripDTO, ScheduleTripDTO
 from app.modules.trips.models import Trip, TripStatus
 from app.modules.rate_categories.models import RateCategory
 from app.modules.rate_customizations.models import RateCustomization
@@ -531,6 +531,120 @@ class TestTripsServiceManualCreateTrip:
 
         assert result == mock_trip
         assert service.expense_service.create_expense.call_count == 2  
+
+
+class TestTripsServiceScheduleTrip:
+
+    @pytest.fixture
+    def user_id(self):
+        return uuid4()
+
+    @pytest.fixture
+    def trip_repo(self):
+        return AsyncMock(spec=TripRepo)
+
+    @pytest.fixture
+    def category_repo(self):
+        return AsyncMock(spec=RateCategoryRepo)
+
+    @pytest.fixture
+    def customization_repo(self):
+        return AsyncMock(spec=RateCustomizationRepo)
+
+    @pytest.fixture
+    def vehicle_repo(self):
+        return AsyncMock(spec=VehicleRepository)
+
+    @pytest.fixture
+    def service(self, trip_repo, category_repo, customization_repo, vehicle_repo):
+        return TripsService(trip_repo, category_repo, customization_repo, vehicle_repo=vehicle_repo)
+
+    @pytest.fixture
+    def mock_customization(self):
+        customization = MagicMock(spec=RateCustomization)
+        customization.id = uuid4()
+        return customization
+
+    @pytest.fixture
+    def mock_category(self):
+        category = MagicMock(spec=RateCategory)
+        category.id = uuid4()
+        category.cost_per_mile = 0.65
+        category.rate_customization_id = uuid4()
+        return category
+
+    @pytest.fixture
+    def mock_trip(self):
+        trip = MagicMock(spec=Trip)
+        trip.id = uuid4()
+        trip.status = TripStatus.scheduled
+        return trip
+
+    @pytest.mark.asyncio
+    async def test_schedule_trip_success(
+        self, service, trip_repo, category_repo, customization_repo,
+        mock_customization, mock_category, mock_trip, user_id
+    ):
+        start_time = datetime.now(timezone.utc)
+        end_time = start_time + timedelta(hours=2)
+        mock_category.rate_customization_id = mock_customization.id
+        dto = ScheduleTripDTO(
+            start_address="123 Main St",
+            end_address="456 Oak Ave",
+            purpose="Planning meeting",
+            vehicle_id=None,
+            rate_customization_id=mock_customization.id,
+            rate_category_id=mock_category.id,
+            scheduled_start_at=start_time,
+            scheduled_end_at=end_time,
+        )
+        customization_repo.get.return_value = mock_customization
+        category_repo.get.return_value = mock_category
+        trip_repo.save.return_value = mock_trip
+
+        with patch('app.modules.trips.service.encrypt_address', return_value="encrypted") as mock_encrypt:
+            with patch('app.modules.trips.service.Trip', return_value=mock_trip):
+                result = await service.schedule_trip(user_id, dto)
+
+        assert result == mock_trip
+        assert mock_encrypt.call_count == 2
+        trip_repo.save.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_schedule_trip_invalid_time_order(self, service, user_id):
+        start_time = datetime.now(timezone.utc)
+        end_time = start_time - timedelta(hours=1)
+        dto = ScheduleTripDTO(
+            start_address="123 Main St",
+            end_address=None,
+            purpose=None,
+            vehicle_id=None,
+            rate_customization_id=uuid4(),
+            rate_category_id=uuid4(),
+            scheduled_start_at=start_time,
+            scheduled_end_at=end_time,
+        )
+        with pytest.raises(InvalidTripDataError) as exc_info:
+            await service.schedule_trip(user_id, dto)
+        assert "Scheduled end time must be after start time" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_schedule_trip_rate_customization_not_found(self, service, customization_repo, user_id):
+        start_time = datetime.now(timezone.utc)
+        end_time = start_time + timedelta(hours=1)
+        dto = ScheduleTripDTO(
+            start_address="123 Main St",
+            end_address=None,
+            purpose=None,
+            vehicle_id=None,
+            rate_customization_id=uuid4(),
+            rate_category_id=uuid4(),
+            scheduled_start_at=start_time,
+            scheduled_end_at=end_time,
+        )
+        customization_repo.get.return_value = None
+        with pytest.raises(RateCustomizationNotFoundError):
+            await service.schedule_trip(user_id, dto)
 
 
 class TestTripsServiceGetTripById:
