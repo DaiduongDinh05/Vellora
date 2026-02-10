@@ -364,6 +364,7 @@ class ReportsService:
             await self.session.commit()
 
     async def get_analytics(self, user: User, month: str) -> AnalyticsResponse:
+        #Gets the analytics for a user for a specific month
         year = date.today().year
         current_month = date.today().month
 
