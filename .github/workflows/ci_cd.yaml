@@ -165,8 +165,23 @@ jobs:
             docker run -d --name vellora-backend \
             -e DATABASE_URL=$DATABASE_URL \
             -e FERNET_KEY=$FERNET_KEY \
+            -e JWT_SECRET_KEY=$JWT_SECRET_KEY \
+            -e OAUTH_PROVIDERS__GOOGLE__CLIENT_ID=$OAUTH_PROVIDERS__GOOGLE__CLIENT_ID \
+            -e OAUTH_PROVIDERS__GOOGLE__CLIENT_SECRET=$OAUTH_PROVIDERS__GOOGLE__CLIENT_SECRET \
+            -e OAUTH_PROVIDERS__GOOGLE__REDIRECT_URI=$OAUTH_PROVIDERS__GOOGLE__REDIRECT_URI \
+            -e OAUTH_PROVIDERS__GOOGLE__SCOPES=$OAUTH_PROVIDERS__GOOGLE__SCOPES \
+            -e OAUTH_STATE_TTL_SECONDS=$OAUTH_STATE_TTL_SECONDS \
+            -e USE_LOCALSTACK=$USE_LOCALSTACK \
+            -e AWS_REGION=$AWS_REGION \
+            -e REPORTS_BUCKET=$REPORTS_BUCKET \
+            -e REPORTS_QUEUE=$REPORTS_QUEUE \
+            -e EMAIL_SENDER=$EMAIL_SENDER \
+            -e EMAIL_ENABLED=$EMAIL_ENABLED \
+            -e EMAIL_PROVIDER=$EMAIL_PROVIDER \
+            -e RESEND_API_KEY=$RESEND_API_KEY \
+            -e BACKEND_URL=$BACKEND_URL \
             --restart=always \
             -p 80:8000 \
-            -e ENV=Production \
+            -e ENV=Testing \
             260125007066.dkr.ecr.us-east-2.amazonaws.com/vellora/backend:latest
             docker exec -it vellora-backend alembic upgrade head

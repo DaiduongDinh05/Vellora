@@ -106,16 +106,8 @@ services:
       context: ./frontend/Vellora # Points to the frontend folder
       dockerfile: Dockerfile
     container_name: vellora_frontend_service
-    ports:
-      - "8081:8081"
-      - "19000:19000"
-      - "19001:19001"
-      - "19002:19002"
     depends_on:
       - backend
-    command: [ "npx", "expo", "start", "--tunnel" ]
-    stdin_open: true
-    tty: true
 
 volumes:
   postgres_data:
