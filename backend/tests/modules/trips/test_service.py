@@ -893,7 +893,7 @@ class TestTripsServiceCancelTrip:
 
         with pytest.raises(InvalidTripDataError) as exc_info:
             await service.cancel_trip(user_id, trip_id)
-        assert "Only active trips can be cancelled" in str(exc_info.value)
+        assert "Only active or scheduled trips can be cancelled" in str(exc_info.value)
 
     @pytest.mark.asyncio
     async def test_cancel_trip_already_cancelled(self, service, trip_repo, mock_trip, user_id):
@@ -903,7 +903,21 @@ class TestTripsServiceCancelTrip:
 
         with pytest.raises(InvalidTripDataError) as exc_info:
             await service.cancel_trip(user_id, trip_id)
-        assert "Only active trips can be cancelled" in str(exc_info.value)
+        assert "Only active or scheduled trips can be cancelled" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_cancel_trip_scheduled_success(self, service, trip_repo, mock_trip, user_id):
+        trip_id = uuid4()
+        mock_trip.status = TripStatus.scheduled
+        trip_repo.get.return_value = mock_trip
+        trip_repo.save.return_value = mock_trip
+
+        result = await service.cancel_trip(user_id, trip_id)
+
+        assert result == mock_trip
+        assert mock_trip.status == TripStatus.cancelled
+        assert mock_trip.ended_at is not None
+        trip_repo.save.assert_called_once()
 
 
 class TestTripsServiceGetMonthlyStats:

@@ -451,7 +451,7 @@ class TestCancelTripEndpoint:
         from app.modules.trips.router import cancel_trip
         
         trip_id = uuid4()
-        mock_service.cancel_trip.side_effect = InvalidTripDataError("Only active trips can be cancelled")
+        mock_service.cancel_trip.side_effect = InvalidTripDataError("Only active or scheduled trips can be cancelled")
 
         with pytest.raises(HTTPException) as exc_info:
             await cancel_trip(trip_id, mock_service, mock_user)

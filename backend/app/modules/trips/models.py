@@ -17,7 +17,7 @@ class Trip(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     status: Mapped[TripStatus] = mapped_column(sa.Enum(TripStatus, name="trip_status"), default=TripStatus.active, nullable=False)
-    start_address_encrypted: Mapped[str] = mapped_column(sa.String(512), nullable=False)
+    start_address_encrypted: Mapped[str | None] = mapped_column(sa.String(512), nullable=True)
     end_address_encrypted: Mapped[str | None] = mapped_column(sa.String(512), nullable=True)
     purpose: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     vehicle_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), sa.ForeignKey("vehicles.id", ondelete="SET NULL"), nullable=True, index=True)
@@ -30,6 +30,9 @@ class Trip(Base):
     scheduled_start_at: Mapped[sa.DateTime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
     scheduled_end_at: Mapped[sa.DateTime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
     ended_at: Mapped[sa.DateTime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
+    calendar_provider: Mapped[str | None] = mapped_column(sa.String(50), nullable=True)
+    calendar_event_id: Mapped[str | None] = mapped_column(sa.String(255), nullable=True)
+    calendar_event_url: Mapped[str | None] = mapped_column(sa.String(1024), nullable=True)
     expenses: Mapped[list["Expense"]] = relationship("Expense", back_populates="trip", cascade="all, delete-orphan")
     receipts: Mapped[list["ExpenseReceipt"]] = relationship(
         "ExpenseReceipt",

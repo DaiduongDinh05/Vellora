@@ -198,9 +198,6 @@ class TripsService:
             raise TripPersistenceError(f"Unexpected error occurred while saving manual trip: {e}") from e
 
     async def schedule_trip(self, user_id: UUID, data: ScheduleTripDTO):
-        if not data.start_address.strip():
-            raise InvalidTripDataError("Start address is required")
-
         if data.scheduled_end_at <= data.scheduled_start_at:
             raise InvalidTripDataError("Scheduled end time must be after start time")
 
@@ -234,8 +231,16 @@ class TripsService:
         reimbursement_rate = category.cost_per_mile
 
         try:
-            encrypted_start_address = encrypt_address(data.start_address)
-            encrypted_end_address = encrypt_address(data.end_address) if data.end_address else None
+            encrypted_start_address = (
+                encrypt_address(data.start_address)
+                if data.start_address and data.start_address.strip()
+                else None
+            )
+            encrypted_end_address = (
+                encrypt_address(data.end_address)
+                if data.end_address and data.end_address.strip()
+                else None
+            )
 
             trip = Trip(
                 user_id=user_id,
@@ -249,6 +254,9 @@ class TripsService:
                 rate_category_id=data.rate_category_id,
                 scheduled_start_at=data.scheduled_start_at,
                 scheduled_end_at=data.scheduled_end_at,
+                calendar_provider=data.calendar_provider,
+                calendar_event_id=data.calendar_event_id,
+                calendar_event_url=data.calendar_event_url,
             )
 
             saved_trip = await self.repo.save(trip)
@@ -367,6 +375,15 @@ class TripsService:
                     raise InvalidTripDataError("Scheduled end time must be after start time")
                 trip.scheduled_end_at = data.scheduled_end_at
 
+            if data.calendar_provider is not None:
+                trip.calendar_provider = data.calendar_provider
+
+            if data.calendar_event_id is not None:
+                trip.calendar_event_id = data.calendar_event_id
+
+            if data.calendar_event_url is not None:
+                trip.calendar_event_url = data.calendar_event_url
+
             return await self.repo.save(trip)
         
         except Exception as e:
@@ -377,8 +394,8 @@ class TripsService:
 
         trip = await self.get_trip_by_id(user_id, trip_id)
 
-        if trip.status != TripStatus.active:
-            raise InvalidTripDataError("Only active trips can be cancelled")
+        if trip.status not in (TripStatus.active, TripStatus.scheduled):
+            raise InvalidTripDataError("Only active or scheduled trips can be cancelled")
 
         try:
             trip.status = TripStatus.cancelled
