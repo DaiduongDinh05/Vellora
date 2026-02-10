@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import logging
 from uuid import UUID
 from app.modules.trips.repository import TripRepo
 from app.modules.trips.schemas import (
@@ -21,16 +22,18 @@ from app.modules.vehicles.repository import VehicleRepository
 from app.modules.vehicles.exceptions import VehicleNotFoundError
 from app.modules.audit_trail.service import AuditTrailService
 from app.modules.audit_trail.models import AuditAction
+from app.modules.notifications.service import NotificationService
 
 
 class TripsService:
-    def __init__(self, repo: TripRepo, category_repo: RateCategoryRepo, customization_repo: RateCustomizationRepo, vehicle_repo: VehicleRepository = None, expense_service=None, audit_service: AuditTrailService = None):
+    def __init__(self, repo: TripRepo, category_repo: RateCategoryRepo, customization_repo: RateCustomizationRepo, vehicle_repo: VehicleRepository = None, expense_service=None, audit_service: AuditTrailService = None, notification_service: NotificationService = None):
         self.repo = repo
         self.category_repo = category_repo
         self.customization_repo = customization_repo
         self.vehicle_repo = vehicle_repo
         self.expense_service = expense_service
         self.audit_service = audit_service
+        self.notification_service = notification_service
 
     async def _validate_vehicle_ownership(self, user_id: UUID, vehicle_id: UUID):
         if not self.vehicle_repo:
@@ -117,6 +120,20 @@ class TripsService:
                     resource_id=str(saved_trip.id),
                     details=f"Started trip to {data.start_address[:50]}..."
                 )
+            
+            #for when scheduled trips are implemnted
+            if self.notification_service:
+                try:
+                    #check if trip is scheduled
+                    # is_scheduled? (implement check later)
+                    # await self.notification_service.notify_trip_started(
+                    #     user_id=user_id,
+                    #     trip_id=saved_trip.id,
+                    #     is_scheduled=is_scheduled
+                    # )
+                    pass
+                except Exception as e:
+                    logging.getLogger(__name__).error(f"Failed to send trip start notification: {e}")
                 
             return saved_trip
 
@@ -315,6 +332,20 @@ class TripsService:
                     resource_id=str(trip.id),
                     details=f"Trip completed: {miles:.2f} miles, ${trip.mileage_reimbursement_total:.2f} reimbursement"
                 )
+            
+            #for when scheduled trips are implemnted
+            if self.notification_service:
+                try:
+                    # Future: check if trip is scheduled
+                    # is_scheduled (implement later)
+                    # await self.notification_service.notify_trip_ended(
+                    #     user_id=user_id,
+                    #     trip_id=saved_trip.id,
+                    #     is_scheduled=is_scheduled
+                    # )
+                    pass
+                except Exception as e:
+                    logging.getLogger(__name__).error(f"Failed to send trip end notification: {e}")
 
             return saved_trip
                
