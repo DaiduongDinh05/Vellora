@@ -279,12 +279,17 @@ class TestTripResponseDTO:
         mock_trip.mileage_reimbursement_total = None
         mock_trip.expense_reimbursement_total = None
         mock_trip.started_at = datetime.now(timezone.utc)
+        mock_trip.scheduled_start_at = None
+        mock_trip.scheduled_end_at = None
         mock_trip.ended_at = None
         mock_trip.updated_at = datetime.now(timezone.utc)
         mock_trip.rate_customization_id = uuid4()
         mock_trip.rate_category_id = uuid4()
         mock_trip.geometry_encrypted = None
         mock_trip.expenses = []
+        mock_trip.calendar_provider = None
+        mock_trip.calendar_event_id = None
+        mock_trip.calendar_event_url = None
 
         with patch('app.modules.trips.schemas.decrypt_address', return_value="123 Main St"):
             dto = TripResponseDTO.model_validate(mock_trip)
@@ -331,12 +336,17 @@ class TestTripResponseDTO:
         mock_trip.mileage_reimbursement_total = 32.50
         mock_trip.expense_reimbursement_total = 20.50
         mock_trip.started_at = datetime.now(timezone.utc)
+        mock_trip.scheduled_start_at = None
+        mock_trip.scheduled_end_at = None
         mock_trip.ended_at = datetime.now(timezone.utc)
         mock_trip.updated_at = datetime.now(timezone.utc)
         mock_trip.rate_customization_id = uuid4()
         mock_trip.rate_category_id = uuid4()
         mock_trip.geometry_encrypted = None
         mock_trip.expenses = [mock_expense1, mock_expense2]
+        mock_trip.calendar_provider = None
+        mock_trip.calendar_event_id = None
+        mock_trip.calendar_event_url = None
 
         with patch('app.modules.trips.schemas.decrypt_address', side_effect=["123 Main St", "456 Oak Ave"]):
             dto = TripResponseDTO.model_validate(mock_trip)
@@ -356,4 +366,7 @@ class TestTripResponseDTO:
             )
         
         errors = exc_info.value.errors()
-        assert any(error["loc"] == ("start_address",) for error in errors)
+        assert any(error["loc"] == ("started_at",) for error in errors)
+        assert any(error["loc"] == ("updated_at",) for error in errors)
+        assert any(error["loc"] == ("rate_customization_id",) for error in errors)
+        assert any(error["loc"] == ("rate_category_id",) for error in errors)

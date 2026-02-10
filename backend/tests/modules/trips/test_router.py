@@ -6,7 +6,7 @@ from fastapi import HTTPException
 
 from app.modules.trips.router import get_trips_service
 from app.modules.trips.service import TripsService
-from app.modules.trips.schemas import CreateTripDTO, EditTripDTO, EndTripDTO, ManualCreateTripDTO
+from app.modules.trips.schemas import CreateTripDTO, EditTripDTO, EndTripDTO, ManualCreateTripDTO, ScheduleTripDTO
 from app.modules.trips.models import Trip, TripStatus
 from app.modules.trips.exceptions import (
     InvalidTripDataError,
@@ -222,6 +222,76 @@ class TestManualCreateTripEndpoint:
             await manual_create_trip(body, mock_service, current_user=mock_user)
         
         assert exc_info.value.status_code == 404
+
+
+class TestScheduleTripEndpoint:
+
+    @pytest.fixture
+    def mock_user(self):
+        user = MagicMock(spec=User)
+        user.id = uuid4()
+        user.email = "test@example.com"
+        user.role = UserRole.EMPLOYEE
+        return user
+
+    @pytest.fixture
+    def mock_service(self):
+        return AsyncMock(spec=TripsService)
+
+    @pytest.fixture
+    def mock_trip(self):
+        trip = MagicMock(spec=Trip)
+        trip.id = uuid4()
+        trip.status = TripStatus.scheduled
+        return trip
+
+    @pytest.mark.asyncio
+    async def test_schedule_trip_success(self, mock_service, mock_trip, mock_user):
+        from app.modules.trips.router import schedule_trip
+
+        start_time = datetime.now(timezone.utc)
+        end_time = start_time + timedelta(hours=2)
+        body = ScheduleTripDTO(
+            start_address="123 Main St",
+            end_address="456 Oak Ave",
+            purpose="Business meeting",
+            vehicle_id=None,
+            rate_customization_id=uuid4(),
+            rate_category_id=uuid4(),
+            scheduled_start_at=start_time,
+            scheduled_end_at=end_time,
+        )
+        mock_service.schedule_trip.return_value = mock_trip
+
+        with patch('app.modules.trips.router.TripResponseDTO.model_validate') as mock_validate:
+            mock_validate.return_value = MagicMock()
+            result = await schedule_trip(body, mock_service, current_user=mock_user)
+
+        mock_service.schedule_trip.assert_called_once_with(mock_user.id, body)
+        mock_validate.assert_called_once_with(mock_trip)
+
+    @pytest.mark.asyncio
+    async def test_schedule_trip_invalid_data(self, mock_service, mock_user):
+        from app.modules.trips.router import schedule_trip
+
+        start_time = datetime.now(timezone.utc)
+        end_time = start_time - timedelta(hours=2)
+        body = ScheduleTripDTO(
+            start_address=None,
+            end_address=None,
+            purpose=None,
+            vehicle_id=None,
+            rate_customization_id=uuid4(),
+            rate_category_id=uuid4(),
+            scheduled_start_at=start_time,
+            scheduled_end_at=end_time,
+        )
+        mock_service.schedule_trip.side_effect = InvalidTripDataError("Scheduled end time must be after start time")
+
+        with pytest.raises(HTTPException) as exc_info:
+            await schedule_trip(body, mock_service, current_user=mock_user)
+
+        assert exc_info.value.status_code == 400
 
 
 class TestGetTripEndpoint:
@@ -451,7 +521,7 @@ class TestCancelTripEndpoint:
         from app.modules.trips.router import cancel_trip
         
         trip_id = uuid4()
-        mock_service.cancel_trip.side_effect = InvalidTripDataError("Only active trips can be cancelled")
+        mock_service.cancel_trip.side_effect = InvalidTripDataError("Only active or scheduled trips can be cancelled")
 
         with pytest.raises(HTTPException) as exc_info:
             await cancel_trip(trip_id, mock_service, mock_user)
