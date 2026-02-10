@@ -184,6 +184,7 @@ jobs:
             -e ENV=Testing \
             260125007066.dkr.ecr.us-east-2.amazonaws.com/vellora/backend:latest
             docker exec vellora-backend alembic upgrade head
+            docker rm -f vellora-worker || true
             docker run -d --name vellora-worker \
             -e DATABASE_URL=$DATABASE_URL \
             -e FERNET_KEY=$FERNET_KEY \
