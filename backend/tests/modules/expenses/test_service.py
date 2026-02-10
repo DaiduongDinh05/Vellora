@@ -18,6 +18,10 @@ from app.modules.trips.exceptions import TripNotFoundError
 class TestExpensesServiceCreateExpense:
 
     @pytest.fixture
+    def user_id(self):
+        return uuid4()
+
+    @pytest.fixture
     def expense_repo(self):
         return AsyncMock(spec=ExpenseRepo)
 
@@ -47,7 +51,7 @@ class TestExpensesServiceCreateExpense:
 
     @pytest.mark.asyncio
     async def test_create_expense_success(
-        self, service, expense_repo, trip_repo, mock_trip, mock_expense
+        self, service, expense_repo, trip_repo, mock_trip, mock_expense, user_id
     ):
         trip_id = uuid4()
         dto = CreateExpenseDTO(type="Parking", amount=15.50)
@@ -58,23 +62,23 @@ class TestExpensesServiceCreateExpense:
 
         with patch('app.modules.expenses.service.Expense') as MockExpense:
             MockExpense.return_value = mock_expense
-            result = await service.create_expense(trip_id, dto)
+            result = await service.create_expense(user_id, trip_id, dto)
 
         assert result == mock_expense
         expense_repo.save.assert_called()
 
     @pytest.mark.asyncio
-    async def test_create_expense_trip_not_found(self, service, trip_repo):
+    async def test_create_expense_trip_not_found(self, service, trip_repo, user_id):
         trip_id = uuid4()
         dto = CreateExpenseDTO(type="Parking", amount=15.50)
         trip_repo.get.return_value = None
 
         with pytest.raises(TripNotFoundError):
-            await service.create_expense(trip_id, dto)
+            await service.create_expense(user_id, trip_id, dto)
 
     @pytest.mark.asyncio
     async def test_create_expense_duplicate_type(
-        self, service, expense_repo, trip_repo, mock_trip, mock_expense
+        self, service, expense_repo, trip_repo, mock_trip, mock_expense, user_id
     ):
         trip_id = uuid4()
         dto = CreateExpenseDTO(type="Parking", amount=15.50)
@@ -82,7 +86,7 @@ class TestExpensesServiceCreateExpense:
         expense_repo.get_by_trip_and_type.return_value = mock_expense
 
         with pytest.raises(DuplicateExpenseError):
-            await service.create_expense(trip_id, dto)
+            await service.create_expense(user_id, trip_id, dto)
 
 
 class TestExpensesServiceGetExpensesForTrip:
@@ -105,27 +109,31 @@ class TestExpensesServiceGetExpensesForTrip:
         trip.id = uuid4()
         return trip
 
+    @pytest.fixture
+    def user_id(self):
+        return uuid4()
+
     @pytest.mark.asyncio
     async def test_get_expenses_for_trip_success(
-        self, service, expense_repo, trip_repo, mock_trip
+        self, service, expense_repo, trip_repo, mock_trip, user_id
     ):
         trip_id = uuid4()
         mock_expenses = [MagicMock(spec=Expense), MagicMock(spec=Expense)]
         trip_repo.get.return_value = mock_trip
         expense_repo.get_expenses_by_trip_id.return_value = mock_expenses
 
-        result = await service.get_expenses_for_trip(trip_id)
+        result = await service.get_expenses_for_trip(user_id, trip_id)
 
         assert result == mock_expenses
-        expense_repo.get_expenses_by_trip_id.assert_called_once_with(trip_id)
+        expense_repo.get_expenses_by_trip_id.assert_called_once_with(trip_id, user_id)
 
     @pytest.mark.asyncio
-    async def test_get_expenses_for_trip_trip_not_found(self, service, trip_repo):
+    async def test_get_expenses_for_trip_trip_not_found(self, service, trip_repo, user_id):
         trip_id = uuid4()
         trip_repo.get.return_value = None
 
         with pytest.raises(TripNotFoundError):
-            await service.get_expenses_for_trip(trip_id)
+            await service.get_expenses_for_trip(user_id, trip_id)
 
 
 class TestExpensesServiceGetExpense:
@@ -142,24 +150,28 @@ class TestExpensesServiceGetExpense:
     def service(self, expense_repo, trip_repo):
         return ExpensesService(expense_repo, trip_repo)
 
+    @pytest.fixture
+    def user_id(self):
+        return uuid4()
+
     @pytest.mark.asyncio
-    async def test_get_expense_success(self, service, expense_repo):
+    async def test_get_expense_success(self, service, expense_repo, user_id):
         expense_id = uuid4()
         mock_expense = MagicMock(spec=Expense)
         expense_repo.get_expense.return_value = mock_expense
 
-        result = await service.get_expense(expense_id)
+        result = await service.get_expense(user_id, expense_id)
 
         assert result == mock_expense
-        expense_repo.get_expense.assert_called_once_with(expense_id)
+        expense_repo.get_expense.assert_called_once_with(expense_id, user_id)
 
     @pytest.mark.asyncio
-    async def test_get_expense_not_found(self, service, expense_repo):
+    async def test_get_expense_not_found(self, service, expense_repo, user_id):
         expense_id = uuid4()
         expense_repo.get_expense.return_value = None
 
         with pytest.raises(ExpenseNotFoundError):
-            await service.get_expense(expense_id)
+            await service.get_expense(user_id, expense_id)
 
 
 class TestExpensesServiceEditExpense:
@@ -192,9 +204,13 @@ class TestExpensesServiceEditExpense:
         trip.expense_reimbursement_total = 0.0
         return trip
 
+    @pytest.fixture
+    def user_id(self):
+        return uuid4()
+
     @pytest.mark.asyncio
     async def test_edit_expense_success(
-        self, service, expense_repo, trip_repo, mock_expense, mock_trip
+        self, service, expense_repo, trip_repo, mock_expense, mock_trip, user_id
     ):
         expense_id = uuid4()
         dto = EditExpenseDTO(type="Tolls", amount=25.00)
@@ -204,23 +220,23 @@ class TestExpensesServiceEditExpense:
         expense_repo.save.return_value = mock_expense
         expense_repo.sum_by_trip.return_value = 25.00
 
-        result = await service.edit_expense(expense_id, dto)
+        result = await service.edit_expense(user_id, expense_id, dto)
 
         assert result == mock_expense
         expense_repo.save.assert_called()
 
     @pytest.mark.asyncio
-    async def test_edit_expense_not_found(self, service, expense_repo):
+    async def test_edit_expense_not_found(self, service, expense_repo, user_id):
         expense_id = uuid4()
         dto = EditExpenseDTO(type="Tolls")
         expense_repo.get_expense.return_value = None
 
         with pytest.raises(ExpenseNotFoundError):
-            await service.edit_expense(expense_id, dto)
+            await service.edit_expense(user_id, expense_id, dto)
 
     @pytest.mark.asyncio
     async def test_edit_expense_duplicate_type(
-        self, service, expense_repo, mock_expense
+        self, service, expense_repo, mock_expense, user_id
     ):
         expense_id = uuid4()
         dto = EditExpenseDTO(type="Tolls")
@@ -231,16 +247,16 @@ class TestExpensesServiceEditExpense:
         expense_repo.get_by_trip_and_type.return_value = other_expense
 
         with pytest.raises(DuplicateExpenseError):
-            await service.edit_expense(expense_id, dto)
+            await service.edit_expense(user_id, expense_id, dto)
 
     @pytest.mark.asyncio
-    async def test_edit_expense_no_changes(self, service, expense_repo, mock_expense):
+    async def test_edit_expense_no_changes(self, service, expense_repo, mock_expense, user_id):
         expense_id = uuid4()
         dto = EditExpenseDTO()
         expense_repo.get_expense.return_value = mock_expense
         expense_repo.save.return_value = mock_expense
 
-        result = await service.edit_expense(expense_id, dto)
+        result = await service.edit_expense(user_id, expense_id, dto)
 
         assert result == mock_expense
         expense_repo.save.assert_called()
@@ -274,23 +290,27 @@ class TestExpensesServiceDeleteExpense:
         trip.expense_reimbursement_total = 50.0
         return trip
 
+    @pytest.fixture
+    def user_id(self):
+        return uuid4()
+
     @pytest.mark.asyncio
     async def test_delete_expense_success(
-        self, service, expense_repo, trip_repo, mock_expense, mock_trip
+        self, service, expense_repo, trip_repo, mock_expense, mock_trip, user_id
     ):
         expense_id = uuid4()
         expense_repo.get_expense.return_value = mock_expense
         trip_repo.get.return_value = mock_trip
         expense_repo.sum_by_trip.return_value = 35.00
 
-        await service.delete_expense(expense_id)
+        await service.delete_expense(user_id, expense_id)
 
         expense_repo.delete_expense.assert_called_once_with(mock_expense)
 
     @pytest.mark.asyncio
-    async def test_delete_expense_not_found(self, service, expense_repo):
+    async def test_delete_expense_not_found(self, service, expense_repo, user_id):
         expense_id = uuid4()
         expense_repo.get_expense.return_value = None
 
         with pytest.raises(ExpenseNotFoundError):
-            await service.delete_expense(expense_id)
+            await service.delete_expense(user_id, expense_id)

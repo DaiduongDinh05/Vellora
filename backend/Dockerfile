@@ -1,20 +1,24 @@
 FROM python:3.13-slim
 
-WORKDIR /backend
+WORKDIR /app
 
-COPY requirements.txt /backend/
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    libpq-dev \
+    gcc \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
 
+# Copy requirements first for better caching
+COPY requirements.txt /app/
+
+# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . /backend/
-
-RUN apt-get update && apt-get install -y libpq-dev
-
-RUN pip install psycopg-binary
-
-RUN pip install asyncpg
+# Copy application code
+COPY . /app/
 
 EXPOSE 8000
 
-#Similar to fastapi dev app/main.py, watches for reloads
+# Use the wait script
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
