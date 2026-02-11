@@ -47,12 +47,27 @@ class EditTripDTO(BaseModel):
     miles: float | None = None
     rate_customization_id: UUID | None = None
     rate_category_id: UUID | None = None
+    scheduled_start_at: datetime.datetime | None = None
+    scheduled_end_at: datetime.datetime | None = None
+    calendar_provider: str | None = None
+    calendar_event_id: str | None = None
+    calendar_event_url: str | None = None
     
     @field_validator('miles')
     @classmethod
     def validate_miles(cls, v: float | None) -> float | None:
         if v is not None and v < 0:
             raise ValueError("Miles must be non-negative")
+        return v
+
+    @field_validator('scheduled_end_at')
+    @classmethod
+    def validate_scheduled_end(cls, v: datetime.datetime | None, info):
+        if v is None:
+            return v
+        start = info.data.get('scheduled_start_at')
+        if start is not None and v <= start:
+            raise ValueError("Scheduled end time must be after start time")
         return v
 
 class ManualCreateTripDTO(BaseModel):
@@ -67,6 +82,19 @@ class ManualCreateTripDTO(BaseModel):
     rate_customization_id: UUID
     rate_category_id: UUID
     expenses: List[CreateExpenseDTO] | None = None 
+
+class ScheduleTripDTO(BaseModel):
+    start_address: str | None = None
+    end_address: str | None = None
+    purpose: str | None = None
+    vehicle_id: UUID | None = None
+    rate_customization_id: UUID
+    rate_category_id: UUID
+    scheduled_start_at: datetime.datetime
+    scheduled_end_at: datetime.datetime
+    calendar_provider: str | None = None
+    calendar_event_id: str | None = None
+    calendar_event_url: str | None = None
 
 class TripExpenseReceiptDTO(BaseModel):
     id: str
@@ -96,7 +124,7 @@ class VehicleInfo(BaseModel):
 class TripResponseDTO(BaseModel):
     id: str
     status: TripStatus
-    start_address: str
+    start_address: str | None = None
     end_address: str | None = None
     geometry: dict | None = None
     purpose: str | None = None
@@ -108,10 +136,15 @@ class TripResponseDTO(BaseModel):
     expense_reimbursement_total: float | None = None
     total_reimbursement: float | None = None
     started_at: datetime.datetime
+    scheduled_start_at: datetime.datetime | None = None
+    scheduled_end_at: datetime.datetime | None = None
     ended_at: datetime.datetime | None = None
     updated_at: datetime.datetime
     rate_customization_id: UUID
     rate_category_id: UUID
+    calendar_provider: str | None = None
+    calendar_event_id: str | None = None
+    calendar_event_url: str | None = None
     expenses: List[ExpenseResponseDTO] = []
     receipts: List[TripExpenseReceiptDTO] = []
 
@@ -122,7 +155,7 @@ class TripResponseDTO(BaseModel):
             #convert uuid to str
             "id": str(trip.id),
             "status": trip.status,
-            "start_address": decrypt_address(trip.start_address_encrypted),
+            "start_address": decrypt_address(trip.start_address_encrypted) if trip.start_address_encrypted else None,
             "end_address": decrypt_address(trip.end_address_encrypted) if trip.end_address_encrypted else None,
             "purpose": trip.purpose,
             "vehicle_id": trip.vehicle_id,
@@ -134,10 +167,15 @@ class TripResponseDTO(BaseModel):
             "expense_reimbursement_total": trip.expense_reimbursement_total,
             "total_reimbursement": (trip.mileage_reimbursement_total or 0) + (trip.expense_reimbursement_total or 0),
             "started_at": trip.started_at,
+            "scheduled_start_at": trip.scheduled_start_at,
+            "scheduled_end_at": trip.scheduled_end_at,
             "ended_at": trip.ended_at,
             "updated_at": trip.updated_at,
             "rate_customization_id": trip.rate_customization_id,
             "rate_category_id": trip.rate_category_id,
+            "calendar_provider": trip.calendar_provider,
+            "calendar_event_id": trip.calendar_event_id,
+            "calendar_event_url": trip.calendar_event_url,
             "expenses": [
                 ExpenseResponseDTO(
                     id=str(e.id),
