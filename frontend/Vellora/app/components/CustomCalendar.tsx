@@ -1,8 +1,14 @@
-import React, { useState } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Calendar, DateData } from 'react-native-calendars';
 import { FontAwesome } from '@expo/vector-icons';
+import { useRouter, useFocusEffect } from 'expo-router';
 import Button from './Button';
+
+// import services
+import { getTrips, Trip, TripStatus } from '../services/Trips';
+import { useTripData } from '../contexts/TripDataContext';
+
 // define the shape of a single trip item
 interface AgendaItem {
   id: string;
@@ -10,24 +16,81 @@ interface AgendaItem {
   purpose: string;
   address: string;
   type: string;
-  status: 'pending' | 'completed';
+  status: string;
+
+  fullTripData: Trip; // context helper
 }
 
-// define the shape of your schedule data object
-const MOCK_SCHEDULES: Record<string, AgendaItem[]> = {
-  '2026-02-08': [
-    { id: '1', time: '09:00 AM', purpose: 'Meeting with Client X', address: '123 Tech Blvd', type: 'Business', status: 'pending' },
-    { id: '2', time: '02:00 PM', purpose: 'Site Visit', address: '456 Construction Rd', type: 'Business', status: 'pending' }
-  ],
-  '2026-02-10': [
-    { id: '3', time: '11:30 AM', purpose: 'Lunch with Mentor', address: '789 Downtown Ave', type: 'Personal', status: 'pending' }
-  ]
-};
+// // define the shape of your schedule data object
+// const MOCK_SCHEDULES: Record<string, AgendaItem[]> = {
+//   '2026-02-13': [
+//     { id: '1', time: '09:00 AM', purpose: 'Meeting with Client X', address: '123 Tech Blvd', type: 'Business', status: 'pending' },
+//     { id: '2', time: '02:00 PM', purpose: 'Site Visit', address: '456 Construction Rd', type: 'Business', status: 'pending' }
+//   ],
+//   '2026-02-10': [
+//     { id: '3', time: '11:30 AM', purpose: 'Lunch with Mentor', address: '789 Downtown Ave', type: 'Personal', status: 'pending' }
+//   ],
+//   '2026-02-15': [
+//     { id: '3', time: '11:30 AM', purpose: 'Office trip', address: '123 Office Ave', type: 'Personal', status: 'pending' }
+//   ]
+// };
 
 const CustomCalendar = () => {
+  const router = useRouter();
+
+  // access the context
+  const { updateTripData, resetTripData } = useTripData();
+
   const today = new Date().toISOString().split('T')[0]; // get today's date in YYYY-MM-DD format
   const [selected, setSelected] = useState(today);
+  const [schedules, setSchedules] = useState<Record<string, AgendaItem[]>>({});
+  const [loading, setLoading] = useState(false);
 
+  const fetchScheduledTrips = async () => {
+
+    try {
+      setLoading(true);
+      const allTrips = await getTrips();  // call the api
+
+      const scheduledOnly = allTrips.filter(t => t.status === TripStatus.scheduled);
+
+      const grouper: Record<string, AgendaItem[]> = {};
+
+      scheduledOnly.forEach((trip) => {
+        if (!trip.scheduled_start_at) return; // skip if no scheduled start time
+
+        // date parsning
+        const dateObj = new Date(trip.scheduled_start_at);
+        const dateKey = dateObj.toISOString().split('T')[0]; // YYYY-MM-DD
+        const timeString = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        if (!grouper[dateKey]) grouper[dateKey] = [];
+
+        grouper[dateKey].push({
+          id: trip.id,
+          time: timeString,
+          purpose: trip.purpose || 'No purpose',
+          address: trip.start_address || 'No address',
+          type: 'Business',
+          status: 'pending',
+          fullTripData: trip
+        });
+      });
+
+      setSchedules(grouper);
+
+    } catch (error) {
+      console.error('Error fetching trips:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchScheduledTrips();
+    }, [])
+  );
 
   // ACTION HANDLERS
   const handleEdit = (id: string) => {
@@ -35,11 +98,30 @@ const CustomCalendar = () => {
   };
 
   const handleStartTracking = (trip: AgendaItem) => {
+    resetTripData(); // clear any existing data in context
 
+    updateTripData({
+      startAddress: trip.fullTripData.start_address || '',
+      endAddress: trip.fullTripData.end_address || '',
+      notes: trip.purpose,
+      vehicle: trip.fullTripData.vehicle || null,
+      
+      linkedScheduledTripId: trip.id // link the active trip to this scheduled trip
+    });
+
+    router.push('/tracking'); // navigate to active trip screen
   };
 
-  const handleMarkComplete = (id: string) => {
+  const handleMarkComplete = (item: AgendaItem) => {
+    resetTripData(); // clear context data
+    updateTripData({
+      startAddress: item.fullTripData.start_address,
+      endAddress: item.fullTripData.end_address,
+      notes: item.purpose,
+      linkedScheduledTripId: item.id // link the completed trip to this scheduled trip
+    });
 
+    router.push('/manualLogScreen'); // navigate to manual log screen with pre-filled data
   };
 
   const getMarkedDates = () => {
@@ -47,7 +129,7 @@ const CustomCalendar = () => {
     const CIRCLE_SIZE = 40;
 
     // add dots for days with scheduled trips
-    Object.keys(MOCK_SCHEDULES).forEach(date => {
+    Object.keys(schedules).forEach(date => {
       marks[date] = { marked: true, dotColor: '#404CCF' };
     });
 
@@ -139,7 +221,7 @@ const CustomCalendar = () => {
         {/* mark complete */}
         <TouchableOpacity
           style={styles.actionButton}
-          onPress={() => handleMarkComplete(item.id)}
+          onPress={() => handleMarkComplete(item)}
         >
           <FontAwesome name="check-circle" size={14} color="#666" />
           <Text style={styles.actionText}>Complete</Text>
@@ -148,7 +230,7 @@ const CustomCalendar = () => {
     </View>
   );
 
-  const dailyTrips = MOCK_SCHEDULES[selected] || [];
+  const dailyTrips = schedules[selected] || [];
 
   return (
     <View style={styles.container}>
@@ -173,20 +255,22 @@ const CustomCalendar = () => {
           {selected ? `Schedule for ${selected}` : 'Select a date to view trips'}
         </Text>
 
-        <View>
-          {dailyTrips.length > 0 ? (
-            dailyTrips.map(item => renderAgendaItem(item))
-          ) : (
-            selected ? (
-              <Text style={styles.emptyText}>No trips scheduled for this day.</Text>
-            ) : null
-          )}
-          <Button
-              title="Schedule a Trip"
-              onPress={() => {}}
-              className="w-full py-4 px-5" 
-            />
-        </View> 
+        {loading ? (
+          <ActivityIndicator size="large" color="#404CCF" />
+        ) : (
+          <View>
+            {dailyTrips.length > 0 ? (
+              dailyTrips.map((item : AgendaItem) => renderAgendaItem(item))
+            ) : (
+              selected && <Text style={styles.emptyText}>No trips scheduled for this day.</Text>
+            )}
+            <Button
+                title="Schedule a Trip"
+                onPress={() => {}}
+                className="w-full py-4 px-5" 
+              />
+          </View> 
+        )}
       </View>
     </View>
   );
