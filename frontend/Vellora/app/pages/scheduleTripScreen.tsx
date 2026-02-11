@@ -1,4 +1,4 @@
-import { Text, View, TouchableOpacity, Platform } from 'react-native'
+import { Text, View, TouchableOpacity, Platform, Alert } from 'react-native'
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
@@ -10,16 +10,15 @@ import { vehicleItems } from '../constants/dropdownOptions';
 import ScreenLayout from '../components/ScreenLayout';
 import TripDetailsForm from '../components/TripDetailsForm';
 import Button from '../components/Button';
-import EditableNumericDisplay from '../components/EditableNumericDisplay';
 import { useRateOptions } from '../hooks/useRateOptions';
 import { useTripData } from '../contexts/TripDataContext';
 import { useCommonPlaces } from '../hooks/useCommonPlaces';
 
 //  import service
-import { createExpensePayload, createManualTrip, createManualTripPayload } from '../services/Trips';
-import { createTripExpense, Expense } from '../services/Trips';
+import { scheduleTrip, scheduleTripPayload } from '../services/Trips';
 
 const ScheduleTripScreen = () => {
+    const router = useRouter();
 
     // use trip data context
     const { tripData, updateTripData, resetTripData } = useTripData();
@@ -31,10 +30,9 @@ const ScheduleTripScreen = () => {
     const { places: commonPlaces } = useCommonPlaces();
 
     // state variables
+    // end date is one hour after start date by default
     const [startDate, setStartDate] = useState(new Date());
-    const [endDate, setEndDate] = useState(new Date());
-    // const [showStartPicker, setShowStartPicker] = useState(false);
-    // const [showEndPicker, setShowEndPicker] = useState(false);
+    const [endDate, setEndDate] = useState(new Date(new Date().getTime() + 60 * 60 * 1000));
 
     const [showStartIOS, setShowStartIOS] = useState(false);
     const [showEndIOS, setShowEndIOS] = useState(false);
@@ -45,15 +43,9 @@ const ScheduleTripScreen = () => {
     const [vehicle, setVehicle] = useState<string | null>(null);
     const [type, setType] = useState<string | null>(null);
     const [rate, setRate] = useState<string | null>(null);
-    const [parking, setParking] = useState<string>('');
-    const [gas, setGas] = useState<string>('');
-    const [tolls, setTolls] = useState('0.00');
 
-    // sticky footer state variables
-    const [tripValue, setTripValue] = useState('0.00');
-    const [tripDistance, setTripDistance] = useState('0');
-    
-    const router = useRouter();
+    const [unusedVal, setUnusedVal] = useState(''); // for parking, gas, tolls inputs that are not used in calculation but are part of the payload
+
 
     // handle rate selection to update categories
     const handleRateChange = (selectedRateId: string | null) => {
@@ -62,27 +54,6 @@ const ScheduleTripScreen = () => {
         updateSelectedRate(selectedRateId);
     };
 
-    // calculate trip value when rate or distance changes
-    useEffect(() => {
-        if (rate && tripDistance) {
-            // extract the actual numeric value from rateItems
-            const selectedRateItem = rateItems.find(item => item.value === rate);
-            if (selectedRateItem && selectedRateItem.originalRate) {
-
-                // find the selected category's cost per mile
-                const selectedCategory = categoryItems.find(item => item.value === type);
-
-                if (selectedCategory && selectedCategory.originalCategory) {
-
-                    const rateValue = selectedCategory.originalCategory.cost_per_mile;
-                    let distanceValue = parseFloat(tripDistance);
-                    const calculatedValue = (rateValue * distanceValue).toFixed(2);
-                    setTripValue(calculatedValue);
-
-                }
-            }
-        }
-    }, [rate, type, tripDistance, rateItems, categoryItems]);
 
     // OPEN ANDROID PICKER
     const openAndroidDateTimePicker = (
@@ -131,73 +102,47 @@ const ScheduleTripScreen = () => {
         }
     };
 
-    // add trip to history event handler. TO BE ADJUSTED
-    const handleAddTrip = async () => {
-        console.log("Adding trip to history...");
-
+    const handleSchedule = async () => {
         try {
-            // validate
-            if (!rate || !type || !tripDistance || parseFloat(tripDistance) <= 0) {
-                alert("please fill in all required fields including distance");
+
+            // validate required fields
+            if (!rate || !type) {
+                Alert.alert('Error', 'Please select a rate and category');
                 return;
             }
 
-            // create the expenses array for storage and filter by amounts that aren't empty (0)
-            const expensesInput: Expense[] = [
-                { type: 'parking', amount: parseFloat(parking) || 0 },
-                { type: 'gas', amount: parseFloat(gas) || 0 },
-                { type: 'tolls', amount: parseFloat(tolls) || 0 }
-            ].filter(e => e.amount > 0)
+            if (!endAddress.trim()) {
+                Alert.alert('Error', 'Please enter an end address');
+                return;
+            }
 
-            // update the context data BEFORE making an API call to ensure the context is up to date
-            updateTripData({
-                notes,
-                vehicle,
-                type,
-                rate,
-                parking: parking.toString(),
-                gas: gas.toString(),
-                tolls: tolls.toString(),
-                startAddress,
-                endAddress,
-                distance: tripDistance,
-                value: tripValue
-            })
-         
-            // typed shape  createManualTrip expects
-            const manualTripPayload: createManualTripPayload = {
-                start_address: startAddress?.trim() || "Unknown start location",
-                end_address: endAddress?.trim() || "Unknown end location",
-                started_at: startDate.toISOString(),
-                ended_at: endDate.toISOString(),
-                miles: Number(parseFloat(tripDistance)),
-                geometry: null,
-                rate_customization_id: rate, // these should be UUID strings
-                rate_category_id: type,
-                expenses: expensesInput,               
-                purpose: notes?.trim() || null,
-                parking: parseFloat(parking) || 0,
-                gas: parseFloat(gas) || 0,
-                tolls: parseFloat(tolls) || 0,
+            // prepare payload
+            const payload: scheduleTripPayload = {
+                start_address: startAddress || undefined,
+                end_address: endAddress.trim(),
+                scheduled_start_at: startDate.toISOString(),
+                scheduled_end_at: endDate.toISOString(),
+                purpose: notes.trim() || null,
                 vehicle: vehicle || null,
+                rate_customization_id: rate,
+                rate_category_id: type
             };
 
-            console.log("Creating manual trip with frontend payload:", manualTripPayload);
+            console.log("Scheduling trip with payload:", payload);
 
-            // call the service which will map the backend format
-            const newTrip = await createManualTrip(manualTripPayload);
-            console.log("Manual trip created successfully:", newTrip);
+            // call API to schedule trip
+            await scheduleTrip(payload);
 
-            // navigate away
-            router.push("/(tabs)/history");
-
+            // success
+            Alert.alert('Success', 'Trip scheduled successfully', [
+                { text: "OK", onPress: () => router.push('./(tabs)/index.tsx') }
+            ]);
         } catch (error: any) {
-            console.error("Error creating manual trip: ", error);
-            alert("Failed to create manual trip: " + (error?.message ?? String(error)));
+            console.error('Failed to schedule trip:', error);
+            Alert.alert('Error', error.message || 'Failed to schedule trip. Please try again.');
         }
-    };
 
-
+    }
     // icons style object
     const iconProps = { size: 18 };
 
@@ -207,36 +152,24 @@ const ScheduleTripScreen = () => {
 
             // return calculated value and distance with an option for user to edit them
             footer={
-                <>
-                    <View className='flex-row justify-between mb-4'>
-                        <EditableNumericDisplay
-                            label='Value'
-                            value={tripValue}
-                            onChangeText={setTripValue}
-                            unit='$'
-                        />
-                        <EditableNumericDisplay
-                            label='Distance'
-                            value={tripDistance}
-                            onChangeText={setTripDistance}
-                            unit='mi'
-                        />
-                    </View>
+                <View className='pt-4'>
                     <Button
-                        title='Save trip'
-                        onPress={handleAddTrip}
-                        style={{top: 10}}
-                        className='py-4 px-5'
+                        title='Schedule Trip'
+                        onPress={handleSchedule}
+                        className='w-full py-4 px-5'
                     />
-                </>
+                </View>
             }
         >
-            <Text className='text-3xl text-primaryPurple font-bold p-6'>Manually Log Trip</Text>
+            <Text className='text-3xl text-primaryPurple font-bold p-6'>Schedule Trip</Text>
 
 
             <View style={{ paddingHorizontal: 25, gap: 16 }}>
 
-                <Text className='text-sm text-gray-500 mb-1'>Start Time</Text>
+                {/* date pickers */}
+
+                <Text className='text-sm text-gray-500 mb-1'>Scheduled Start</Text>
+
                 {/* button for picking a date and time */}
                 <TouchableOpacity onPress={handleStartPress}>
                     {/* style it to look like a dropdown to match the general visuals */}
@@ -262,7 +195,7 @@ const ScheduleTripScreen = () => {
                     />
                 )}
 
-                <Text className='text-sm text-gray-500 mb-1'>End Time</Text>
+                <Text className='text-sm text-gray-500 mb-1'>Scheduled End</Text>
                 {/* button for picking a date and time */}
                 <TouchableOpacity onPress={handleEndPress}>
                     {/* style it to look like a dropdown to match the general visuals */}
@@ -296,11 +229,13 @@ const ScheduleTripScreen = () => {
                     vehicle={vehicle} setVehicle={setVehicle}
                     type={type} setType={setType}
                     rate={rate} setRate={handleRateChange}
-                    parking={parking} setParking={setParking}
-                    gas={gas} setGas={setGas}
-                    tolls={tolls} setTolls={setTolls}
                     startAddress={startAddress} setStartAddress={setStartAddress}
                     endAddress={endAddress} setEndAddress={setEndAddress}
+
+                    // dummy props for expeense fields since we don't use them in scheduling
+                    parking={unusedVal} setParking={setUnusedVal}
+                    gas={unusedVal} setGas={setUnusedVal}
+                    tolls={unusedVal} setTolls={setUnusedVal}
 
                     // mock data arrays
                     vehicleItems={vehicleItems}
