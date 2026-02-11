@@ -23,28 +23,6 @@ export default function Index() {
 
   const { places: commonPlaces, loading } = useCommonPlaces();
 
-  /* Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldPlaySound: true,
-      shouldSetBadge: true,
-      shouldShowBanner: true,
-      shouldShowList: true,
-    }),
-  });
-
-  async function registerForPushNotificationsAsync() {
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
-    if (existingStatus !== 'granted') {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
-    }
-    if (finalStatus !== 'granted') {
-      alert('Failed to get push token!');
-      return;
-    }
-  } */
-
 
   // modal button handlers
   const handleManualLogPress = () => {
@@ -57,8 +35,6 @@ export default function Index() {
     router.push('/tracking');    // navigate to live tracking screen
   };
 
-// Use effect for requesting notification push tokens for notifications
-useEffect(() => {
   const requestPushToken = async () => {
     if (Device.isDevice) { // Checking if a physical device
       try {
@@ -95,6 +71,8 @@ useEffect(() => {
     }
   };
 
+// Use effect for requesting notification push tokens for notifications
+useEffect(() => {
   requestPushToken();
 }, []);
 

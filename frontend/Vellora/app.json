@@ -17,22 +17,21 @@
         "UIBackgroundModes": [
           "location",
           "fetch",
-          "remote-notification",
-          "location",
-          "fetch",
-          "remote-notification",
-          "location",
-          "fetch",
-          "remote-notification",
-          "location",
-          "fetch",
           "remote-notification"
         ],
         "NSLocationWhenInUseUsageDescription": "This app requires access to your location when open.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "This app requires access to your location even when closed.",
         "NSLocationAlwaysUsageDescription": "This app requires access to your location when open.",
         "deploymentTarget": "14",
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSAppTransportSecurity": {
+          "NSExceptionDomains": {
+            "18.216.218.184": {
+              "NSExceptionAllowsInsecureHTTPLoads": true,
+              "NSIncludesSubdomains": false
+            }
+          }
+        }
       },
       "supportsTablet": true,
       "bundleIdentifier": "com.anonymous.Vellora"
