@@ -1,7 +1,7 @@
 import { Text, View } from 'react-native'
 import React, { useState } from 'react'
 
-const scheduleTripScreen = () => {
+const ScheduleTripScreen = () => {
     return (
         <View>
             <Text>scheduleTripScreen</Text>
@@ -9,4 +9,4 @@ const scheduleTripScreen = () => {
     )
 }
 
-export default scheduleTripScreen
+export default ScheduleTripScreen
