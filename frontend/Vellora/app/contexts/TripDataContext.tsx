@@ -13,6 +13,8 @@ export interface TripData {
     distance?: string;
     value?: string;
     tripId?: string;
+
+    linkedScheduledTripId?: string; // ID of the scheduled trip this active trip is linked to, if any
 }
 
 interface TripDataContextType {
@@ -35,7 +37,9 @@ const defaultTripData: TripData = {
     endAddress: '',
     distance: '0',
     value: '0.00',
-    tripId: undefined
+    tripId: undefined,
+
+    linkedScheduledTripId: undefined
 };
 
 const TripDataContext = createContext<TripDataContextType | undefined>(undefined);
