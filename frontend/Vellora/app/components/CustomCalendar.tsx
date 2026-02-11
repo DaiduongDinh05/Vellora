@@ -266,7 +266,7 @@ const CustomCalendar = () => {
             )}
             <Button
                 title="Schedule a Trip"
-                onPress={() => {}}
+                onPress={() => {router.push('./pages/ScheduleTripScreen')}}
                 className="w-full py-4 px-5" 
               />
           </View> 
