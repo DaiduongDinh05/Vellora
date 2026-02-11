@@ -6,7 +6,11 @@ import { FontAwesome } from "@expo/vector-icons";
 import Button from "../components/Button";
 import { useEffect, useState } from "react";
 import * as Notifications from 'expo-notifications';
+import * as Device from 'expo-device';
+import Constants from 'expo-constants';
+import { registerDevice } from "../services/Notifications";
 
+// Common Places
 import { useCommonPlaces } from "../hooks/useCommonPlaces";
 import CommonPlaceCard from "../components/CommonPlaceCard";
 
@@ -19,7 +23,7 @@ export default function Index() {
 
   const { places: commonPlaces, loading } = useCommonPlaces();
 
-  Notifications.setNotificationHandler({
+  /* Notifications.setNotificationHandler({
     handleNotification: async () => ({
       shouldPlaySound: true,
       shouldSetBadge: true,
@@ -39,7 +43,8 @@ export default function Index() {
       alert('Failed to get push token!');
       return;
     }
-  }
+  } */
+
 
   // modal button handlers
   const handleManualLogPress = () => {
@@ -52,9 +57,46 @@ export default function Index() {
     router.push('/tracking');    // navigate to live tracking screen
   };
 
-  useEffect(() => {
-    registerForPushNotificationsAsync();
-  })
+// Use effect for requesting notification push tokens for notifications
+useEffect(() => {
+  const requestPushToken = async () => {
+    if (Device.isDevice) { // Checking if a physical device
+      try {
+        // Get the notification permissions
+        const { status: existingStatus } = await Notifications.getPermissionsAsync();
+        let finalStatus = existingStatus;
+
+        // If no perms, request
+        if (existingStatus !== 'granted') {
+          const { status } = await Notifications.requestPermissionsAsync();
+          finalStatus = status;
+        }
+        
+        if (finalStatus !== 'granted') { // If no access no permissions
+          alert('Permissions not granted to get push notifications!');
+          throw new Error('Permissions not granted to get push notifications!');
+        }
+
+        // Get the project ID to be able to send notifications
+        const projectId = Constants?.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
+
+        if (!projectId) {
+          throw new Error('Project ID not found!');
+        }
+
+        const token = await Notifications.getExpoPushTokenAsync();
+        await registerDevice(token);
+
+      } catch (error) {
+        console.error('Failed to get push token', error);
+      }
+    } else {
+      alert('Physical Device required for push notifications');
+    }
+  };
+
+  requestPushToken();
+}, []);
 
   return (
 
