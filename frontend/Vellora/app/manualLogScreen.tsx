@@ -55,6 +55,12 @@ const ManualLogScreen = () => {
     
     const router = useRouter();
 
+    useEffect(() => {
+        if (rate) {
+          updateSelectedRate(rate);
+        }
+      }, []);
+    
     // handle rate selection to update categories
     const handleRateChange = (selectedRateId: string | null) => {
         setRate(selectedRateId);

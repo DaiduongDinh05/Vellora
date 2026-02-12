@@ -44,6 +44,12 @@ const Tracking = () => {
   // fetch rates
   const { rateItems, categoryItems, loading, error, updateSelectedRate, selectedRate } = useRateOptions();
 
+  useEffect(() => {
+    if (rate) {
+      updateSelectedRate(rate);
+    }
+  }, []);
+
   // Update context when form data changes
   useEffect(() => {
     updateTripData({

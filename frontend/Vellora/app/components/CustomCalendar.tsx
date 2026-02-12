@@ -103,9 +103,11 @@ const CustomCalendar = () => {
     updateTripData({
       startAddress: trip.fullTripData.start_address || '',
       endAddress: trip.fullTripData.end_address || '',
-      notes: trip.purpose,
-      vehicle: trip.fullTripData.vehicle || null,
-      
+      notes: trip.purpose || '',
+      vehicle: (trip.fullTripData as any).vehicle_id || trip.fullTripData.vehicle || null,
+      rate: trip.fullTripData.rate_customization_id || null,
+      type: trip.fullTripData.rate_category_id || null,
+
       linkedScheduledTripId: trip.id // link the active trip to this scheduled trip
     });
 

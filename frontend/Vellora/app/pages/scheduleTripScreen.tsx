@@ -135,7 +135,7 @@ const ScheduleTripScreen = () => {
 
             // success
             Alert.alert('Success', 'Trip scheduled successfully', [
-                { text: "OK", onPress: () => router.push('./(tabs)/index.tsx') }
+                { text: "OK", onPress: () => router.push('../(tabs)/index.tsx') }
             ]);
         } catch (error: any) {
             console.error('Failed to schedule trip:', error);

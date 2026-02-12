@@ -35,6 +35,7 @@ export type Trip = {
     rate_category_id: string;
     expenses?: Expense[] | null;
     vehicle?: string | null;
+    vehicle_id?: string | null;
 
     scheduled_start_at?: string | null;
     scheduled_end_at?: string | null;
