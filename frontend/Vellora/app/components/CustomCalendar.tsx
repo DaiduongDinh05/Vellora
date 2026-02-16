@@ -100,11 +100,20 @@ const CustomCalendar = () => {
   const handleStartTracking = (trip: AgendaItem) => {
     resetTripData(); // clear any existing data in context
 
+    // extract vehicle id string
+    let extractedVehicleID = trip.fullTripData.vehicle_id;
+    if (!extractedVehicleID && trip.fullTripData.vehicle) {
+
+      // if id is missing but vehicle obj exists, grab its id
+      extractedVehicleID = typeof trip.fullTripData.vehicle === 'object'
+        ? (trip.fullTripData.vehicle as any).id 
+        : trip.fullTripData.vehicle;
+    }
     updateTripData({
       startAddress: trip.fullTripData.start_address || '',
       endAddress: trip.fullTripData.end_address || '',
       notes: trip.purpose || '',
-      vehicle: (trip.fullTripData as any).vehicle_id || trip.fullTripData.vehicle || null,
+      vehicle: extractedVehicleID || null,
       rate: trip.fullTripData.rate_customization_id || null,
       type: trip.fullTripData.rate_category_id || null,
 

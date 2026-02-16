@@ -42,13 +42,13 @@ const Tracking = () => {
   const { startTracking, errorMessage, isTracking } = useLocationTracking();
 
   // fetch rates
-  const { rateItems, categoryItems, loading, error, updateSelectedRate, selectedRate } = useRateOptions();
+  const { rateItems, categoryItems, loading, error, updateSelectedRate, selectedRate, rates } = useRateOptions();
 
   useEffect(() => {
-    if (rate) {
+    if (rate && rates.length > 0) {
       updateSelectedRate(rate);
     }
-  }, []);
+  }, [rate, rates]);
 
   // Update context when form data changes
   useEffect(() => {
@@ -64,9 +64,13 @@ const Tracking = () => {
 
   // handle rate selection
   const handleRateChange = (selectedRateId: string | null) => {
-    setRate(selectedRateId);
-    setType(null);      // reset category when rate changes
-    updateSelectedRate(selectedRateId);
+    
+    // reset type if the user actually picked a different rate
+    if (rate !== selectedRateId) {
+      setRate(selectedRateId);
+      setType(null);      // reset category when rate changes
+      updateSelectedRate(selectedRateId);
+    }
   };
 
   useEffect(() => {
