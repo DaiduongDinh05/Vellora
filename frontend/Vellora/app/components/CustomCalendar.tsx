@@ -125,10 +125,26 @@ const CustomCalendar = () => {
 
   const handleMarkComplete = (item: AgendaItem) => {
     resetTripData(); // clear context data
+
+    // extract vehicle id
+    let extractedVehicleID = item.fullTripData.vehicle_id;
+    if (!extractedVehicleID && item.fullTripData.vehicle) {
+      extractedVehicleID = typeof item.fullTripData.vehicle === 'object'
+      ? (item.fullTripData.vehicle as any).id
+      : item.fullTripData.vehicle;
+    }
+
     updateTripData({
-      startAddress: item.fullTripData.start_address,
-      endAddress: item.fullTripData.end_address,
-      notes: item.purpose,
+      startAddress: item.fullTripData.start_address || '',
+      endAddress: item.fullTripData.end_address || '',
+      notes: item.purpose || '',
+      vehicle: extractedVehicleID || null,
+      rate: item.fullTripData.rate_customization_id || null,
+      type: item.fullTripData.rate_category_id || null,
+
+      startDate: item.fullTripData.scheduled_start_at || undefined,
+      endDate: item.fullTripData.scheduled_end_at || undefined,
+      
       linkedScheduledTripId: item.id // link the completed trip to this scheduled trip
     });
 

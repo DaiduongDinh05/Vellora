@@ -25,29 +25,29 @@ const ManualLogScreen = () => {
     const { tripData, updateTripData, resetTripData } = useTripData();
 
     // use rate options hook for dynamic rates
-    const { rateItems, categoryItems, loading, error, updateSelectedRate } = useRateOptions();
+    const { rateItems, categoryItems, loading, error, updateSelectedRate, rates } = useRateOptions();
 
     // use common places hook to get all the common places
     const { places: commonPlaces } = useCommonPlaces();
 
     // state variables
-    const [startDate, setStartDate] = useState(new Date());
-    const [endDate, setEndDate] = useState(new Date());
+    const [startDate, setStartDate] = useState(tripData.startDate ? new Date(tripData.startDate) : new Date());
+    const [endDate, setEndDate] = useState(tripData.endDate ? new Date(tripData.endDate) : new Date());
     // const [showStartPicker, setShowStartPicker] = useState(false);
     // const [showEndPicker, setShowEndPicker] = useState(false);
 
     const [showStartIOS, setShowStartIOS] = useState(false);
     const [showEndIOS, setShowEndIOS] = useState(false);
 
-    const [startAddress, setStartAddress] = useState('');
-    const [endAddress, setEndAddress] = useState('');
-    const [notes, setNotes] = useState('');
-    const [vehicle, setVehicle] = useState<string | null>(null);
-    const [type, setType] = useState<string | null>(null);
-    const [rate, setRate] = useState<string | null>(null);
-    const [parking, setParking] = useState<string>('');
-    const [gas, setGas] = useState<string>('');
-    const [tolls, setTolls] = useState('0.00');
+    const [startAddress, setStartAddress] = useState(tripData.startAddress || '');
+    const [endAddress, setEndAddress] = useState(tripData.endAddress || '');
+    const [notes, setNotes] = useState(tripData.notes ||'');
+    const [vehicle, setVehicle] = useState<string | null>(tripData.vehicle || null);
+    const [type, setType] = useState<string | null>(tripData.type ||null);
+    const [rate, setRate] = useState<string | null>(tripData.rate || null);
+    const [parking, setParking] = useState<string>(tripData.parking || '');
+    const [gas, setGas] = useState<string>(tripData.gas || '');
+    const [tolls, setTolls] = useState(tripData.tolls || '0.00');
 
     // sticky footer state variables
     const [tripValue, setTripValue] = useState('0.00');
@@ -56,16 +56,20 @@ const ManualLogScreen = () => {
     const router = useRouter();
 
     useEffect(() => {
-        if (rate) {
+        if (rate && rates.length > 0) {
           updateSelectedRate(rate);
         }
-      }, []);
+      }, [rate, rates]);
     
     // handle rate selection to update categories
     const handleRateChange = (selectedRateId: string | null) => {
-        setRate(selectedRateId);
-        setType(null); // reset category when rate changes
-        updateSelectedRate(selectedRateId);
+
+        // reset if it actually changes
+        if (rate !== selectedRateId) {
+            setRate(selectedRateId);
+            setType(null); // reset category when rate changes
+            updateSelectedRate(selectedRateId);
+        }
     };
 
     // calculate trip value when rate or distance changes
