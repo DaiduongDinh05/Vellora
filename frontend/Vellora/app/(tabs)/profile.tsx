@@ -271,7 +271,7 @@ export default function Profile() {
             >
               <View className="flex-row items-center">
                 <FontAwesome name="dollar" size={22} color="black" className="mr-3 ml-2" />
-                <Text className="text-black text-base ml-3">Reimbursement rate</Text>
+                <Text className="text-black text-base ml-3">Reimbursement Rates</Text>
               </View>
               <FontAwesome name="chevron-right" size={16} color="black" />
             </TouchableOpacity>
