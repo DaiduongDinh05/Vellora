@@ -16,7 +16,7 @@ export default function MyProfile() {
               className="items-center justify-center mr-10"
             >
               <Image 
-                source={require('./assets/placeholderProfile.svg')}
+                source={require('../assets/placeholderProfile.svg')}
                 contentFit="cover"
                 style={{width: 200, height: 125, borderRadius: 55}}
               />
@@ -67,7 +67,10 @@ export default function MyProfile() {
         <View className="bg-white mt-3 mx-3 rounded-3xl">
           <View className="mt-1">
             
-            <TouchableOpacity className="bg-white px-6 py-4 flex-row items-center justify-between border-b border-gray-100 rounded-3xl mb-1">
+            <TouchableOpacity 
+              className="bg-white px-6 py-4 flex-row items-center justify-between border-b border-gray-100 rounded-3xl mb-1"
+              onPress={() => router.push('/reimbursement')}
+            >
               <View className="flex-row items-center">
                 <FontAwesome name="dollar" size={22} color="black" className="mr-3 ml-2" />
                 <Text className="text-black text-base ml-3">Reimbursement rate</Text>
