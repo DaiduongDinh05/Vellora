@@ -143,12 +143,11 @@ const ManualLogScreen = () => {
             }
 
             // create the expenses array for storage and filter by amounts that aren't empty (0)
-            const expensesInput: createExpensePayload[] = [
+            const expensesInput: Expense[] = [
                 { type: 'parking', amount: parseFloat(parking) || 0 },
                 { type: 'gas', amount: parseFloat(gas) || 0 },
                 { type: 'tolls', amount: parseFloat(tolls) || 0 }
             ].filter(e => e.amount > 0)
-            .map(e => ({ ...e, amount: Number(e.amount.toFixed(2)) }));     // map the objects for payloads later
 
             // update the context data BEFORE making an API call to ensure the context is up to date
             updateTripData({
@@ -175,7 +174,7 @@ const ManualLogScreen = () => {
                 geometry: null,
                 rate_customization_id: rate, // these should be UUID strings
                 rate_category_id: type,
-                expenses: [],               // CHANGE THE EXPENSES TO CALCULATE THE SUM OF ALL EXPENSES LIKE PARKING, GAS, TOLLS. THIS EMPTY ARRAY IS HERE TEMPORARILY
+                expenses: expensesInput,               
                 purpose: notes?.trim() || null,
                 parking: parseFloat(parking) || 0,
                 gas: parseFloat(gas) || 0,
@@ -188,28 +187,6 @@ const ManualLogScreen = () => {
             // call the service which will map the backend format
             const newTrip = await createManualTrip(manualTripPayload);
             console.log("Manual trip created successfully:", newTrip);
-
-            // Create all the new expenses of the new trip
-            let newExpenses: Expense[] = [];
-
-            if(expensesInput.length) {      // check if the array is > 0
-                const results = await Promise.allSettled(
-                    expensesInput.map((payload) => createTripExpense(newTrip.id, payload))  // create an expense for the new trip
-                );
-
-                // Ensure promises are fuffiled when creating new trip expenses, 
-                newExpenses = results
-                .filter((r): r is PromiseFulfilledResult<Expense> => r.status === 'fulfilled')
-                .map((r) => r.value);
-
-                const failures = results.filter(r => r.status === 'rejected');
-                if (failures.length) console.warn(`Failure to create ${failures.length} expense(s).`)
-            }
-            
-            if (newExpenses.length) {
-                // 'expenses' is not declared on TripData; cast to any to update context with the new expenses
-                updateTripData({ expenses: newExpenses } as any)
-            }
 
             // navigate away
             router.push("/(tabs)/history");
