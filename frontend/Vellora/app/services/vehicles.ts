@@ -46,10 +46,32 @@ export async function getVehicles(token?: string): Promise<Vehicle[]> {
         },
     });
 
-    const data = await handleResponse<VehicleListResponse>(response);
-    return data.vehicles;
+    const data = await handleResponse<any>(response);
+
+    console.log("Backend GET Vehicles Response:", data); // Debug log\
+
+    if (Array.isArray(data)) {
+        // Handle case where backend returns a plain array
+        return data;
+    }
+    return data?.vehicles || [];
 }
 
+export async function getVehicle(id: string, token?: string): Promise<Vehicle> {
+    const authToken = token || tokenStorage.getToken();
+    if (!authToken) {
+        throw new ApiError("Authentication token is missing");
+    }
+    const response = await fetch(`${API_BASE_URL}/vehicles/${id}/`, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`,
+        },
+    });
+
+    return handleResponse<Vehicle>(response);
+}
 export async function createVehicle(payload: CreateVehiclePayload, token?: string): Promise<Vehicle> {
     const authToken = token || tokenStorage.getToken();
     if (!authToken) {
