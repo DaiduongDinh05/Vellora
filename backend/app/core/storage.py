@@ -28,7 +28,7 @@ class ReceiptStorage:
             aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
             aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
             endpoint_url=settings.AWS_S3_ENDPOINT_URL,
-            config=Config(s3={"addressing_style": "virtual"}),
+            config=Config(s3={"addressing_style": "path"}),
         )
         return cls(
             bucket=settings.AWS_S3_BUCKET,

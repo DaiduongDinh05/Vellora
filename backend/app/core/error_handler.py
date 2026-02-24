@@ -141,6 +141,20 @@ def error_handler(func):
         except AuditTrailPersistenceError as e:
             raise HTTPException(status_code=500, detail=str(e))
         
+        #notifications
+        except InvalidNotificationDataError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        except NotificationNotFoundError as e:
+            raise HTTPException(status_code=404, detail=str(e))
+        except DuplicateDeviceTokenError as e:
+            raise HTTPException(status_code=409, detail=str(e))
+        except DeviceTokenError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        except NotificationDeliveryError as e:
+            raise HTTPException(status_code=502, detail=str(e))
+        except NotificationPersistenceError as e:
+            raise HTTPException(status_code=500, detail=str(e))
+        
         #all
         except Exception as e:
             logger.exception("Unhandled error: %s", e)

@@ -1,7 +1,14 @@
 from datetime import datetime, timezone
+import logging
 from uuid import UUID
 from app.modules.trips.repository import TripRepo
-from app.modules.trips.schemas import CreateTripDTO, EditTripDTO, EndTripDTO, ManualCreateTripDTO
+from app.modules.trips.schemas import (
+    CreateTripDTO,
+    EditTripDTO,
+    EndTripDTO,
+    ManualCreateTripDTO,
+    ScheduleTripDTO,
+)
 from app.modules.trips.utils.crypto import encrypt_address, encrypt_geometry
 from app.modules.trips.models import Trip, TripStatus
 from app.modules.trips.exceptions import InvalidTripDataError, TripNotFoundError, TripPersistenceError, TripAlreadyActiveError
@@ -15,16 +22,18 @@ from app.modules.vehicles.repository import VehicleRepository
 from app.modules.vehicles.exceptions import VehicleNotFoundError
 from app.modules.audit_trail.service import AuditTrailService
 from app.modules.audit_trail.models import AuditAction
+from app.modules.notifications.service import NotificationService
 
 
 class TripsService:
-    def __init__(self, repo: TripRepo, category_repo: RateCategoryRepo, customization_repo: RateCustomizationRepo, vehicle_repo: VehicleRepository = None, expense_service=None, audit_service: AuditTrailService = None):
+    def __init__(self, repo: TripRepo, category_repo: RateCategoryRepo, customization_repo: RateCustomizationRepo, vehicle_repo: VehicleRepository = None, expense_service=None, audit_service: AuditTrailService = None, notification_service: NotificationService = None):
         self.repo = repo
         self.category_repo = category_repo
         self.customization_repo = customization_repo
         self.vehicle_repo = vehicle_repo
         self.expense_service = expense_service
         self.audit_service = audit_service
+        self.notification_service = notification_service
 
     async def _validate_vehicle_ownership(self, user_id: UUID, vehicle_id: UUID):
         if not self.vehicle_repo:
@@ -111,6 +120,20 @@ class TripsService:
                     resource_id=str(saved_trip.id),
                     details=f"Started trip to {data.start_address[:50]}..."
                 )
+            
+            #for when scheduled trips are implemnted
+            if self.notification_service:
+                try:
+                    #check if trip is scheduled
+                    # is_scheduled? (implement check later)
+                    # await self.notification_service.notify_trip_started(
+                    #     user_id=user_id,
+                    #     trip_id=saved_trip.id,
+                    #     is_scheduled=is_scheduled
+                    # )
+                    pass
+                except Exception as e:
+                    logging.getLogger(__name__).error(f"Failed to send trip start notification: {e}")
                 
             return saved_trip
 
@@ -190,6 +213,75 @@ class TripsService:
 
         except Exception as e:
             raise TripPersistenceError(f"Unexpected error occurred while saving manual trip: {e}") from e
+
+    async def schedule_trip(self, user_id: UUID, data: ScheduleTripDTO):
+        if data.scheduled_end_at <= data.scheduled_start_at:
+            raise InvalidTripDataError("Scheduled end time must be after start time")
+
+        customization = await self.customization_repo.get(data.rate_customization_id, user_id)
+        if not customization:
+            customization = await self.customization_repo.get(data.rate_customization_id)
+            if customization:
+                from app.modules.users.models import User
+                from sqlalchemy import select
+                irs_user_result = await self.customization_repo.db.execute(
+                    select(User.id).where(User.email == 'system@irs.gov')
+                )
+                irs_user_id = irs_user_result.scalar_one_or_none()
+
+                if not (irs_user_id and customization.user_id == irs_user_id):
+                    customization = None
+
+        if not customization:
+            raise RateCustomizationNotFoundError("Rate customization not found or not accessible to user")
+
+        category = await self.category_repo.get(data.rate_category_id)
+        if not category:
+            raise RateCategoryNotFoundError("Rate category not found")
+
+        if category.rate_customization_id != customization.id:
+            raise InvalidRateCategoryDataError("Category does not belong to this customization")
+
+        if data.vehicle_id:
+            await self._validate_vehicle_ownership(user_id, data.vehicle_id)
+
+        reimbursement_rate = category.cost_per_mile
+
+        try:
+            encrypted_start_address = (
+                encrypt_address(data.start_address)
+                if data.start_address and data.start_address.strip()
+                else None
+            )
+            encrypted_end_address = (
+                encrypt_address(data.end_address)
+                if data.end_address and data.end_address.strip()
+                else None
+            )
+
+            trip = Trip(
+                user_id=user_id,
+                status=TripStatus.scheduled,
+                start_address_encrypted=encrypted_start_address,
+                end_address_encrypted=encrypted_end_address,
+                purpose=data.purpose,
+                vehicle_id=data.vehicle_id,
+                reimbursement_rate=reimbursement_rate,
+                rate_customization_id=data.rate_customization_id,
+                rate_category_id=data.rate_category_id,
+                scheduled_start_at=data.scheduled_start_at,
+                scheduled_end_at=data.scheduled_end_at,
+                calendar_provider=data.calendar_provider,
+                calendar_event_id=data.calendar_event_id,
+                calendar_event_url=data.calendar_event_url,
+            )
+
+            saved_trip = await self.repo.save(trip)
+
+            return saved_trip
+
+        except Exception as e:
+            raise TripPersistenceError(f"Unexpected error occurred while scheduling trip: {e}") from e
     
     async def get_trip_by_id(self, user_id: UUID, trip_id: UUID):
         trip = await self.repo.get(trip_id, user_id)
@@ -240,6 +332,20 @@ class TripsService:
                     resource_id=str(trip.id),
                     details=f"Trip completed: {miles:.2f} miles, ${trip.mileage_reimbursement_total:.2f} reimbursement"
                 )
+            
+            #for when scheduled trips are implemnted
+            if self.notification_service:
+                try:
+                    # Future: check if trip is scheduled
+                    # is_scheduled (implement later)
+                    # await self.notification_service.notify_trip_ended(
+                    #     user_id=user_id,
+                    #     trip_id=saved_trip.id,
+                    #     is_scheduled=is_scheduled
+                    # )
+                    pass
+                except Exception as e:
+                    logging.getLogger(__name__).error(f"Failed to send trip end notification: {e}")
 
             return saved_trip
                
@@ -291,6 +397,24 @@ class TripsService:
                 trip.rate_category_id = data.rate_category_id
                 trip.reimbursement_rate = category.cost_per_mile
 
+            if data.scheduled_start_at is not None:
+                trip.scheduled_start_at = data.scheduled_start_at
+
+            if data.scheduled_end_at is not None:
+                start_at = data.scheduled_start_at or trip.scheduled_start_at
+                if start_at and data.scheduled_end_at <= start_at:
+                    raise InvalidTripDataError("Scheduled end time must be after start time")
+                trip.scheduled_end_at = data.scheduled_end_at
+
+            if data.calendar_provider is not None:
+                trip.calendar_provider = data.calendar_provider
+
+            if data.calendar_event_id is not None:
+                trip.calendar_event_id = data.calendar_event_id
+
+            if data.calendar_event_url is not None:
+                trip.calendar_event_url = data.calendar_event_url
+
             return await self.repo.save(trip)
         
         except Exception as e:
@@ -301,8 +425,8 @@ class TripsService:
 
         trip = await self.get_trip_by_id(user_id, trip_id)
 
-        if trip.status != TripStatus.active:
-            raise InvalidTripDataError("Only active trips can be cancelled")
+        if trip.status not in (TripStatus.active, TripStatus.scheduled):
+            raise InvalidTripDataError("Only active or scheduled trips can be cancelled")
 
         try:
             trip.status = TripStatus.cancelled

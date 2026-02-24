@@ -1,3 +1,4 @@
+import logging
 import secrets
 import uuid
 from pathlib import Path
@@ -16,6 +17,9 @@ from app.modules.expenses.schemas import ExpenseReceiptDTO
 from app.modules.trips.exceptions import TripNotFoundError
 from app.modules.trips.repository import TripRepo
 from app.core.storage import ReceiptStorage
+
+
+logger = logging.getLogger(__name__)
 
 
 MAX_RECEIPT_BYTES = 10 * 1024 * 1024  # 10 MB
@@ -62,7 +66,7 @@ class ExpenseReceiptsService:
         self,
         user_id: UUID,
         trip_id: UUID,
-        expense_id: UUID,
+        expense_id: UUID | None,
         upload: UploadFile,
     ) -> ExpenseReceiptDTO:
         await self._ensure_trip(user_id, trip_id)
@@ -86,6 +90,7 @@ class ExpenseReceiptsService:
                 content_type=upload.content_type or "application/octet-stream",
             )
         except Exception as exc:  # pragma: no cover - network/storage errors
+            logger.exception("Receipt storage upload failed for %s", object_key)
             raise ReceiptUploadError("Failed to upload receipt to storage") from exc
 
         receipt = ExpenseReceipt(
@@ -121,7 +126,7 @@ class ExpenseReceiptsService:
         self,
         user_id: UUID,
         trip_id: UUID,
-        expense_id: UUID,
+        expense_id: UUID | None,
     ) -> list[ExpenseReceiptDTO]:
         await self._ensure_trip(user_id, trip_id)
         receipts = await self.receipt_repo.list_for_trip(trip_id, user_id)
