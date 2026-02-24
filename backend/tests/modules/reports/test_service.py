@@ -5,13 +5,15 @@ from uuid import uuid4
 
 from app.modules.reports.service import ReportsService
 from app.modules.reports.repository import ReportRepository
-from app.modules.reports.schemas import GenerateReportDTO
+from app.modules.reports.schemas import GenerateReportDTO, AnalyticsResponse
 from app.modules.reports.models import Report, ReportStatus
 from app.modules.reports.exceptions import (
     ReportNotFoundError, ReportPermissionError, ReportRateLimitError,
     ReportSystemLimitError, ReportMaxRetriesError, ReportInvalidStateError,
-    ReportExpiredError, ReportPersistenceError
+    ReportExpiredError, ReportPersistenceError, InvalidMonthAnalyticsError,
+    InvalidDataAnalyticsError
 )
+from app.modules.users.models import User
 
 
 class TestReportsService:
@@ -361,3 +363,77 @@ class TestGenerateNow(TestReportsService):
 
         with pytest.raises(ReportNotFoundError):
             await service.generate_now(report_id)
+
+
+class TestGetAnalytics(TestReportsService):
+
+    @pytest.fixture
+    def mock_user(self):
+        user = MagicMock(spec=User)
+        user.id = uuid4()
+        return user
+
+    @pytest.fixture
+    def mock_trip_data(self):
+        """Mock trip data with category information"""
+        data = MagicMock()
+        trip1 = MagicMock()
+        trip1.category_name = "Business"
+        trip2 = MagicMock()
+        trip2.category_name = "Business"
+        trip3 = MagicMock()
+        trip3.category_name = "Personal"
+        data.trips = [trip1, trip2, trip3]
+        data.total_miles = 150.5
+        data.grand_total = 95.25
+        return data
+
+    @pytest.mark.asyncio
+    async def test_get_analytics_success(
+        self, service, mock_user, mock_data_builder, mock_trip_data
+    ):
+        mock_data_builder.build.return_value = mock_trip_data
+
+        with patch('app.modules.reports.service.Report'):
+            result = await service.get_analytics(mock_user, "January")
+
+        mock_data_builder.build.assert_called_once()
+        assert result.total_miles == 150.5
+        assert result.grand_total == 95.25
+        assert result.category_counts == {"Business": 2, "Personal": 1}
+
+    @pytest.mark.asyncio
+    async def test_get_analytics_invalid_month(self, service, mock_user):
+        with pytest.raises(InvalidMonthAnalyticsError) as exc_info:
+            await service.get_analytics(mock_user, "InvalidMonth")
+        
+        assert "Invalid Month" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_get_analytics_data_builder_failure(
+        self, service, mock_user, mock_data_builder
+    ):
+        mock_data_builder.build.side_effect = Exception("Database error")
+
+        with patch('app.modules.reports.service.Report'):
+            with pytest.raises(InvalidDataAnalyticsError) as exc_info:
+                await service.get_analytics(mock_user, "January")
+        
+        assert "Failed to gather data" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_get_analytics_empty_trips(
+        self, service, mock_user, mock_data_builder
+    ):
+        empty_data = MagicMock()
+        empty_data.trips = []
+        empty_data.total_miles = 0.0
+        empty_data.grand_total = 0.0
+        mock_data_builder.build.return_value = empty_data
+
+        with patch('app.modules.reports.service.Report'):
+            result = await service.get_analytics(mock_user, "February")
+
+        assert result.total_miles == 0.0
+        assert result.grand_total == 0.0
+        assert result.category_counts == {}

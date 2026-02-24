@@ -7,7 +7,7 @@ from fastapi import APIRouter
 from app.container import get_db
 from app.modules.reports.repository import ReportRepository
 from app.modules.reports.service import ReportsService
-from app.modules.reports.schemas import GenerateReportDTO, ReportResponse, ReportStatusResponse
+from app.modules.reports.schemas import GenerateReportDTO, ReportResponse, ReportStatusResponse, AnalyticsResponse
 from app.core.dependencies import get_current_user
 from app.modules.reports.models import ReportStatus
 from app.modules.reports.data_builder import ReportDataBuilder
@@ -31,6 +31,12 @@ def get_reports_service(db: AsyncSession = Depends(get_db)):
     from app.modules.audit_trail.repository import AuditTrailRepo
     audit_service = AuditTrailService(AuditTrailRepo(db))
     return ReportsService(db, repo, data_builder, renderer, storage, queue, notification_service, audit_service)
+
+@router.get("/analytics/{month}", response_model=AnalyticsResponse)
+@error_handler
+async def get_analytics(month: str, user=Depends(get_current_user), service: ReportsService = Depends(get_reports_service)):
+    analytics = await service.get_analytics(user, month)
+    return AnalyticsResponse.model_validate(analytics, from_attributes=True)
 
 @router.post("", response_model=ReportResponse)
 @error_handler
