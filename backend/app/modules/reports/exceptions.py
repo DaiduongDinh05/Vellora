@@ -36,3 +36,9 @@ class ReportMaxRetriesError(ReportError):
 
 class ReportInvalidStateError(ReportError):
     """For invalid state transitions"""
+
+class InvalidMonthAnalyticsError(ReportError):
+    """For invalid months errors"""
+
+class InvalidDataAnalyticsError(ReportError):
+    """For invalid data gathered from data_builder errors"""
