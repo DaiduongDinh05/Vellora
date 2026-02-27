@@ -47,7 +47,7 @@ export type scheduleTripPayload = {
     scheduled_start_at: string; // ISO  datetime string
     scheduled_end_at?: string; // ISO datetime string
     purpose?: string | null;
-    vehicle?: string | null;
+    vehicle_id?: string | null;
     rate_customization_id: string;
     rate_category_id: string;
 }

@@ -46,13 +46,20 @@ const Tracking = () => {
   const { rateItems, categoryItems, loading, error, updateSelectedRate, selectedRate, rates } = useRateOptions();
 
   // fetch vehicles for dropdown
-  const { vehicleItems: dynamicVehicleItems } = useVehicles();
+  const { vehicleItems: dynamicVehicleItems, vehicles } = useVehicles();
 
   useEffect(() => {
     if (rate && rates.length > 0) {
       updateSelectedRate(rate);
     }
   }, [rate, rates]);
+
+  // handle vehicle selection
+  useEffect(() => {
+    if (tripData.vehicle && vehicles.length > 0) {
+      setVehicle(tripData.vehicle);
+    }
+  }, [tripData.vehicle, vehicles]);
 
   // Update context when form data changes
   useEffect(() => {

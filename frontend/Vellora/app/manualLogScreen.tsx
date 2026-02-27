@@ -28,7 +28,7 @@ const ManualLogScreen = () => {
     const { rateItems, categoryItems, loading, error, updateSelectedRate, rates } = useRateOptions();
 
     // fetch vehicles
-    const { vehicleItems: dynamicVehicleItems } = useVehicles();
+    const { vehicleItems: dynamicVehicleItems, vehicles } = useVehicles();
 
     // use common places hook to get all the common places
     const { places: commonPlaces } = useCommonPlaces();
@@ -64,6 +64,15 @@ const ManualLogScreen = () => {
         }
       }, [rate, rates]);
     
+    
+    // handle vehicle selection
+    useEffect(() => {
+        if (tripData.vehicle && vehicles.length > 0) {
+          setVehicle(tripData.vehicle);
+        }
+    }, [tripData.vehicle, vehicles]);
+
+
     // handle rate selection to update categories
     const handleRateChange = (selectedRateId: string | null) => {
 
