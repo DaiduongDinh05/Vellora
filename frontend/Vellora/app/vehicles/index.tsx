@@ -31,15 +31,15 @@ export default function VehiclesListPage() {
 
     const renderItem = ({ item }: { item: Vehicle }) => (
         <Pressable
-            style={rateStyles.card}
+            style={[rateStyles.card, { padding: 16, marginBottom: 10 }]}
             onPress={() => router.push({ pathname: `/vehicles/edit`, params: { id: item.id } } as any)}
         >
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
                 <View>
-                    <Text style={rateStyles.rateRowText}>{item.name}</Text>
-                    <Text style={{ color: "gray" }}>{item.model} - {item.license_plate} </Text>
+                    <Text style={[rateStyles.rateRowText, { marginBottom: 4 }]}>{item.name}</Text>
+                    <Text style={{ color: "gray", fontSize: 14 }}>{item.model} - {item.license_plate} </Text>
                 </View>
-                <Text style={{ fontSize: 18, color: "#3F46D6" }}>{">"}</Text>
+                <Text style={{ fontSize: 18, color: "#3F46D6", fontWeight: "bold" }}>{">"}</Text>
             </View>
         </Pressable>
     );
