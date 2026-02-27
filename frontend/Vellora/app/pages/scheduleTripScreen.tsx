@@ -123,8 +123,8 @@ const ScheduleTripScreen = () => {
                 end_address: endAddress.trim(),
                 scheduled_start_at: startDate.toISOString(),
                 scheduled_end_at: endDate.toISOString(),
-                purpose: notes.trim() || null,
-                vehicle_id: vehicle || null,
+                purpose: notes.trim() || undefined,
+                vehicle_id: vehicle || undefined,
                 rate_customization_id: rate,
                 rate_category_id: type
             };

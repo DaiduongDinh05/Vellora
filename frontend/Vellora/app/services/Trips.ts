@@ -21,8 +21,8 @@ export type Trip = {
     id: string;
     status: TripStatus;
     start_address: string;
-    end_address?: string;
-    purpose?: string;
+    end_address?: string | null;
+    purpose?: string | null;
     reimbursement_rate?: number | null;
     miles?: number | null;
     geometry?: object | null;

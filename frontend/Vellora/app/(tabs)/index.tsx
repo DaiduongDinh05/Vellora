@@ -111,6 +111,11 @@ export default function Index() {
               ))}  
             </View>
 
+            {/* calendar */}
+            <View className="mt-8 mb-4 flex-row justify-between items-center">
+              <Text className="text-2xl text-textBlack font-bold mb-4">Trip Schedule</Text>
+            </View>
+
             <View>
               <CustomCalendar />
             </View>

@@ -94,6 +94,10 @@ const CustomCalendar = () => {
 
   // ACTION HANDLERS
   const handleEdit = (id: string) => {
+    router.push({
+      pathname: '/pages/editScheduledTrip',
+      params: { id }
+    } as any);
     
   };
 
