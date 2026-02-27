@@ -45,7 +45,6 @@ const ScheduleTripScreen = () => {
     const [type, setType] = useState<string | null>(null);
     const [rate, setRate] = useState<string | null>(null);
 
-    const [unusedVal, setUnusedVal] = useState(''); // for parking, gas, tolls inputs that are not used in calculation but are part of the payload
 
 
     // handle rate selection to update categories
@@ -233,11 +232,7 @@ const ScheduleTripScreen = () => {
                     startAddress={startAddress} setStartAddress={setStartAddress}
                     endAddress={endAddress} setEndAddress={setEndAddress}
 
-                    // dummy props for expeense fields since we don't use them in scheduling
-                    parking={unusedVal} setParking={setUnusedVal}
-                    gas={unusedVal} setGas={setUnusedVal}
-                    tolls={unusedVal} setTolls={setUnusedVal}
-
+                   
                     // mock data arrays
                     vehicleItems={dynamicVehicleItems}
                     typeItems={categoryItems}

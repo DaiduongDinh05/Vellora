@@ -42,7 +42,6 @@ const EditScheduledTripScreen = () => {
     const [rate, setRate] = useState<string | null>(null);
     
     const [loading, setLoading] = useState(true);
-    const [unusedVal, setUnusedVal] = useState('');
 
     // fetch existing trip details on mount
     useEffect(() => {
@@ -235,9 +234,7 @@ const EditScheduledTripScreen = () => {
                 rate={rate} setRate={handleRateChange}
                 startAddress={startAddress} setStartAddress={setStartAddress}
                 endAddress={endAddress} setEndAddress={setEndAddress}
-                parking={unusedVal} setParking={setUnusedVal}
-                gas={unusedVal} setGas={setUnusedVal}
-                tolls={unusedVal} setTolls={setUnusedVal}
+                
                 vehicleItems={dynamicVehicleItems}
                 typeItems={categoryItems}
                 rateItems={rateItems}
