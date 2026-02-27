@@ -9,11 +9,12 @@ import * as Location from 'expo-location';
 import ScreenLayout from './components/ScreenLayout';
 import TripDetailsForm from './components/TripDetailsForm';
 import Button from './components/Button';
-import { vehicleItems } from '../app/constants/dropdownOptions';
+
 import UserLocationMap from './components/UserLocationMap';
 import { useLocationTracking } from './hooks/useLocationTracking';
 import { useRateOptions } from './hooks/useRateOptions';
 import { useTripData } from './contexts/TripDataContext';
+import { useVehicles } from './hooks/useVehicles';
 
 // service import
 import { createTrip, getActiveTrip } from './services/Trips';
@@ -43,6 +44,9 @@ const Tracking = () => {
 
   // fetch rates
   const { rateItems, categoryItems, loading, error, updateSelectedRate, selectedRate, rates } = useRateOptions();
+
+  // fetch vehicles for dropdown
+  const { vehicleItems: dynamicVehicleItems } = useVehicles();
 
   useEffect(() => {
     if (rate && rates.length > 0) {
@@ -248,7 +252,7 @@ const Tracking = () => {
         gas={gas} setGas={setGas}
 
         // mock data arrays
-        vehicleItems={vehicleItems}
+        vehicleItems={dynamicVehicleItems}
         typeItems={categoryItems}
         rateItems={rateItems}
       />

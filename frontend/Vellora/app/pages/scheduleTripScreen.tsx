@@ -6,14 +6,13 @@ import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/dat
 import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 
 // component and data imports
-import { vehicleItems } from '../constants/dropdownOptions';
 import ScreenLayout from '../components/ScreenLayout';
 import TripDetailsForm from '../components/TripDetailsForm';
 import Button from '../components/Button';
 import { useRateOptions } from '../hooks/useRateOptions';
 import { useTripData } from '../contexts/TripDataContext';
 import { useCommonPlaces } from '../hooks/useCommonPlaces';
-
+import { useVehicles } from '../hooks/useVehicles';
 //  import service
 import { scheduleTrip, scheduleTripPayload } from '../services/Trips';
 
@@ -29,6 +28,8 @@ const ScheduleTripScreen = () => {
     // use common places hook to get all the common places
     const { places: commonPlaces } = useCommonPlaces();
 
+    // import vehicles
+    const { vehicleItems: dynamicVehicleItems } = useVehicles();
     // state variables
     // end date is one hour after start date by default
     const [startDate, setStartDate] = useState(new Date());
@@ -238,7 +239,7 @@ const ScheduleTripScreen = () => {
                     tolls={unusedVal} setTolls={setUnusedVal}
 
                     // mock data arrays
-                    vehicleItems={vehicleItems}
+                    vehicleItems={dynamicVehicleItems}
                     typeItems={categoryItems}
                     rateItems={rateItems}
 

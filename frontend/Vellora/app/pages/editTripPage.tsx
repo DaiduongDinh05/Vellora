@@ -5,7 +5,6 @@ import TripDetailsForm from "../components/TripDetailsForm";
 import { useRateOptions } from "../hooks/useRateOptions";
 import GeometryMap from "../components/GeometryMap";
 import ScreenLayout from "../components/ScreenLayout";
-import { vehicleItems } from "../constants/dropdownOptions";
 import { useState, useEffect } from "react";
 import EditableNumericDisplay from "../components/EditableNumericDisplay";
 import Button from "../components/Button";
@@ -14,6 +13,7 @@ import { useCommonPlaces } from "../hooks/useCommonPlaces";
 import * as FileSystem from 'expo-file-system/legacy';
 import * as MediaLibrary from "expo-media-library";
 
+import { useVehicles } from "../hooks/useVehicles";
 const MAPBOX_KEY = process.env.EXPO_PUBLIC_API_KEY_MAPBOX_PUBLIC_ACCESS_TOKEN;
 
 
@@ -47,7 +47,8 @@ const EditTripPage = () => {
 
     const { rateItems, categoryItems, loading, updateSelectedRate } = useRateOptions();
     const { places: commonPlaces } = useCommonPlaces();
-
+    const { vehicleItems } = useVehicles();
+    
     // Get the trip that will be edited
     const handleGetTrip = async () => {
         const tripId = id as string | undefined;
