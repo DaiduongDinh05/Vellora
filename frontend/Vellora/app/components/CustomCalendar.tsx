@@ -209,57 +209,77 @@ const CustomCalendar = () => {
     return marks;
   };
 
-  const renderAgendaItem = (item: AgendaItem ) => (
-    <View key={item.id} style={styles.card}>
+  const renderAgendaItem = (item: AgendaItem ) => {
 
-      {/* trip info section */}
-      <View style={styles.cardTopRow}>
-        <View style={styles.cardTimeContainer}>
-          <Text style={styles.cardTime}>{item.time}</Text>
-          <View style={styles.verticalLine} />
-        </View>
-        <View style={styles.cardContent}>
-          <Text style={styles.cardPurpose}>{item.purpose}</Text>
-          <Text style={styles.cardAddress}>{item.address}</Text>
-          <View style={styles.badgeContainer}>
-            <Text style={styles.badgeText}>{item.type}</Text>
+    // check if the trip is older than 5 hours
+    let showStartButton = true;
+    if (item.fullTripData.scheduled_start_at) {
+      const startTime = new Date(item.fullTripData.scheduled_start_at).getTime();
+      const now = new Date().getTime();
+      
+      // hours difference
+      const hoursDifference = (now - startTime) / (1000 * 60 * 60);
+
+      // if it's in the future, hoursdifference is negative
+      // if it is in the past, it will only show if it's been 5 hours or less
+      showStartButton = hoursDifference <= 5;
+    }
+
+
+    return (
+      <View key={item.id} style={styles.card}>
+
+        {/* trip info section */}
+        <View style={styles.cardTopRow}>
+          <View style={styles.cardTimeContainer}>
+            <Text style={styles.cardTime}>{item.time}</Text>
+            <View style={styles.verticalLine} />
+          </View>
+          <View style={styles.cardContent}>
+            <Text style={styles.cardPurpose}>{item.purpose}</Text>
+            <Text style={styles.cardAddress}>{item.address}</Text>
+            <View style={styles.badgeContainer}>
+              <Text style={styles.badgeText}>{item.type}</Text>
+            </View>
           </View>
         </View>
+
+        {/* action buttons */}
+        <View style={styles.actionRow}>
+
+          {/* edit */}
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => handleEdit(item.id)}
+          >
+            <FontAwesome name="pencil" size={14} color="#666" />
+            <Text style={styles.actionText}>Edit</Text>
+
+          </TouchableOpacity>
+
+          {/* start tracking */}
+          {showStartButton && (
+            <TouchableOpacity
+            style={[styles.actionButton, styles.primaryAction]}
+            onPress={() => handleStartTracking(item)}
+          >
+            <FontAwesome name="play" size={14} color="#666" />
+            <Text style={[styles.actionText, styles.primaryActionText]}>Start</Text>
+          </TouchableOpacity>
+          )}
+          
+          {/* mark complete */}
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => handleMarkComplete(item)}
+          >
+            <FontAwesome name="check-circle" size={14} color="#666" />
+            <Text style={styles.actionText}>Complete</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-
-      {/* action buttons */}
-      <View style={styles.actionRow}>
-
-        {/* edit */}
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => handleEdit(item.id)}
-        >
-          <FontAwesome name="pencil" size={14} color="#666" />
-          <Text style={styles.actionText}>Edit</Text>
-
-        </TouchableOpacity>
-
-        {/* start tracking */}
-        <TouchableOpacity
-          style={[styles.actionButton, styles.primaryAction]}
-          onPress={() => handleStartTracking(item)}
-        >
-          <FontAwesome name="play" size={14} color="#666" />
-          <Text style={[styles.actionText, styles.primaryActionText]}>Start</Text>
-        </TouchableOpacity>
-
-        {/* mark complete */}
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => handleMarkComplete(item)}
-        >
-          <FontAwesome name="check-circle" size={14} color="#666" />
-          <Text style={styles.actionText}>Complete</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+    )
+  };
 
   const dailyTrips = schedules[selected] || [];
 
