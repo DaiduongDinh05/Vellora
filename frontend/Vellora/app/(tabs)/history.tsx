@@ -4,6 +4,7 @@ import TripCard from '../components/TripCard'
 import { getTrips, Trip } from '../services/Trips'
 import ScreenLayout from '../components/ScreenLayout'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import  MonthYearDropdown from '../components/MonthYearDropdown'
 
 
 const History = () => {
@@ -95,8 +96,8 @@ const groupTripsByDate = (trips: Trip[]) => {
         </View>
       )}
       ListHeaderComponent={
-        <View style={{alignContent: 'center', justifyContent: 'center', backgroundColor: 'white', marginBottom: 10, height: 200}}>
-          
+        <View style={{justifyContent: 'center', alignItems: 'center', backgroundColor: 'white', marginBottom: 10, height: 200}}>
+            <MonthYearDropdown />
         </View>
       }
       ListEmptyComponent={
