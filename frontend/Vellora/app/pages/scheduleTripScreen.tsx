@@ -130,12 +130,12 @@ const ScheduleTripScreen = () => {
 
             console.log("Scheduling trip with payload:", payload);
 
-            // call API to schedule trip
+            // call API to schedule trip    
             await scheduleTrip(payload);
 
             // success
             Alert.alert('Success', 'Trip scheduled successfully', [
-                { text: "OK", onPress: () => router.push('../(tabs)/index.tsx') }
+                { text: "OK", onPress: () => router.push('/(tabs)') }
             ]);
         } catch (error: any) {
             console.error('Failed to schedule trip:', error);
