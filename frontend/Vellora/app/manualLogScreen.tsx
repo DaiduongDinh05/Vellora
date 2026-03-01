@@ -16,7 +16,7 @@ import { useCommonPlaces } from './hooks/useCommonPlaces';
 import { useVehicles } from './hooks/useVehicles';
 
 //  import service
-import { createExpensePayload, createManualTrip, createManualTripPayload } from './services/Trips';
+import { createExpensePayload, createManualTrip, createManualTripPayload, editTrip, TripStatus } from './services/Trips';
 import { createTripExpense, Expense } from './services/Trips';
 
 const ManualLogScreen = () => {
@@ -210,8 +210,22 @@ const ManualLogScreen = () => {
             const newTrip = await createManualTrip(manualTripPayload);
             console.log("Manual trip created successfully:", newTrip);
 
+            // update trip status
+            if (tripData.linkedScheduledTripId) {
+                try {
+                    console.log("Attempting to update scheduled trip status for ID: ", tripData.linkedScheduledTripId);
+                    await editTrip(tripData.linkedScheduledTripId, { status: TripStatus.completed });
+                    console.log("Successfully updated linked scheduled trip status to completed");
+                } catch (e) {
+                    console.error("Failed to update linked scheduled trip status: ", e);
+                }
+            } else {
+                console.log("No linked scheduled trip to update");
+            }
             // navigate away
-            router.push("/(tabs)/history");
+            setTimeout(() => {
+                router.push("/(tabs)/history");
+            }, 300);
 
         } catch (error: any) {
             console.error("Error creating manual trip: ", error);

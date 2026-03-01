@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { Calendar, DateData } from 'react-native-calendars';
+import { Agenda, Calendar, DateData } from 'react-native-calendars';
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
 import Button from './Button';
@@ -8,7 +8,7 @@ import Button from './Button';
 // import services
 import { getTrips, Trip, TripStatus } from '../services/Trips';
 import { useTripData } from '../contexts/TripDataContext';
-
+import { getRateCustomizations } from '../services/rateCustomizations';
 // define the shape of a single trip item
 interface AgendaItem {
   id: string;
@@ -52,15 +52,30 @@ const CustomCalendar = () => {
       setLoading(true);
       const allTrips = await getTrips();  // call the api
 
-      const scheduledOnly = allTrips.filter(t => t.status === TripStatus.scheduled);
+      let categoryMap: Record<string, string> = {};
 
+      try {
+        const customizations = await getRateCustomizations();
+        customizations.forEach(cust => {
+          if (cust.categories) {
+            cust.categories.forEach((cat: any) => {
+              categoryMap[cat.id] = cat.name; // map category id to rate customization name
+            });
+          }
+        });
+      } catch (catError) {
+        console.log("Could not fetch categories for mapping", catError);
+      }
+      
+      const scheduledTrips = allTrips.filter(t => 
+        t.scheduled_start_at && t.status !== TripStatus.cancelled
+      );
       const grouper: Record<string, AgendaItem[]> = {};
 
-      scheduledOnly.forEach((trip) => {
-        if (!trip.scheduled_start_at) return; // skip if no scheduled start time
+      scheduledTrips.forEach((trip) => {
 
         // date parsning
-        const dateObj = new Date(trip.scheduled_start_at);
+        const dateObj = new Date(trip.scheduled_start_at as string);
         const dateKey = dateObj.toISOString().split('T')[0]; // YYYY-MM-DD
         const timeString = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
@@ -71,8 +86,8 @@ const CustomCalendar = () => {
           time: timeString,
           purpose: trip.purpose || 'No purpose',
           address: trip.start_address || 'No address',
-          type: 'Business',
-          status: 'pending',
+          type: categoryMap[trip.rate_category_id] || 'Unknown',
+          status: trip.status,
           fullTripData: trip
         });
       });
@@ -121,7 +136,7 @@ const CustomCalendar = () => {
       rate: trip.fullTripData.rate_customization_id || null,
       type: trip.fullTripData.rate_category_id || null,
 
-      linkedScheduledTripId: trip.id // link the active trip to this scheduled trip
+      linkedScheduledTripId: trip.fullTripData.id // link the active trip to this scheduled trip
     });
 
     router.push('/tracking'); // navigate to active trip screen
@@ -149,7 +164,7 @@ const CustomCalendar = () => {
       startDate: item.fullTripData.scheduled_start_at || undefined,
       endDate: item.fullTripData.scheduled_end_at || undefined,
       
-      linkedScheduledTripId: item.id // link the completed trip to this scheduled trip
+      linkedScheduledTripId: item.fullTripData.id // link the completed trip to this scheduled trip
     });
 
     router.push('/manualLogScreen'); // navigate to manual log screen with pre-filled data
@@ -211,6 +226,8 @@ const CustomCalendar = () => {
 
   const renderAgendaItem = (item: AgendaItem ) => {
 
+    const isScheduled = item.status === TripStatus.scheduled;
+
     // check if the trip is older than 5 hours
     let showStartButton = true;
     if (item.fullTripData.scheduled_start_at) {
@@ -238,47 +255,75 @@ const CustomCalendar = () => {
           <View style={styles.cardContent}>
             <Text style={styles.cardPurpose}>{item.purpose}</Text>
             <Text style={styles.cardAddress}>{item.address}</Text>
-            <View style={styles.badgeContainer}>
-              <Text style={styles.badgeText}>{item.type}</Text>
+
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <View style={styles.badgeContainer}>
+                <Text style={styles.badgeText}>{item.type}</Text>
+              </View>
+
+
+              {!isScheduled && (
+                <View style={[
+                  styles.badgeContainer, 
+                  { backgroundColor: item.status === TripStatus.completed ? '#D1FAE5' : '#FEF3C7' }
+                ]}>
+                  <Text style={[
+                    styles.badgeText, 
+                    { color: item.status === TripStatus.completed ? '#059669' : '#D97706' }
+                  ]}>
+                    {item.status.toUpperCase()}
+                  </Text>
+                </View>
+              )}
+      
             </View>
           </View>
         </View>
 
-        {/* action buttons */}
-        <View style={styles.actionRow}>
+        {/* action buttons. Show only if schedueld*/}
 
-          {/* edit */}
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => handleEdit(item.id)}
-          >
-            <FontAwesome name="pencil" size={14} color="#666" />
-            <Text style={styles.actionText}>Edit</Text>
+        {isScheduled ? (
+          <View style={styles.actionRow}>
 
-          </TouchableOpacity>
-
-          {/* start tracking */}
-          {showStartButton && (
+            {/* edit */}
             <TouchableOpacity
-            style={[styles.actionButton, styles.primaryAction]}
-            onPress={() => handleStartTracking(item)}
-          >
-            <FontAwesome name="play" size={14} color="#666" />
-            <Text style={[styles.actionText, styles.primaryActionText]}>Start</Text>
-          </TouchableOpacity>
-          )}
-          
-          {/* mark complete */}
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => handleMarkComplete(item)}
-          >
-            <FontAwesome name="check-circle" size={14} color="#666" />
-            <Text style={styles.actionText}>Complete</Text>
-          </TouchableOpacity>
-        </View>
+              style={styles.actionButton}
+              onPress={() => handleEdit(item.id)}
+            >
+              <FontAwesome name="pencil" size={14} color="#666" />
+              <Text style={styles.actionText}>Edit</Text>
+
+            </TouchableOpacity>
+
+            {/* start tracking */}
+            {showStartButton && (
+              <TouchableOpacity
+              style={[styles.actionButton, styles.primaryAction]}
+              onPress={() => handleStartTracking(item)}
+            >
+              <FontAwesome name="play" size={14} color="#666" />
+              <Text style={[styles.actionText, styles.primaryActionText]}>Start</Text>
+            </TouchableOpacity>
+            )}
+
+            {/* mark complete */}
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => handleMarkComplete(item)}
+            >
+              <FontAwesome name="check-circle" size={14} color="#666" />
+              <Text style={styles.actionText}>Complete</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={[styles.actionRow, { justifyContent: 'center', paddingVertical: 8 }]}>
+            <Text style={{ color: '#9CA3AF', fontStyle: 'italic', fontSize: 12}}>
+              This trip has alreadt been {item.status}.
+            </Text>
+          </View>
+        )}
       </View>
-    )
+    );
   };
 
   const dailyTrips = schedules[selected] || [];

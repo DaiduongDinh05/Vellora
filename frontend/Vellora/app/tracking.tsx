@@ -17,7 +17,7 @@ import { useTripData } from './contexts/TripDataContext';
 import { useVehicles } from './hooks/useVehicles';
 
 // service import
-import { createTrip, getActiveTrip } from './services/Trips';
+import { createTrip, getActiveTrip, editTrip, TripStatus } from './services/Trips';
 
 const MAPBOX_KEY = process.env.EXPO_PUBLIC_API_KEY_MAPBOX_PUBLIC_ACCESS_TOKEN;
 Mapbox.setAccessToken(`${MAPBOX_KEY}`);
@@ -196,6 +196,14 @@ const Tracking = () => {
       const newTrip = await createTrip(tripPayload);
       console.log('trip create successfully: ', newTrip);
 
+      // update trip status
+      if (tripData.linkedScheduledTripId) {
+        try {
+          await editTrip(tripData.linkedScheduledTripId, { status: TripStatus.active });
+        } catch (e) {
+          console.log('Failed to update linked scheduled trip status: ', e);
+        }
+      }
       // store the trip id in the context
       setTripId(newTrip.id);
 
