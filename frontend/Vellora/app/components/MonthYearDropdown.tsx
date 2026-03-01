@@ -2,12 +2,14 @@ import React, { useState, useCallback } from "react";
 import { View, Text, TouchableOpacity, Button } from 'react-native';
 import MonthPicker from 'react-native-month-year-picker';
 
+interface MonthYearDropdownProps {
+  currentDate: Date
+}
 
 
 
-
-const MonthYearDropdown = () => {
-    const [date, setDate] = useState<Date>(new Date());
+const MonthYearDropdown: React.FC<MonthYearDropdownProps> = ({ currentDate }) => {
+    const [date, setDate] = useState<Date>(currentDate);
     const [show, setShow] = useState<boolean>(false);
     
     const showPicker = useCallback((value: boolean | ((prevState: boolean) => boolean)) => setShow(value), []);

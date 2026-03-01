@@ -97,6 +97,20 @@ export async function getTrips(token?: string): Promise<Trip[]> {
     return Trips;
 }
 
+export async function getTripByMonthYear(month: number, year: number): Promise <Trip[]> {
+    const authToken = await checkToken();
+
+    const response = await fetch(`${API_BASE_URL}/trips/monthly-stats/${month}/${year}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': "application/json",
+            Authorization: `Bearer ${authToken}`
+        }
+    });
+
+    return await handleResponse<Trip[]>(response);
+}
+
 export async function getTrip(id: string, token?: string): Promise<Trip> {
     const authToken = await checkToken();
 
