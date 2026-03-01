@@ -1,8 +1,115 @@
-import { View, Text, Image, TextInput, Pressable, StyleSheet, StatusBar } from "react-native";
+import { View, Text, Image, TextInput, Pressable, StyleSheet, StatusBar, ScrollView, Animated } from "react-native";
 import { router } from "expo-router";
 import { FontAwesome } from "@expo/vector-icons";
+import { useState, useEffect, useRef } from "react";
+
+type Message = {
+	id: string;
+	text: string;
+	isUser: boolean;
+	timestamp: Date;
+};
 
 export default function chatBot() {
+	const [messages, setMessages] = useState<Message[]>([]);
+	const [inputText, setInputText] = useState('');
+	const [isTyping, setIsTyping] = useState(false);
+	const scrollViewRef = useRef<ScrollView>(null);
+
+	useEffect(() => {
+		if (messages.length > 0) {
+			setTimeout(() => {
+				scrollViewRef.current?.scrollToEnd({ animated: true });
+			}, 100);
+		}
+	}, [messages]);
+
+	const sendMessage = () => {
+		if (inputText.trim() === '') return;
+
+		const newMessage: Message = {
+			id: Date.now().toString(),
+			text: inputText,
+			isUser: true,
+			timestamp: new Date()
+		};
+
+		setMessages(prev => [...prev, newMessage]);
+		setInputText('');
+		setIsTyping(true);
+
+		//fake response just till api created
+		setTimeout(() => {
+			const mockResponses = [
+				"ik literally best cat. he so cute and adorable. meow meow meow meow meow meow meow meow meow meow",
+				"meow  meow meow meow meow meow meow meow meow meow meow  meow meow meow meow",
+			];
+			
+			const randomResponse = mockResponses[Math.floor(Math.random() * mockResponses.length)];
+			
+			const botMessage: Message = {
+				id: Date.now().toString() + '_bot',
+				text: randomResponse,
+				isUser: false,
+				timestamp: new Date()
+			};
+			
+			setIsTyping(false);
+			setMessages(prev => [...prev, botMessage]);
+		}, 2000);
+	};
+
+	//typinh animation
+	const TypingIndicator = () => {
+		const dot1 = useRef(new Animated.Value(0)).current;
+		const dot2 = useRef(new Animated.Value(0)).current;
+		const dot3 = useRef(new Animated.Value(0)).current;
+
+		useEffect(() => {
+			const animate = () => {
+				const animateDot = (dot: Animated.Value, delay: number) => {
+					return Animated.loop(
+						Animated.sequence([
+							Animated.delay(delay),
+							Animated.timing(dot, {
+								toValue: 1,
+								duration: 400,
+								useNativeDriver: true,
+							}),
+							Animated.timing(dot, {
+								toValue: 0,
+								duration: 400,
+								useNativeDriver: true,
+							}),
+						])
+					);
+				};
+
+				Animated.parallel([
+					animateDot(dot1, 0),
+					animateDot(dot2, 200),
+					animateDot(dot3, 400),
+				]).start();
+			};
+
+			animate();
+		}, []);
+
+		return (
+			<View style={styles.messageContainer}>
+				<View style={styles.botMessage}>
+					<View style={[styles.messageBubble, styles.botBubble, styles.typingBubble]}>
+						<View style={styles.typingContainer}>
+							<Animated.View style={[styles.typingDot, { opacity: dot1 }]} />
+							<Animated.View style={[styles.typingDot, { opacity: dot2 }]} />
+							<Animated.View style={[styles.typingDot, { opacity: dot3 }]} />
+						</View>
+					</View>
+				</View>
+			</View>
+		);
+	};
+
 	return (
 		<View style={styles.container}>
 			<StatusBar barStyle="light-content" backgroundColor="#404CCF" />
@@ -14,19 +121,44 @@ export default function chatBot() {
 				<View style={styles.headerSpacer} />
 			</View>
 
-			<View style={styles.content}>
-				<Image source={require("./assets/wheel.png")} style={styles.wheelTop} />
-				<Image source={require("./assets/wheel.png")} style={styles.wheelBottomLeft} />
-				<Image source={require("./assets/wheel.png")} style={styles.wheelBottomRight} />
-
+			<ScrollView 
+				ref={scrollViewRef}
+				style={styles.messagesContainer}
+				contentContainerStyle={styles.messagesContent}
+				showsVerticalScrollIndicator={false}
+			>
 				<View style={styles.mascotContainer}>
 					<Image 
 						source={require("./assets/velo.png")} 
 						style={styles.mascotImage} 
 						resizeMode="contain"
 					/>
+					<Image source={require("./assets/wheel.png")} style={styles.wheelTop} />
+					<Image source={require("./assets/wheel.png")} style={styles.wheelBottomLeft} />
+					<Image source={require("./assets/wheel.png")} style={styles.wheelBottomRight} />
 				</View>
-			</View>
+
+				{messages.map((message) => (
+					<View key={message.id} style={[
+						styles.messageContainer,
+						message.isUser ? styles.userMessage : styles.botMessage
+					]}>
+						<View style={[
+							styles.messageBubble,
+							message.isUser ? styles.userBubble : styles.botBubble
+						]}>
+							<Text style={[
+								styles.messageText,
+								message.isUser ? styles.userText : styles.botText
+							]}>
+								{message.text}
+							</Text>
+						</View>
+					</View>
+				))}
+
+				{isTyping && <TypingIndicator />}
+			</ScrollView>
 
 			<View style={styles.inputContainer}>
 				<View style={styles.inputWrapper}>
@@ -35,8 +167,11 @@ export default function chatBot() {
 						placeholder="Ask your question..."
 						placeholderTextColor="#999"
 						multiline
+						value={inputText}
+						onChangeText={setInputText}
+						onSubmitEditing={sendMessage}
 					/>
-					<Pressable style={styles.sendButton}>
+					<Pressable style={styles.sendButton} onPress={sendMessage}>
 						<View style={styles.sendIconContainer}>
 							<View style={styles.linesContainer}>
 								<View style={styles.line1} />
@@ -81,6 +216,14 @@ const styles = StyleSheet.create({
 	headerSpacer: {
 		width: 40,
 	},
+	messagesContainer: {
+		flex: 1,
+		backgroundColor: "#131313",
+	},
+	messagesContent: {
+		padding: 20,
+		paddingBottom: 10,
+	},
 	content: {
 		flex: 1,
 		position: "relative",
@@ -89,24 +232,27 @@ const styles = StyleSheet.create({
 	},
 	wheelTop: {
 		position: "absolute",
-		top: 130,
-		right: 30,
+		top: 50,
+		right: 0,
 		width: 90,
 		height: 90,
+		zIndex: 10,
 	},
 	wheelBottomLeft: {
 		position: "absolute",
-		bottom: 190,
-		left: 40,
+		bottom: 80,
+		left: 20,
 		width: 70,
 		height: 70,
+		zIndex: 10,
 	},
 	wheelBottomRight: {
 		position: "absolute",
-		bottom: 160,
-		left: 110,
+		bottom: 55,
+		left: 90,
 		width: 50,
 		height: 50,
+		zIndex: 10,
 	},
 	mascotContainer: {
 		alignItems: "center",
@@ -115,6 +261,40 @@ const styles = StyleSheet.create({
 	mascotImage: {
 		width: 500,
 		height: 500,
+	},
+	messageContainer: {
+		marginVertical: 4,
+		paddingHorizontal: 10,
+	},
+	userMessage: {
+		alignItems: "flex-end",
+	},
+	botMessage: {
+		alignItems: "flex-start",
+	},
+	messageBubble: {
+		maxWidth: "80%",
+		paddingHorizontal: 16,
+		paddingVertical: 12,
+		borderRadius: 18,
+	},
+	userBubble: {
+		backgroundColor: "#44A65C",
+		borderBottomRightRadius: 4,
+	},
+	botBubble: {
+		backgroundColor: "#B8D9C0",
+		borderBottomLeftRadius: 4,
+	},
+	messageText: {
+		fontSize: 16,
+		lineHeight: 20,
+	},
+	userText: {
+		color: "#F2F2F2",
+	},
+	botText: {
+		color: "#032A0C",
 	},
 	inputContainer: {
 		paddingHorizontal: 23,
@@ -181,5 +361,21 @@ const styles = StyleSheet.create({
 		width: 5,
 		height: 1,
 		backgroundColor: "#4DBF69",
+	},
+	typingBubble: {
+		paddingHorizontal: 20,
+		paddingVertical: 16,
+	},
+	typingContainer: {
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	typingDot: {
+		width: 8,
+		height: 8,
+		borderRadius: 4,
+		backgroundColor: "#032A0C",
+		marginHorizontal: 2,
 	},
 });
