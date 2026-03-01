@@ -52,6 +52,7 @@ class EditTripDTO(BaseModel):
     calendar_provider: str | None = None
     calendar_event_id: str | None = None
     calendar_event_url: str | None = None
+    status: TripStatus | None = None
     
     @field_validator('miles')
     @classmethod
