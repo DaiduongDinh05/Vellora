@@ -1,7 +1,7 @@
 import { View, Text, ScrollView, Button, SectionList } from 'react-native'
 import React, { useState, useEffect, useCallback } from 'react'
 import TripCard from '../components/TripCard'
-import { getTrips, Trip, getTripByMonthYear } from '../services/Trips'
+import { getTrips, Trip, getTripsByMonthYear } from '../services/Trips'
 import ScreenLayout from '../components/ScreenLayout'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import  MonthYearDropdown from '../components/MonthYearDropdown'
@@ -44,15 +44,15 @@ const handleGetTripsByMonth = async (currentDate: Date) => {
     const month = currentDate.getMonth() + 1;
     const year = currentDate.getFullYear();
     
-    const response = await getTripByMonthYear(month, year);
+    const response = await getTripsByMonthYear(month, year);
 
-    console.log(response);
+
     if (!response) {
       alert("Failed to get trip history by Month/Year, please try again"); 
       return;
     } 
 
-    setTrips(response);
+    setTrips(response.trips);
     setIsLoading(false);
 
   } catch (error) {
@@ -92,9 +92,9 @@ const groupTripsByDate = (trips: Trip[]) => {
 }
 
   useEffect(() => {
-    handleGetAllTrips();
-   // handleGetTripsByMonth(date); needs to be modified to return all trip data
-  }, []); 
+    // handleGetAllTrips();
+    handleGetTripsByMonth(date); //needs to be modified to return all trip data
+  }, [date]); 
 
   if (loading) {
     return (
@@ -130,11 +130,16 @@ const groupTripsByDate = (trips: Trip[]) => {
       )}
       ListHeaderComponent={
         <View style={{justifyContent: 'center', alignItems: 'center', backgroundColor: 'white', marginBottom: 10, height: 200}}>
-            <MonthYearDropdown currentDate={date} />
+            <MonthYearDropdown 
+            currentDate={date}
+            onDateChange={setDate} 
+            />
         </View>
       }
       ListEmptyComponent={
-        <Text style={{textAlign: 'center', marginTop: 20}}>No Trips Found.</Text>
+        <View style={{alignItems: 'center', justifyContent: 'center', marginTop: 20}}>
+        <Text style={{textAlign: 'center', fontWeight: 'bold'}}>No Trips Found for {date.toLocaleDateString('en-US', {month: 'long', year: 'numeric'})}.</Text>
+        </View>
       }
     />
   </SafeAreaView>
