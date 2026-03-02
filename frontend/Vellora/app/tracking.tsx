@@ -9,14 +9,15 @@ import * as Location from 'expo-location';
 import ScreenLayout from './components/ScreenLayout';
 import TripDetailsForm from './components/TripDetailsForm';
 import Button from './components/Button';
-import { vehicleItems } from '../app/constants/dropdownOptions';
+
 import UserLocationMap from './components/UserLocationMap';
 import { useLocationTracking } from './hooks/useLocationTracking';
 import { useRateOptions } from './hooks/useRateOptions';
 import { useTripData } from './contexts/TripDataContext';
+import { useVehicles } from './hooks/useVehicles';
 
 // service import
-import { createTrip, getActiveTrip } from './services/Trips';
+import { createTrip, getActiveTrip, editTrip, TripStatus } from './services/Trips';
 
 const MAPBOX_KEY = process.env.EXPO_PUBLIC_API_KEY_MAPBOX_PUBLIC_ACCESS_TOKEN;
 Mapbox.setAccessToken(`${MAPBOX_KEY}`);
@@ -42,7 +43,23 @@ const Tracking = () => {
   const { startTracking, errorMessage, isTracking } = useLocationTracking();
 
   // fetch rates
-  const { rateItems, categoryItems, loading, error, updateSelectedRate, selectedRate } = useRateOptions();
+  const { rateItems, categoryItems, loading, error, updateSelectedRate, selectedRate, rates } = useRateOptions();
+
+  // fetch vehicles for dropdown
+  const { vehicleItems: dynamicVehicleItems, vehicles } = useVehicles();
+
+  useEffect(() => {
+    if (rate && rates.length > 0) {
+      updateSelectedRate(rate);
+    }
+  }, [rate, rates]);
+
+  // handle vehicle selection
+  useEffect(() => {
+    if (tripData.vehicle && vehicles.length > 0) {
+      setVehicle(tripData.vehicle);
+    }
+  }, [tripData.vehicle, vehicles]);
 
   // Update context when form data changes
   useEffect(() => {
@@ -58,9 +75,13 @@ const Tracking = () => {
 
   // handle rate selection
   const handleRateChange = (selectedRateId: string | null) => {
-    setRate(selectedRateId);
-    setType(null);      // reset category when rate changes
-    updateSelectedRate(selectedRateId);
+    
+    // reset type if the user actually picked a different rate
+    if (rate !== selectedRateId) {
+      setRate(selectedRateId);
+      setType(null);      // reset category when rate changes
+      updateSelectedRate(selectedRateId);
+    }
   };
 
   useEffect(() => {
@@ -175,6 +196,14 @@ const Tracking = () => {
       const newTrip = await createTrip(tripPayload);
       console.log('trip create successfully: ', newTrip);
 
+      // update trip status
+      if (tripData.linkedScheduledTripId) {
+        try {
+          await editTrip(tripData.linkedScheduledTripId, { status: TripStatus.active });
+        } catch (e) {
+          console.log('Failed to update linked scheduled trip status: ', e);
+        }
+      }
       // store the trip id in the context
       setTripId(newTrip.id);
 
@@ -238,7 +267,7 @@ const Tracking = () => {
         gas={gas} setGas={setGas}
 
         // mock data arrays
-        vehicleItems={vehicleItems}
+        vehicleItems={dynamicVehicleItems}
         typeItems={categoryItems}
         rateItems={rateItems}
       />

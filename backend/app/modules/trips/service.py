@@ -360,6 +360,9 @@ class TripsService:
         
         try:
 
+            if data.status is not None:
+                trip.status = data.status
+                
             if data.purpose is not None:
                 trip.purpose = data.purpose
 
