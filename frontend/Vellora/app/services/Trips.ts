@@ -1,7 +1,5 @@
 import { API_BASE_URL } from "../constants/api";
 import { ApiError, handleResponse, checkToken } from "./helpers";
-import { fetch } from 'expo/fetch';
-import { File } from "expo-file-system";
 
 
 export type Expense = {
