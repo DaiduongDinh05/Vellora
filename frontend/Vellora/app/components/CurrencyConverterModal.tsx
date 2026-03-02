@@ -9,22 +9,6 @@ type Props = {
     onApply: (field: 'parking' | 'gas' | 'tolls', convertedValue: string) => void;
 };
 
-const CURRENCIES = [
-    { label: 'EUR - Euro', value: 'EUR' },
-    { label: 'GBP - British Pound', value: 'GBP' },
-    { label: 'CAD - Canadian Dollar', value: 'CAD' },
-    { label: 'MXN - Mexican Peso', value: 'MXN' },
-    { label: 'AUD - Australian Dollar', value: 'AUD' },
-    { label: 'JPY - Japanese Yen', value: 'JPY' },
-    { label: 'CNY - Chinese Yuan', value: 'CNY' },
-    { label: 'INR - Indian Rupee', value: 'INR' },
-    { label: 'BRL - Brazilian Real', value: 'BRL' },
-    { label: 'ZAR - South African Rand', value: 'ZAR' },
-    { label: 'CHF - Swiss Franc', value: 'CHF' },
-    { label: 'SEK - Swedish Krona', value: 'SEK' },
-    { label: 'NOK - Norwegian Krone', value: 'NOK' },
-];
-
 const EXPENSE_FIELDS = [
     { label: 'Parking', value: 'parking' },
     { label: 'Gas', value: 'gas' },
@@ -36,10 +20,38 @@ const CurrencyConverterModal: React.FC<Props> = ({ onClose, onApply }) => {
     const [currency, setCurrency] = useState<string | null>('EUR');
     const [targetField, setTargetField] = useState<string | null>('parking');
 
+    // dynamic list of currencies for dropdown
+    const [currencyList, setCurrencyList] = useState<{ label: string; value: string }[]>([]);
+
     const [rate, setRate] = useState<number | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    // fetch all available currencies
+    useEffect(() => {
+        const fetchCurrencies = async () => {
+            try {
+                const response = await fetch('https://api.frankfurter.app/currencies');
+                const data = await response.json();
+
+                // map the data
+                const formattedList = Object.keys(data)
+                    .filter(key => key !== 'USD') // exclude USD since it's the default
+                    .map(key => ({
+                        label: `${key} - ${data[key]}`,
+                        value: key
+                    }));
+
+                    setCurrencyList(formattedList);
+            } catch (err) {
+                console.error('Failed to fetch currencies', err);
+            }
+        };
+
+        fetchCurrencies();
+    }, []);
+
+    // fetch the rate whenever the seelcted currency changes
     useEffect(() => {
         if (!currency) {
             return;
@@ -98,7 +110,7 @@ const CurrencyConverterModal: React.FC<Props> = ({ onClose, onApply }) => {
 
                 <Dropdown
                     placeholder='Select Currency'
-                    items={CURRENCIES}
+                    items={currencyList}
                     value={currency}
                     onValueChange={setCurrency}
                 />
