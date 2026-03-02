@@ -13,6 +13,8 @@ import { registerDevice } from "../services/Notifications";
 // Common Places
 import { useCommonPlaces } from "../hooks/useCommonPlaces";
 import CommonPlaceCard from "../components/CommonPlaceCard";
+import CustomCalendar from "../components/CustomCalendar";
+// import Tracking from "../components/tracking";
 
 export default function Index() {
   const insets = useSafeAreaInsets();
@@ -143,6 +145,15 @@ useEffect(() => {
                   })}
                 />
               ))}  
+            </View>
+
+            {/* calendar */}
+            <View className="mt-8 mb-4 flex-row justify-between items-center">
+              <Text className="text-2xl text-textBlack font-bold mb-4">Trip Schedule</Text>
+            </View>
+
+            <View>
+              <CustomCalendar />
             </View>
               
           </View>
