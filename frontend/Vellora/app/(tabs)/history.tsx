@@ -5,6 +5,7 @@ import { getTrips, Trip, getTripsByMonthYear } from '../services/Trips'
 import ScreenLayout from '../components/ScreenLayout'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import  MonthYearDropdown from '../components/MonthYearDropdown'
+import FilterButton from '../components/filterButton'
 
 
 const History = () => {
@@ -137,6 +138,7 @@ const groupTripsByDate = (trips: Trip[]) => {
             onDateChange={setDate} 
             />
             <Text style={{textAlign: 'center', color: '#A2A2A2', fontWeight: 'bold', fontSize: 11}}>Classified value: ${value}</Text>
+            <FilterButton label='label' count={4} isSelected={false} />  
         </View>
       }
       ListEmptyComponent={
