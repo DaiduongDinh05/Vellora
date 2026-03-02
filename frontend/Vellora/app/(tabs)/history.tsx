@@ -12,6 +12,7 @@ const History = () => {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [error, setError] = useState<unknown | null>(null);
   const [date, setDate] = useState<Date>(new Date());
+  const [value, setValue] = useState<number>(0.00);
   
 
 
@@ -53,6 +54,7 @@ const handleGetTripsByMonth = async (currentDate: Date) => {
     } 
 
     setTrips(response.trips);
+    setValue(response.total_mileage_reimbursement)
     setIsLoading(false);
 
   } catch (error) {
@@ -134,6 +136,7 @@ const groupTripsByDate = (trips: Trip[]) => {
             currentDate={date}
             onDateChange={setDate} 
             />
+            <Text style={{textAlign: 'center', color: '#A2A2A2', fontWeight: 'bold', fontSize: 11}}>Classified value: ${value}</Text>
         </View>
       }
       ListEmptyComponent={

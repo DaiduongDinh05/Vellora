@@ -32,7 +32,7 @@ const MonthYearDropdown: React.FC<MonthYearDropdownProps> = ({ currentDate, onDa
   return (
     <View style={{justifyContent: 'center', alignItems: 'center'}}>
         <TouchableOpacity onPress={() => showPicker(true)} style={{ flexDirection: "row"}}>
-            <Text className='text-xl font-bold text-primaryPurple text-center'>{date.toLocaleDateString('en-us', { month: 'long', year: 'numeric'})}</Text>
+            <Text className='text-xl font-bold text-primaryPurple text-center mr-2'>{date.toLocaleDateString('en-us', { month: 'long', year: 'numeric'})}</Text>
             <Entypo name='chevron-down' size={24} color='#404CCF' /> 
         </TouchableOpacity>
         { show && (
