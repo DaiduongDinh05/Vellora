@@ -1,15 +1,26 @@
 import json
+import logging
+from datetime import datetime, timedelta, timezone
 from typing import Any
 from uuid import UUID
 
 import httpx
 
 from app.config import settings
-from app.modules.ai.exceptions import AiConfigError, AiProviderError, WeatherProviderError
+from app.modules.ai.exceptions import (
+    AiConfigError,
+    AiProviderError,
+    AiRateLimitError,
+    AiValidationError,
+    WeatherProviderError,
+)
 from app.modules.ai.schemas import RoutePointDTO, TripAssistantRequestDTO, TripAssistantResponseDTO
 from app.modules.trips.exceptions import TripNotFoundError
 from app.modules.trips.repository import TripRepo
 from app.modules.trips.utils.crypto import decrypt_address
+
+
+logger = logging.getLogger(__name__)
 
 
 WEATHER_CODE_DESCRIPTIONS: dict[int, str] = {
@@ -36,8 +47,19 @@ WEATHER_CODE_DESCRIPTIONS: dict[int, str] = {
 
 
 class AiAssistantService:
+    _user_request_times: dict[UUID, list[datetime]] = {}
+
     def __init__(self, trip_repo: TripRepo):
         self.trip_repo = trip_repo
+
+    async def get_route_weather_for_user(
+        self,
+        user_id: UUID,
+        current_location: RoutePointDTO | None,
+        destination_location: RoutePointDTO | None,
+    ) -> str | None:
+        self._enforce_rate_limit(user_id)
+        return await self.get_route_weather(current_location, destination_location)
 
     async def get_route_weather(
         self,
@@ -59,6 +81,15 @@ class AiAssistantService:
         return " | ".join(parts)
 
     async def ask_trip_assistant(self, user_id: UUID, payload: TripAssistantRequestDTO) -> TripAssistantResponseDTO:
+        self._enforce_rate_limit(user_id)
+        self._validate_payload(payload)
+        logger.info(
+            "AI trip assistant request user_id=%s trip_id=%s ai_enabled=%s",
+            user_id,
+            payload.trip_id,
+            settings.AI_AGENT_ENABLED,
+        )
+
         trip_context = await self._load_trip_context(user_id, payload.trip_id) if payload.trip_id else {}
         weather_summary = await self.get_route_weather(payload.current_location, payload.destination_location)
         missing_details = self._infer_missing_details(trip_context)
@@ -70,10 +101,22 @@ class AiAssistantService:
             raise AiConfigError("OPENAI_API_KEY must be set when AI_AGENT_ENABLED=true")
 
         ai_result = await self._call_openai(payload, trip_context, weather_summary, missing_details)
+        suggested_category = ai_result.get("suggested_category")
+        if isinstance(suggested_category, str):
+            suggested_category = suggested_category.strip() or None
+            if suggested_category and len(suggested_category) > 80:
+                suggested_category = suggested_category[:80]
+        else:
+            suggested_category = None
+
+        assistant_message = ai_result.get("assistant_message")
+        if not isinstance(assistant_message, str) or not assistant_message.strip():
+            assistant_message = "I could not generate a response."
+
         return TripAssistantResponseDTO(
-            assistant_message=ai_result.get("assistant_message", "I could not generate a response."),
-            suggested_category=ai_result.get("suggested_category"),
-            missing_details=ai_result.get("missing_details") or missing_details,
+            assistant_message=assistant_message,
+            suggested_category=suggested_category,
+            missing_details=self._normalize_missing_details(ai_result.get("missing_details"), missing_details),
             weather_summary=weather_summary,
             ai_enabled=True,
         )
@@ -108,6 +151,12 @@ class AiAssistantService:
                 response.raise_for_status()
                 data = response.json()
         except httpx.HTTPError as exc:
+            logger.warning(
+                "Weather provider call failed for label=%s lat=%s lon=%s",
+                label,
+                point.lat,
+                point.lon,
+            )
             raise WeatherProviderError("Failed to fetch weather data") from exc
 
         current = data.get("current") or {}
@@ -117,6 +166,54 @@ class AiAssistantService:
         wind = current.get("wind_speed_10m")
         precip = current.get("precipitation")
         return f"{label}: {description}, {temp}C, wind {wind} km/h, precip {precip} mm"
+
+    def _validate_payload(self, payload: TripAssistantRequestDTO) -> None:
+        metadata = payload.metadata or {}
+        if len(metadata) > settings.AI_MAX_METADATA_KEYS:
+            raise AiValidationError(
+                f"metadata supports at most {settings.AI_MAX_METADATA_KEYS} keys"
+            )
+        for key, value in metadata.items():
+            if len(str(key)) > 120:
+                raise AiValidationError("metadata keys must be <= 120 characters")
+            if len(str(value)) > settings.AI_MAX_METADATA_VALUE_LENGTH:
+                raise AiValidationError(
+                    f"metadata values must be <= {settings.AI_MAX_METADATA_VALUE_LENGTH} characters"
+                )
+
+    def _enforce_rate_limit(self, user_id: UUID) -> None:
+        limit = settings.AI_RATE_LIMIT_PER_MINUTE
+        if limit <= 0:
+            return
+
+        now = datetime.now(timezone.utc)
+        window_start = now - timedelta(minutes=1)
+        recent = self._user_request_times.get(user_id, [])
+        recent = [request_time for request_time in recent if request_time > window_start]
+
+        if len(recent) >= limit:
+            self._user_request_times[user_id] = recent
+            logger.warning("AI rate limit exceeded for user_id=%s", user_id)
+            raise AiRateLimitError("Too many AI requests. Please wait and try again.")
+
+        recent.append(now)
+        self._user_request_times[user_id] = recent
+
+    def _normalize_missing_details(self, value: Any, fallback: list[str]) -> list[str]:
+        if not isinstance(value, list):
+            return fallback[:settings.AI_MAX_MISSING_DETAILS]
+
+        cleaned: list[str] = []
+        for item in value:
+            if not isinstance(item, str):
+                continue
+            field_name = item.strip()
+            if not field_name or field_name in cleaned:
+                continue
+            cleaned.append(field_name[:80])
+            if len(cleaned) >= settings.AI_MAX_MISSING_DETAILS:
+                break
+        return cleaned or fallback[:settings.AI_MAX_MISSING_DETAILS]
 
     def _infer_missing_details(self, trip_context: dict[str, Any]) -> list[str]:
         if not trip_context:
@@ -202,11 +299,17 @@ class AiAssistantService:
         }
 
         try:
-            async with httpx.AsyncClient(timeout=30) as client:
+            async with httpx.AsyncClient(timeout=settings.AI_TIMEOUT_SECONDS) as client:
+                logger.debug(
+                    "Calling AI provider model=%s trip_id=%s",
+                    settings.OPENAI_MODEL,
+                    payload.trip_id,
+                )
                 response = await client.post(url, headers=headers, json=body)
                 response.raise_for_status()
                 data = response.json()
         except httpx.HTTPError as exc:
+            logger.warning("AI provider call failed for trip_id=%s", payload.trip_id)
             raise AiProviderError("Failed to call AI provider") from exc
 
         content = (
@@ -220,6 +323,7 @@ class AiAssistantService:
             raise AiProviderError("AI provider returned malformed JSON") from exc
         if not isinstance(parsed, dict):
             raise AiProviderError("AI provider response was not valid JSON")
+        logger.debug("AI provider response parsed successfully for trip_id=%s", payload.trip_id)
         return parsed
 
     def _parse_json_content(self, content: str) -> dict[str, Any]:

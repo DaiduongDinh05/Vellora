@@ -39,5 +39,9 @@ async def route_weather(
     svc: AiAssistantService = Depends(get_ai_service),
     current_user: User = Depends(get_current_user),
 ):
-    summary = await svc.get_route_weather(body.current_location, body.destination_location)
+    summary = await svc.get_route_weather_for_user(
+        current_user.id,
+        body.current_location,
+        body.destination_location,
+    )
     return RouteWeatherResponseDTO(weather_summary=summary)

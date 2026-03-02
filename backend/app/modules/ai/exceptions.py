@@ -13,3 +13,10 @@ class AiProviderError(AiAssistantError):
 class WeatherProviderError(AiAssistantError):
     """Raised when weather provider request fails."""
 
+
+class AiRateLimitError(AiAssistantError):
+    """Raised when AI requests exceed configured rate limits."""
+
+
+class AiValidationError(AiAssistantError):
+    """Raised when AI payload validation fails."""

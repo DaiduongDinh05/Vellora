@@ -19,7 +19,7 @@ from app.modules.vehicles.exceptions import VehicleNotFoundError, DuplicateVehic
 from app.modules.reports.exceptions import InvalidReportDataError, ReportNotFoundError, ReportPersistenceError, ReportPermissionError, ReportRateLimitError, ReportSystemLimitError,ReportExpiredError, ReportMaxRetriesError, ReportInvalidStateError
 
 from app.modules.notifications.exceptions import NotificationNotFoundError, NotificationPersistenceError, InvalidNotificationDataError,NotificationDeliveryError, DeviceTokenError, DuplicateDeviceTokenError
-from app.modules.ai.exceptions import AiConfigError, AiProviderError, WeatherProviderError
+from app.modules.ai.exceptions import AiConfigError, AiProviderError, AiRateLimitError, AiValidationError, WeatherProviderError
 
 from fastapi import HTTPException
 
@@ -155,6 +155,10 @@ def error_handler(func):
             raise HTTPException(status_code=502, detail=str(e))
         except WeatherProviderError as e:
             raise HTTPException(status_code=502, detail=str(e))
+        except AiRateLimitError as e:
+            raise HTTPException(status_code=429, detail=str(e))
+        except AiValidationError as e:
+            raise HTTPException(status_code=400, detail=str(e))
         
         #all
         except Exception as e:
