@@ -28,12 +28,12 @@ type TripDtailsFormProps = {
     setRate: (value: string | null) => void;
 
     // parking cost input
-    parking: string;
-    setParking: (value: string) => void;
+    parking?: string;
+    setParking?: (value: string) => void;
 
     // gas cost input
-    gas: string;
-    setGas: (value: string) => void;
+    gas?: string;
+    setGas?: (value: string) => void;
 
     // optional start address
     startAddress?: string;
@@ -111,41 +111,45 @@ const TripDetailsForm: React.FC<TripDtailsFormProps> = (props) => {
                 className=''
             />
 
-            {/* render currency type inputs */}
-            <View className='flex-row gap-4'>
-                <CurrencyInput 
-                    label='Parking'
-                    value={props.parking}
-                    onChangeText={props.setParking}
-                    className="flex-1"
-                />
-                
-                {/* conditionally render tolls if the tolls prop is provided. If not, render gas instead     */}
-                {props.tolls !== undefined && props.setTolls ? (
-                    <CurrencyInput 
-                        label='Tolls'
-                        value={props.tolls}
-                        onChangeText={props.setTolls}
-                        className="flex-1"
-                    />
-                ) : (
-                    <CurrencyInput 
-                        label='Gas'
-                        value={props.gas}
-                        onChangeText={props.setGas}
-                        className="flex-1"
-                    />
-                )}
-            </View>
+            {/* render currency type inputs if props are passed down*/}
+            {props.parking !== undefined && props.setParking && props.gas !== undefined && props.setGas && (
+                <>
+                    <View className='flex-row gap-4'>
+                        <CurrencyInput 
+                            label='Parking'
+                            value={props.parking}
+                            onChangeText={props.setParking}
+                            className="flex-1"
+                        />
+                        
+                        {/* conditionally render tolls if the tolls prop is provided. If not, render gas instead     */}
+                        {props.tolls !== undefined && props.setTolls ? (
+                            <CurrencyInput 
+                                label='Tolls'
+                                value={props.tolls}
+                                onChangeText={props.setTolls}
+                                className="flex-1"
+                            />
+                        ) : (
+                            <CurrencyInput 
+                                label='Gas'
+                                value={props.gas}
+                                onChangeText={props.setGas}
+                                className="flex-1"
+                            />
+                        )}
+                    </View>
+                    {/* if tolls were rendered earlier, also render gas */}
+                    {props.tolls !== undefined && (
+                        <CurrencyInput 
+                            label='Gas'
+                            value={props.gas}
+                            onChangeText={props.setGas}
+                            className="flex-1"
+                        />
+                    )}
+                </>
 
-            {/* if tolls were rendered earlier, also render gas */}
-            {props.tolls !== undefined && (
-                <CurrencyInput 
-                    label='Gas'
-                    value={props.gas}
-                    onChangeText={props.setGas}
-                    className="flex-1"
-                />
             )}
 
             {/* render vehicle dropdown */}

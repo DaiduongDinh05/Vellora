@@ -8,7 +8,7 @@ RUN npm i --unsafe-perm -g npm@latest
 
 WORKDIR /app
 COPY package.json package-lock.json /app/
-RUN npm ci
+RUN npm install
 
 COPY . /app/
 
