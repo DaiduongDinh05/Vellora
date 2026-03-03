@@ -220,3 +220,13 @@ class MonthlyTripStatsResponseDTO(BaseModel):
     total_drives: int
     total_miles: float
     total_reimbursement: float
+
+class MonthlyTripDetailsResponseDTO(BaseModel):
+    trips: List[TripResponseDTO]
+    month: int
+    year: int
+    total_drives: int
+    total_miles: float
+    total_mileage_reimbursement: float
+    total_expense_reimbursement: float
+    total_reimbursement: float

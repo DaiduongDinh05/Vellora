@@ -8,6 +8,7 @@ from app.modules.trips.schemas import (
     TripResponseDTO,
     ManualCreateTripDTO,
     MonthlyTripStatsResponseDTO,
+    MonthlyTripDetailsResponseDTO,
     ScheduleTripDTO,
 )
 from app.modules.trips.service import TripsService
@@ -133,3 +134,12 @@ async def get_user_trips(svc: TripsService = Depends(get_trips_service), current
 async def get_monthly_trip_stats(month: int, year: int, svc: TripsService = Depends(get_trips_service), current_user: User = Depends(get_current_user)):
     stats = await svc.get_monthly_stats(current_user.id, month, year)
     return MonthlyTripStatsResponseDTO(**stats)
+
+@router.get("/monthly-details/{month}/{year}", response_model=MonthlyTripDetailsResponseDTO)
+@error_handler
+async def get_monthly_trip_details(month: int, year: int, svc: TripsService = Depends(get_trips_service), current_user: User = Depends(get_current_user)):
+    details = await svc.get_monthly_trip_details(current_user.id, month, year)
+    
+    details['trips'] = [TripResponseDTO.model_validate(trip) for trip in details['trips']]
+    
+    return MonthlyTripDetailsResponseDTO(**details)
