@@ -276,7 +276,10 @@ export default function Profile() {
               <FontAwesome name="chevron-right" size={16} color="black" />
             </TouchableOpacity>
 
-            <TouchableOpacity className="bg-white px-6 py-4 flex-row items-center justify-between rounded-3xl mb-1">
+            <TouchableOpacity 
+              className="bg-white px-6 py-4 flex-row items-center justify-between rounded-3xl mb-1"
+              onPress={() => router.push('/vehicles')}
+            >
               <View className="flex-row items-center">
                 <FontAwesome name="car" size={18} color="black" className="mr-3 ml-2" />
                 <Text className="text-black text-base ml-3">Vehicles</Text>
