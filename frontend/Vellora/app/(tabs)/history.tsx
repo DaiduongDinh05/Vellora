@@ -143,7 +143,7 @@ const getLabelsforFilter = (rateItems: any) => {
             onDateChange={setDate} 
             />
             <Text style={{textAlign: 'center', color: '#A2A2A2', fontWeight: 'bold', fontSize: 11}}>Classified value: ${value}</Text>
-            <FilterButton label='label' count={4} isSelected={false} />  
+           
         </View>
       }
       ListEmptyComponent={
