@@ -1,7 +1,7 @@
-import { View } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import React from 'react';
 import { FontAwesome } from '@expo/vector-icons';
-
+import CurrencyConverterModal from './CurrencyConverterModal';
 // import custom components
 import NoteInput from './NoteInput';
 import Dropdown from './Dropdown';
@@ -67,6 +67,18 @@ type TripDtailsFormProps = {
 // is used to create forms when starting, updating, or ending trip details
 const TripDetailsForm: React.FC<TripDtailsFormProps> = (props) => {
 
+    const [showConverter, setShowConverter] = React.useState(false);
+
+    const handleApplyConversion = (field: 'parking' | 'gas' | 'tolls', value: string) => {
+        if (field === 'parking' && props.setParking) {
+            props.setParking(value);
+        } else if (field === 'gas' && props.setGas) {
+            props.setGas(value);
+        } else if (field === 'tolls' && props.setTolls) {
+            props.setTolls(value);
+        }
+    };
+    
     // common icon properties
     const iconProps = { size: 18, color: '#6B7280' };
 
@@ -114,6 +126,24 @@ const TripDetailsForm: React.FC<TripDtailsFormProps> = (props) => {
             {/* render currency type inputs if props are passed down*/}
             {props.parking !== undefined && props.setParking && props.gas !== undefined && props.setGas && (
                 <>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                        <Text style={{ fontSize: 16, fontWeight: '600', color: '#333' }}>Expenses (USD)</Text>
+
+                        {!showConverter && (
+                            <TouchableOpacity onPress={() => setShowConverter(true)} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                <FontAwesome name='exchange' size={14} color="#3F46D6" style={{ marginRight: 6}} />
+                                <Text style={{ fontWeight: '600', color: '#3F46D6' }}>Convert Currency</Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
+
+                    {showConverter && (
+                        <CurrencyConverterModal
+                            onClose={() => setShowConverter(false)}
+                            onApply={handleApplyConversion}
+                        />
+                    )}
+
                     <View className='flex-row gap-4'>
                         <CurrencyInput 
                             label='Parking'
