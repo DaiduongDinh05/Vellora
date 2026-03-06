@@ -72,7 +72,7 @@ jobs:
       - name: Install Frontend Dependencies
         working-directory: frontend/Vellora
         run: |
-          npm install
+          npm ci
 
       - name: Run ESLint
         working-directory: frontend/Vellora
