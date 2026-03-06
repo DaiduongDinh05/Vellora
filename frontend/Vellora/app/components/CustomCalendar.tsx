@@ -318,7 +318,7 @@ const CustomCalendar = () => {
         ) : (
           <View style={[styles.actionRow, { justifyContent: 'center', paddingVertical: 8 }]}>
             <Text style={{ color: '#9CA3AF', fontStyle: 'italic', fontSize: 12}}>
-              This trip has alreadt been {item.status}.
+              This trip has already been {item.status}.
             </Text>
           </View>
         )}
@@ -362,7 +362,7 @@ const CustomCalendar = () => {
             )}
             <Button
                 title="Schedule a Trip"
-                onPress={() => {router.push('./pages/ScheduleTripScreen')}}
+                onPress={() => {router.push('./pages/scheduleTripScreen')}}
                 className="w-full py-4 px-5" 
               />
           </View> 

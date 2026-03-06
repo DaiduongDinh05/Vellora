@@ -6,6 +6,7 @@ import ScreenLayout from '../components/ScreenLayout'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import  MonthYearDropdown from '../components/MonthYearDropdown'
 import FilterButton from '../components/filterButton'
+import { useRateOptions } from '../hooks/useRateOptions'
 
 
 const History = () => {
@@ -14,11 +15,11 @@ const History = () => {
   const [error, setError] = useState<unknown | null>(null);
   const [date, setDate] = useState<Date>(new Date());
   const [value, setValue] = useState<number>(0.00);
-  
+  const { rateItems, categoryItems, updateSelectedRate, rates } = useRateOptions();
+  // console.log(rateItems[0].originalRate.categories[0].name);
 
 
-
-  const handleGetAllTrips = async () => { 
+const handleGetAllTrips = async () => { 
   try {
     setIsLoading(true);
     const response = await getTrips();
@@ -92,6 +93,10 @@ const groupTripsByDate = (trips: Trip[]) => {
     title: date,
     data: grouped[date]
   }));
+}
+
+const getLabelsforFilter = (rateItems: any) => {
+  
 }
 
   useEffect(() => {
