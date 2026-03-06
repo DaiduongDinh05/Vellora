@@ -12,6 +12,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useCommonPlaces } from "../hooks/useCommonPlaces";
 import * as FileSystem from 'expo-file-system/legacy';
 import * as MediaLibrary from "expo-media-library";
+import React from 'react';
 
 import { useVehicles } from "../hooks/useVehicles";
 const MAPBOX_KEY = process.env.EXPO_PUBLIC_API_KEY_MAPBOX_PUBLIC_ACCESS_TOKEN;
