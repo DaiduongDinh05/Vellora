@@ -17,6 +17,11 @@ export const AUTH_ROUTES = {
 		`${API_BASE_URL}/auth/providers/${provider}/callback`,
 };
 
+export const AI_ROUTES = {
+	tripAssistant: `${API_BASE_URL}/ai/trip-assistant`,
+	routeWeather: `${API_BASE_URL}/ai/route-weather`,
+};
+
 export const getOAuthRedirectUri = () => {
 	if (Platform.OS === "android") {
 		return (

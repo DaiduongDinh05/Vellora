@@ -1,7 +1,9 @@
-import { View, Text, Image, TextInput, Pressable, StyleSheet, StatusBar, ScrollView, Animated } from "react-native";
+import { View, Text, Image, TextInput, Pressable, StyleSheet, StatusBar, ScrollView, Animated, Alert } from "react-native";
 import { router } from "expo-router";
 import { FontAwesome } from "@expo/vector-icons";
 import { useState, useEffect, useRef } from "react";
+import { askTripAssistant } from "./services/ai";
+import { ApiError } from "./services/helpers";
 
 type Message = {
 	id: string;
@@ -24,7 +26,7 @@ export default function chatBot() {
 		}
 	}, [messages]);
 
-	const sendMessage = () => {
+	const sendMessage = async () => {
 		if (inputText.trim() === '') return;
 
 		const newMessage: Message = {
@@ -35,28 +37,48 @@ export default function chatBot() {
 		};
 
 		setMessages(prev => [...prev, newMessage]);
+		const currentInput = inputText;
 		setInputText('');
 		setIsTyping(true);
 
-		//fake response just till api created
-		setTimeout(() => {
-			const mockResponses = [
-				"ik literally best cat. he so cute and adorable. meow meow meow meow meow meow meow meow meow meow",
-				"meow  meow meow meow meow meow meow meow meow meow meow  meow meow meow meow",
-			];
-			
-			const randomResponse = mockResponses[Math.floor(Math.random() * mockResponses.length)];
+		try {
+			const response = await askTripAssistant(currentInput);
 			
 			const botMessage: Message = {
 				id: Date.now().toString() + '_bot',
-				text: randomResponse,
+				text: response.assistant_message,
 				isUser: false,
 				timestamp: new Date()
 			};
 			
 			setIsTyping(false);
 			setMessages(prev => [...prev, botMessage]);
-		}, 2000);
+		} catch (error) {
+			setIsTyping(false);
+			
+			let errorMessage = "Sorry, I'm having trouble connecting right now. Please try again.";
+			
+			if (error instanceof ApiError) {
+				if (error.status === 401) {
+					errorMessage = "Please log in to continue chatting.";
+					Alert.alert("Login Required", "You need to be logged in to use the chat assistant.", [
+						{ text: "OK", onPress: () => router.push('/login') }
+					]);
+					return;
+				} else {
+					errorMessage = error.message || errorMessage;
+				}
+			}
+			
+			const errorBotMessage: Message = {
+				id: Date.now().toString() + '_error',
+				text: errorMessage,
+				isUser: false,
+				timestamp: new Date()
+			};
+			
+			setMessages(prev => [...prev, errorBotMessage]);
+		}
 	};
 
 	//typinh animation
