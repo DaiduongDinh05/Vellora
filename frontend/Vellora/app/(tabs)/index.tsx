@@ -14,6 +14,7 @@ import { registerDevice } from "../services/Notifications";
 import { useCommonPlaces } from "../hooks/useCommonPlaces";
 import CommonPlaceCard from "../components/CommonPlaceCard";
 import CustomCalendar from "../components/CustomCalendar";
+import React from 'react';
 // import Tracking from "../components/tracking";
 
 export default function Index() {

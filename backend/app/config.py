@@ -40,6 +40,17 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
+    AI_AGENT_ENABLED: bool = False
+    OPENAI_API_KEY: str | None = None
+    OPENAI_MODEL: str = "gpt-4o-mini"
+    OPENAI_BASE_URL: str = "https://api.openai.com/v1"
+    AI_TIMEOUT_SECONDS: int = 30
+    AI_RATE_LIMIT_PER_MINUTE: int = 12
+    AI_MAX_METADATA_KEYS: int = 20
+    AI_MAX_METADATA_VALUE_LENGTH: int = 500
+    AI_MAX_MISSING_DETAILS: int = 8
+    WEATHER_BASE_URL: str = "https://api.open-meteo.com/v1/forecast"
+    WEATHER_TIMEOUT_SECONDS: int = 10
     OAUTH_STATE_TTL_SECONDS: int = 600
     OAUTH_PROVIDERS: OAuthProviders = OAuthProviders()
     AWS_S3_BUCKET: str | None = None

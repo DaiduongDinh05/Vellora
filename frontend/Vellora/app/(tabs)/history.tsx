@@ -1,20 +1,25 @@
 import { View, Text, ScrollView, Button, SectionList } from 'react-native'
 import React, { useState, useEffect, useCallback } from 'react'
 import TripCard from '../components/TripCard'
-import { getTrips, Trip } from '../services/Trips'
+import { getTrips, Trip, getTripsByMonthYear } from '../services/Trips'
 import ScreenLayout from '../components/ScreenLayout'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import  MonthYearDropdown from '../components/MonthYearDropdown'
+import FilterButton from '../components/filterButton'
+import { useRateOptions } from '../hooks/useRateOptions'
 
 
 const History = () => {
   const [loading, setIsLoading] = useState(true);
   const [trips, setTrips] = useState<Trip[]>([]);
   const [error, setError] = useState<unknown | null>(null);
-  
+  const [date, setDate] = useState<Date>(new Date());
+  const [value, setValue] = useState<number>(0.00);
+  const { rateItems, categoryItems, updateSelectedRate, rates } = useRateOptions();
+  // console.log(rateItems[0].originalRate.categories[0].name);
 
 
-
-  const handleGetAllTrips = async () => { 
+const handleGetAllTrips = async () => { 
   try {
     setIsLoading(true);
     const response = await getTrips();
@@ -35,7 +40,39 @@ const History = () => {
   }
 }
 
+const handleGetTripsByMonth = async (currentDate: Date) => {
+  try {
+    setIsLoading(true);
+
+    const month = currentDate.getMonth() + 1;
+    const year = currentDate.getFullYear();
+    
+    const response = await getTripsByMonthYear(month, year);
+
+
+    if (!response) {
+      alert("Failed to get trip history by Month/Year, please try again"); 
+      return;
+    } 
+
+    setTrips(response.trips);
+    setValue(response.total_mileage_reimbursement)
+    setIsLoading(false);
+
+  } catch (error) {
+    console.error('Failed to get trip by month: ', error);
+    alert("Failed to filter trip by month, please try again.");
+    setError(error);
+    return;
+  }
+}
+
 const groupTripsByDate = (trips: Trip[]) => {
+
+  if (!trips) {
+    return [];
+  }
+
   const grouped = trips.reduce((acc, trip) => {
     const date = new Date(trip.started_at);
     const dateKey = date.toLocaleDateString('en-US', {
@@ -58,9 +95,14 @@ const groupTripsByDate = (trips: Trip[]) => {
   }));
 }
 
+const getLabelsforFilter = (rateItems: any) => {
+  
+}
+
   useEffect(() => {
-    handleGetAllTrips();
-  }, []);
+    // handleGetAllTrips();
+    handleGetTripsByMonth(date); //needs to be modified to return all trip data
+  }, [date]); 
 
   if (loading) {
     return (
@@ -77,7 +119,7 @@ const groupTripsByDate = (trips: Trip[]) => {
   return (
   <SafeAreaView style={{flex: 1}}>
     <SectionList
-      sections={groupTripsByDate(trips)}
+      sections={trips ? groupTripsByDate(trips) : []}
       keyExtractor={(item) => item.id}
       renderItem={({ item }) => (
         <TripCard
@@ -95,12 +137,19 @@ const groupTripsByDate = (trips: Trip[]) => {
         </View>
       )}
       ListHeaderComponent={
-        <View style={{alignContent: 'center', justifyContent: 'center', backgroundColor: 'white', marginBottom: 10, height: 200}}>
-          
+        <View style={{justifyContent: 'center', alignItems: 'center', backgroundColor: 'white', marginBottom: 10, height: 200}}>
+            <MonthYearDropdown 
+            currentDate={date}
+            onDateChange={setDate} 
+            />
+            <Text style={{textAlign: 'center', color: '#A2A2A2', fontWeight: 'bold', fontSize: 11}}>Classified value: ${value}</Text>
+           
         </View>
       }
       ListEmptyComponent={
-        <Text style={{textAlign: 'center', marginTop: 20}}>No Trips Found.</Text>
+        <View style={{alignItems: 'center', justifyContent: 'center', marginTop: 20}}>
+        <Text style={{textAlign: 'center', fontWeight: 'bold'}}>No Trips Found for {date.toLocaleDateString('en-US', {month: 'long', year: 'numeric'})}.</Text>
+        </View>
       }
     />
   </SafeAreaView>
