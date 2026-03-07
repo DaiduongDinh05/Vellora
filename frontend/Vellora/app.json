@@ -4,7 +4,7 @@
     "slug": "Vellora",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./app/assets/Vellora_Dark_Logo.png",
+    "icon": "./app/assets/Vellora_App_Icon.png",
     "scheme": "vellora",
     "owner": "vellora",
     "deeplinks": [
@@ -39,9 +39,9 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./app/assets/Vellora_Dark_Logo.png",
-        "backgroundImage": "./app/assets/Vellora_Dark_Logo.png",
-        "monochromeImage": "./app/assets/Vellora_Dark_Logo.png"
+        "foregroundImage": "./app/assets/Vellora_App_Icon.png",
+        "backgroundImage": "./app/assets/Vellora_App_Icon.png",
+        "monochromeImage": "./app/assets/Vellora_App_Icon.png"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
@@ -93,7 +93,10 @@
       "expo-font",
       "expo-web-browser",
       "expo-notifications",
-      "expo-image-picker"
+      "expo-image-picker",
+      "@react-native-community/datetimepicker",
+      "expo-image",
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true,
