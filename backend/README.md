@@ -99,6 +99,72 @@ docker exec -it vellora_backend_service python -m app.worker
 
 **Note about report downloads:** When using the reports download endpoint, Docker might return a URL starting with `http://localstack:4566/`. This won't work from your browser. Simply replace `localstack` with `localhost` in the URL to access the report: `http://localhost:4566/...`
 
+### AI Trip Assistant (Backend Integration)
+
+The backend now exposes two authenticated AI endpoints:
+
+```bash
+POST /api/v1/ai/trip-assistant
+POST /api/v1/ai/route-weather
+```
+
+`POST /api/v1/ai/trip-assistant` request body:
+
+```json
+{
+  "message": "I have a client meeting tomorrow, what category should this be?",
+  "trip_id": "optional-trip-uuid",
+  "current_location": { "lat": 32.7767, "lon": -96.7970 },
+  "destination_location": { "lat": 33.2148, "lon": -97.1331 },
+  "metadata": { "source": "mobile" }
+}
+```
+
+Response includes:
+- `assistant_message`
+- `suggested_category`
+- `missing_details`
+- `weather_summary`
+- `ai_enabled`
+
+`POST /api/v1/ai/route-weather` request body:
+
+```json
+{
+  "current_location": { "lat": 32.7767, "lon": -96.7970 },
+  "destination_location": { "lat": 33.2148, "lon": -97.1331 }
+}
+```
+
+Response:
+
+```json
+{
+  "weather_summary": "Current location: clear, 26C, wind 8 km/h, precip 0 mm | Destination: partly cloudy, 24C, wind 10 km/h, precip 0 mm"
+}
+```
+
+Required environment variables for AI:
+
+```bash
+AI_AGENT_ENABLED=false
+OPENAI_API_KEY=
+OPENAI_MODEL=gpt-4o-mini
+OPENAI_BASE_URL=https://api.openai.com/v1
+AI_TIMEOUT_SECONDS=30
+AI_RATE_LIMIT_PER_MINUTE=12
+AI_MAX_METADATA_KEYS=20
+AI_MAX_METADATA_VALUE_LENGTH=500
+AI_MAX_MISSING_DETAILS=8
+WEATHER_BASE_URL=https://api.open-meteo.com/v1/forecast
+WEATHER_TIMEOUT_SECONDS=10
+```
+
+Notes:
+- If `AI_AGENT_ENABLED=false`, backend returns a deterministic fallback response (no provider call).
+- AI endpoints are rate limited per user (requests per minute).
+- Metadata payload has guardrails on key count and value size.
+
 ### Setup without Docker (Local Development)
 
 #### 1. Clone repo
