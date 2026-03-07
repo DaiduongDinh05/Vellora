@@ -16,6 +16,12 @@ from app.modules.rate_categories.exceptions import InvalidRateCategoryDataError,
 from app.modules.common_places.exceptions import InvalidCommonPlaceDataError, CommonPlaceNotFoundError, CommonPlacePersistenceError, DuplicateCommonPlaceError, MaxCommonPlacesError
 from app.modules.audit_trail.exceptions import AuditTrailNotFoundError, AuditTrailPersistenceError
 from app.modules.vehicles.exceptions import VehicleNotFoundError, DuplicateVehicleError, InvalidVehicleDataError, VehiclePersistenceError, VehicleInUseError
+from app.modules.reports.exceptions import (
+    InvalidReportDataError, ReportNotFoundError, ReportPersistenceError, 
+    ReportPermissionError, ReportRateLimitError, ReportSystemLimitError,
+    ReportExpiredError, ReportMaxRetriesError, ReportInvalidStateError,
+    InvalidMonthAnalyticsError, InvalidDataAnalyticsError
+)
 from app.modules.reports.exceptions import InvalidReportDataError, ReportNotFoundError, ReportPersistenceError, ReportPermissionError, ReportRateLimitError, ReportSystemLimitError,ReportExpiredError, ReportMaxRetriesError, ReportInvalidStateError
 
 from app.modules.notifications.exceptions import NotificationNotFoundError, NotificationPersistenceError, InvalidNotificationDataError,NotificationDeliveryError, DeviceTokenError, DuplicateDeviceTokenError
@@ -128,6 +134,12 @@ def error_handler(func):
         except ReportPersistenceError as e:
             raise HTTPException(status_code=500, detail=str(e))
         
+        #analytics
+        except InvalidMonthAnalyticsError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        except InvalidDataAnalyticsError as e:
+            raise HTTPException(status_code=500, detail=str(e))
+    
         #audit trails
         except AuditTrailNotFoundError as e:
             raise HTTPException(status_code=404, detail=str(e))

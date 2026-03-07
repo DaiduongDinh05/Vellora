@@ -4,10 +4,17 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { getProviderAuthorizeUrl, login } from "../services/auth";
 import { FontAwesome } from "@expo/vector-icons";
 import Button from "../components/Button";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import * as Notifications from 'expo-notifications';
+import * as Device from 'expo-device';
+import Constants from 'expo-constants';
+import { registerDevice } from "../services/Notifications";
 
+// Common Places
 import { useCommonPlaces } from "../hooks/useCommonPlaces";
 import CommonPlaceCard from "../components/CommonPlaceCard";
+import CustomCalendar from "../components/CustomCalendar";
+import React from 'react';
 // import Tracking from "../components/tracking";
 
 export default function Index() {
@@ -18,16 +25,6 @@ export default function Index() {
   const [shotLogTripModal, setShowLogTripModal] = useState(false);
 
   const { places: commonPlaces, loading } = useCommonPlaces();
-
-  // temporary common places data
-  // const commonPlaces = [
-
-  //   { id: '1', title: 'Home', address: '123 Main St, Springfield, IL', lat: 39.7817, lng: -89.6501},
-  //   { id: '2', title: 'Work', address: '456 Corporate Blvd, Springfield, IL', lat: 39.7990, lng: -89.6436},
-  //   { id: '3', title: 'Gym', address: '789 Fitness Ave, Springfield, IL', lat: 39.7886, lng: -89.6544},
-  //   { id: '4', title: 'Grocery Store', address: '101 Market St, Springfield, IL', lat: 39.7833, lng: -89.6550},
-  // ];
-
 
 
   // modal button handlers
@@ -40,6 +37,47 @@ export default function Index() {
     setShowLogTripModal(false);   // close modal
     router.push('/tracking');    // navigate to live tracking screen
   };
+
+  const requestPushToken = async () => {
+    if (Device.isDevice) { // Checking if a physical device
+      try {
+        // Get the notification permissions
+        const { status: existingStatus } = await Notifications.getPermissionsAsync();
+        let finalStatus = existingStatus;
+
+        // If no perms, request
+        if (existingStatus !== 'granted') {
+          const { status } = await Notifications.requestPermissionsAsync();
+          finalStatus = status;
+        }
+        
+        if (finalStatus !== 'granted') { // If no access no permissions
+          alert('Permissions not granted to get push notifications!');
+          throw new Error('Permissions not granted to get push notifications!');
+        }
+
+        // Get the project ID to be able to send notifications
+        const projectId = Constants?.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
+
+        if (!projectId) {
+          throw new Error('Project ID not found!');
+        }
+
+        const token = await Notifications.getExpoPushTokenAsync();
+        await registerDevice(token);
+
+      } catch (error) {
+        console.error('Failed to get push token', error);
+      }
+    } else {
+      alert('Physical Device required for push notifications');
+    }
+  };
+
+// Use effect for requesting notification push tokens for notifications
+useEffect(() => {
+  requestPushToken();
+}, []);
 
   return (
 
@@ -108,6 +146,15 @@ export default function Index() {
                   })}
                 />
               ))}  
+            </View>
+
+            {/* calendar */}
+            <View className="mt-8 mb-4 flex-row justify-between items-center">
+              <Text className="text-2xl text-textBlack font-bold mb-4">Trip Schedule</Text>
+            </View>
+
+            <View>
+              <CustomCalendar />
             </View>
               
           </View>

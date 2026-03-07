@@ -38,7 +38,7 @@ class Settings(BaseSettings):
         min_length=32,
     )
     JWT_ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
     AI_AGENT_ENABLED: bool = False
     OPENAI_API_KEY: str | None = None
