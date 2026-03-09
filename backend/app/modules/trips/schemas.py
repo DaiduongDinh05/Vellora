@@ -219,3 +219,7 @@ class MonthlyTripStatsResponseDTO(BaseModel):
     total_drives: int
     total_miles: float
     total_reimbursement: float
+
+class TripCountsResponseDTO(BaseModel):
+    total_trips: int
+    total_scheduled: int

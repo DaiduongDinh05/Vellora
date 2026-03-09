@@ -6,6 +6,7 @@ from app.modules.trips.schemas import (
     EditTripDTO,
     EndTripDTO,
     TripResponseDTO,
+    TripCountsResponseDTO,
     ManualCreateTripDTO,
     MonthlyTripStatsResponseDTO,
     ScheduleTripDTO,
@@ -96,6 +97,13 @@ async def get_active_trip(svc: TripsService = Depends(get_trips_service), curren
         from fastapi import HTTPException, status
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No active trip found")
     return TripResponseDTO.model_validate(trip)
+
+@router.get("/counts", response_model=TripCountsResponseDTO)
+@error_handler
+async def get_trip_counts(svc: TripsService = Depends(get_trips_service), current_user: User = Depends(get_current_user)):
+    total_trips = await svc.get_total_trips_count(current_user.id)
+    total_scheduled = await svc.get_scheduled_trips_count(current_user.id)
+    return TripCountsResponseDTO(total_trips=total_trips, total_scheduled=total_scheduled)
 
 @router.get("/{trip_id}", response_model=TripResponseDTO)
 @error_handler

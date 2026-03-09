@@ -453,6 +453,10 @@ class TripsService:
         
         return stats
     
+    async def get_total_trips_count(self, user_id: UUID) -> int:
+        return await self.repo.get_total_trips_count(user_id)
 
+    async def get_scheduled_trips_count(self, user_id: UUID) -> int:
+        return await self.repo.get_scheduled_trips_count(user_id)
 
     

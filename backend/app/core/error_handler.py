@@ -22,6 +22,15 @@ from app.modules.reports.exceptions import (
     ReportExpiredError, ReportMaxRetriesError, ReportInvalidStateError,
     InvalidMonthAnalyticsError, InvalidDataAnalyticsError
 )
+from app.modules.users.exceptions import DuplicateUsernameError, InvalidPasswordError
+from app.modules.notifications.exceptions import (
+    InvalidNotificationDataError,
+    NotificationNotFoundError,
+    DuplicateDeviceTokenError,
+    DeviceTokenError,
+    NotificationDeliveryError,
+    NotificationPersistenceError,
+)
 from fastapi import HTTPException
 
 
@@ -154,6 +163,12 @@ def error_handler(func):
             raise HTTPException(status_code=502, detail=str(e))
         except NotificationPersistenceError as e:
             raise HTTPException(status_code=500, detail=str(e))
+        
+        #users
+        except DuplicateUsernameError as e:
+            raise HTTPException(status_code=409, detail=str(e))
+        except InvalidPasswordError as e:
+            raise HTTPException(status_code=400, detail=str(e))
         
         #all
         except Exception as e:
