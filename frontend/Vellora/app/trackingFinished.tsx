@@ -7,13 +7,12 @@ import ScreenLayout from './components/ScreenLayout';
 import TripDetailsForm from './components/TripDetailsForm';
 import EditableNumericDisplay from './components/EditableNumericDisplay';
 import Button from './components/Button';
-import { vehicleItems  } from '../app/constants/dropdownOptions';
 import GeometryMap from './components/GeometryMap';
 import { useTripData } from './contexts/TripDataContext';
 import { useRateOptions } from './hooks/useRateOptions';
 import { endTrip, TripStatus, Expense, createExpensePayload, createTripExpense } from './services/Trips';
 import { useCommonPlaces } from './hooks/useCommonPlaces';
-
+import { useVehicles } from './hooks/useVehicles';
 const MAPBOX_KEY = process.env.EXPO_PUBLIC_API_KEY_MAPBOX_PUBLIC_ACCESS_TOKEN;
 
 const TrackingFinished = () => {
@@ -25,6 +24,9 @@ const TrackingFinished = () => {
 
     const { places: commonPlaces } = useCommonPlaces();
 
+    // fetch vehicles for dropdown
+    const { vehicleItems } = useVehicles();
+    
     // state variables
     const [notes, setNotes] = useState(tripData.notes);
     const [vehicle, setVehicle] = useState<string | null>(tripData.vehicle);

@@ -1,7 +1,7 @@
-import { View } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import React from 'react';
 import { FontAwesome } from '@expo/vector-icons';
-
+import CurrencyConverterModal from './CurrencyConverterModal';
 // import custom components
 import NoteInput from './NoteInput';
 import Dropdown from './Dropdown';
@@ -28,12 +28,12 @@ type TripDtailsFormProps = {
     setRate: (value: string | null) => void;
 
     // parking cost input
-    parking: string;
-    setParking: (value: string) => void;
+    parking?: string;
+    setParking?: (value: string) => void;
 
     // gas cost input
-    gas: string;
-    setGas: (value: string) => void;
+    gas?: string;
+    setGas?: (value: string) => void;
 
     // optional start address
     startAddress?: string;
@@ -67,6 +67,18 @@ type TripDtailsFormProps = {
 // is used to create forms when starting, updating, or ending trip details
 const TripDetailsForm: React.FC<TripDtailsFormProps> = (props) => {
 
+    const [showConverter, setShowConverter] = React.useState(false);
+
+    const handleApplyConversion = (field: 'parking' | 'gas' | 'tolls', value: string) => {
+        if (field === 'parking' && props.setParking) {
+            props.setParking(value);
+        } else if (field === 'gas' && props.setGas) {
+            props.setGas(value);
+        } else if (field === 'tolls' && props.setTolls) {
+            props.setTolls(value);
+        }
+    };
+    
     // common icon properties
     const iconProps = { size: 18, color: '#6B7280' };
 
@@ -111,41 +123,63 @@ const TripDetailsForm: React.FC<TripDtailsFormProps> = (props) => {
                 className=''
             />
 
-            {/* render currency type inputs */}
-            <View className='flex-row gap-4'>
-                <CurrencyInput 
-                    label='Parking'
-                    value={props.parking}
-                    onChangeText={props.setParking}
-                    className="flex-1"
-                />
-                
-                {/* conditionally render tolls if the tolls prop is provided. If not, render gas instead     */}
-                {props.tolls !== undefined && props.setTolls ? (
-                    <CurrencyInput 
-                        label='Tolls'
-                        value={props.tolls}
-                        onChangeText={props.setTolls}
-                        className="flex-1"
-                    />
-                ) : (
-                    <CurrencyInput 
-                        label='Gas'
-                        value={props.gas}
-                        onChangeText={props.setGas}
-                        className="flex-1"
-                    />
-                )}
-            </View>
+            {/* render currency type inputs if props are passed down*/}
+            {props.parking !== undefined && props.setParking && props.gas !== undefined && props.setGas && (
+                <>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                        <Text style={{ fontSize: 16, fontWeight: '600', color: '#333' }}>Expenses (USD)</Text>
 
-            {/* if tolls were rendered earlier, also render gas */}
-            {props.tolls !== undefined && (
-                <CurrencyInput 
-                    label='Gas'
-                    value={props.gas}
-                    onChangeText={props.setGas}
-                    className="flex-1"
-                />
+                        {!showConverter && (
+                            <TouchableOpacity onPress={() => setShowConverter(true)} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                <FontAwesome name='exchange' size={14} color="#3F46D6" style={{ marginRight: 6}} />
+                                <Text style={{ fontWeight: '600', color: '#3F46D6' }}>Convert Currency</Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
+
+                    {showConverter && (
+                        <CurrencyConverterModal
+                            onClose={() => setShowConverter(false)}
+                            onApply={handleApplyConversion}
+                        />
+                    )}
+
+                    <View className='flex-row gap-4'>
+                        <CurrencyInput 
+                            label='Parking'
+                            value={props.parking}
+                            onChangeText={props.setParking}
+                            className="flex-1"
+                        />
+                        
+                        {/* conditionally render tolls if the tolls prop is provided. If not, render gas instead     */}
+                        {props.tolls !== undefined && props.setTolls ? (
+                            <CurrencyInput 
+                                label='Tolls'
+                                value={props.tolls}
+                                onChangeText={props.setTolls}
+                                className="flex-1"
+                            />
+                        ) : (
+                            <CurrencyInput 
+                                label='Gas'
+                                value={props.gas}
+                                onChangeText={props.setGas}
+                                className="flex-1"
+                            />
+                        )}
+                    </View>
+                    {/* if tolls were rendered earlier, also render gas */}
+                    {props.tolls !== undefined && (
+                        <CurrencyInput 
+                            label='Gas'
+                            value={props.gas}
+                            onChangeText={props.setGas}
+                            className="flex-1"
+                        />
+                    )}
+                </>
+
             )}
 
             {/* render vehicle dropdown */}

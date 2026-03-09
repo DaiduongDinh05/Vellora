@@ -8,6 +8,7 @@ from app.modules.trips.schemas import (
     EndTripDTO,
     ManualCreateTripDTO,
     ScheduleTripDTO,
+    TripResponseDTO,
 )
 from app.modules.trips.utils.crypto import encrypt_address, encrypt_geometry
 from app.modules.trips.models import Trip, TripStatus
@@ -360,6 +361,9 @@ class TripsService:
         
         try:
 
+            if data.status is not None:
+                trip.status = data.status
+                
             if data.purpose is not None:
                 trip.purpose = data.purpose
 
@@ -452,6 +456,24 @@ class TripsService:
         stats['year'] = year
         
         return stats
+
+    async def get_monthly_trip_details(self, user_id: UUID, month: int, year: int):
+       
+        trips = await self.repo.get_monthly_trips(user_id, month, year)
+        stats = await self.repo.get_monthly_stats(user_id, month, year)
+        
+        total_reimbursement = stats['total_mileage_reimbursement'] + stats['total_expense_reimbursement']
+        
+        return {
+            'trips': trips,
+            'month': month,
+            'year': year,
+            'total_drives': stats['total_drives'],
+            'total_miles': stats['total_miles'],
+            'total_mileage_reimbursement': stats['total_mileage_reimbursement'],
+            'total_expense_reimbursement': stats['total_expense_reimbursement'],
+            'total_reimbursement': total_reimbursement
+        }
     
     async def get_total_trips_count(self, user_id: UUID) -> int:
         return await self.repo.get_total_trips_count(user_id)

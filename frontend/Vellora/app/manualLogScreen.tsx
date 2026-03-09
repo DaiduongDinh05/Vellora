@@ -6,7 +6,6 @@ import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/dat
 import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 
 // component and data imports
-import { vehicleItems } from '../app/constants/dropdownOptions';
 import ScreenLayout from './components/ScreenLayout';
 import TripDetailsForm from './components/TripDetailsForm';
 import Button from './components/Button';
@@ -14,9 +13,10 @@ import EditableNumericDisplay from './components/EditableNumericDisplay';
 import { useRateOptions } from './hooks/useRateOptions';
 import { useTripData } from './contexts/TripDataContext';
 import { useCommonPlaces } from './hooks/useCommonPlaces';
+import { useVehicles } from './hooks/useVehicles';
 
 //  import service
-import { createExpensePayload, createManualTrip, createManualTripPayload } from './services/Trips';
+import { createExpensePayload, createManualTrip, createManualTripPayload, editTrip, TripStatus } from './services/Trips';
 import { createTripExpense, Expense } from './services/Trips';
 
 const ManualLogScreen = () => {
@@ -25,29 +25,32 @@ const ManualLogScreen = () => {
     const { tripData, updateTripData, resetTripData } = useTripData();
 
     // use rate options hook for dynamic rates
-    const { rateItems, categoryItems, loading, error, updateSelectedRate } = useRateOptions();
+    const { rateItems, categoryItems, loading, error, updateSelectedRate, rates } = useRateOptions();
+
+    // fetch vehicles
+    const { vehicleItems: dynamicVehicleItems, vehicles } = useVehicles();
 
     // use common places hook to get all the common places
     const { places: commonPlaces } = useCommonPlaces();
 
     // state variables
-    const [startDate, setStartDate] = useState(new Date());
-    const [endDate, setEndDate] = useState(new Date());
+    const [startDate, setStartDate] = useState(tripData.startDate ? new Date(tripData.startDate) : new Date());
+    const [endDate, setEndDate] = useState(tripData.endDate ? new Date(tripData.endDate) : new Date());
     // const [showStartPicker, setShowStartPicker] = useState(false);
     // const [showEndPicker, setShowEndPicker] = useState(false);
 
     const [showStartIOS, setShowStartIOS] = useState(false);
     const [showEndIOS, setShowEndIOS] = useState(false);
 
-    const [startAddress, setStartAddress] = useState('');
-    const [endAddress, setEndAddress] = useState('');
-    const [notes, setNotes] = useState('');
-    const [vehicle, setVehicle] = useState<string | null>(null);
-    const [type, setType] = useState<string | null>(null);
-    const [rate, setRate] = useState<string | null>(null);
-    const [parking, setParking] = useState<string>('');
-    const [gas, setGas] = useState<string>('');
-    const [tolls, setTolls] = useState('0.00');
+    const [startAddress, setStartAddress] = useState(tripData.startAddress || '');
+    const [endAddress, setEndAddress] = useState(tripData.endAddress || '');
+    const [notes, setNotes] = useState(tripData.notes ||'');
+    const [vehicle, setVehicle] = useState<string | null>(tripData.vehicle || null);
+    const [type, setType] = useState<string | null>(tripData.type ||null);
+    const [rate, setRate] = useState<string | null>(tripData.rate || null);
+    const [parking, setParking] = useState<string>(tripData.parking || '');
+    const [gas, setGas] = useState<string>(tripData.gas || '');
+    const [tolls, setTolls] = useState(tripData.tolls || '0.00');
 
     // sticky footer state variables
     const [tripValue, setTripValue] = useState('0.00');
@@ -55,11 +58,30 @@ const ManualLogScreen = () => {
     
     const router = useRouter();
 
+    useEffect(() => {
+        if (rate && rates.length > 0) {
+          updateSelectedRate(rate);
+        }
+      }, [rate, rates]);
+    
+    
+    // handle vehicle selection
+    useEffect(() => {
+        if (tripData.vehicle && vehicles.length > 0) {
+          setVehicle(tripData.vehicle);
+        }
+    }, [tripData.vehicle, vehicles]);
+
+
     // handle rate selection to update categories
     const handleRateChange = (selectedRateId: string | null) => {
-        setRate(selectedRateId);
-        setType(null); // reset category when rate changes
-        updateSelectedRate(selectedRateId);
+
+        // reset if it actually changes
+        if (rate !== selectedRateId) {
+            setRate(selectedRateId);
+            setType(null); // reset category when rate changes
+            updateSelectedRate(selectedRateId);
+        }
     };
 
     // calculate trip value when rate or distance changes
@@ -188,8 +210,22 @@ const ManualLogScreen = () => {
             const newTrip = await createManualTrip(manualTripPayload);
             console.log("Manual trip created successfully:", newTrip);
 
+            // update trip status
+            if (tripData.linkedScheduledTripId) {
+                try {
+                    console.log("Attempting to update scheduled trip status for ID: ", tripData.linkedScheduledTripId);
+                    await editTrip(tripData.linkedScheduledTripId, { status: TripStatus.completed });
+                    console.log("Successfully updated linked scheduled trip status to completed");
+                } catch (e) {
+                    console.error("Failed to update linked scheduled trip status: ", e);
+                }
+            } else {
+                console.log("No linked scheduled trip to update");
+            }
             // navigate away
-            router.push("/(tabs)/history");
+            setTimeout(() => {
+                router.push("/(tabs)/history");
+            }, 300);
 
         } catch (error: any) {
             console.error("Error creating manual trip: ", error);
@@ -303,7 +339,7 @@ const ManualLogScreen = () => {
                     endAddress={endAddress} setEndAddress={setEndAddress}
 
                     // mock data arrays
-                    vehicleItems={vehicleItems}
+                    vehicleItems={dynamicVehicleItems}
                     typeItems={categoryItems}
                     rateItems={rateItems}
 
