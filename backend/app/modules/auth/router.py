@@ -3,8 +3,10 @@ from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm
 
 from app.core.dependencies import get_auth_service, get_current_user, get_oauth_service
+from app.core.error_handler import error_handler
 from app.modules.users.models import User
-from app.modules.users.schemas import UserRead
+from app.modules.users.schemas import UserRead, UserUpdate
+
 
 from .schemas import (
     AuthResponse,
@@ -63,6 +65,15 @@ async def logout(payload: LogoutRequest, auth_service: AuthService = Depends(get
 async def get_me(current_user: User = Depends(get_current_user)) -> UserRead:
     return UserRead.model_validate(current_user, from_attributes=True)
 
+@router.patch("/me", response_model=UserRead)
+@error_handler
+async def update_me(
+    body: UserUpdate, 
+    current_user: User = Depends(get_current_user),
+    auth_service: AuthService = Depends(get_auth_service)
+) -> UserRead:
+    updated_user = await auth_service.user_service.update_user(current_user, body)
+    return UserRead.model_validate(updated_user, from_attributes=True)
 
 @router.get("/providers/{provider}/authorize", response_model=OAuthAuthorizeResponse)
 async def authorize_provider(
