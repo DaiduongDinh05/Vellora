@@ -12,7 +12,7 @@ type Message = {
 	timestamp: Date;
 };
 
-export default function chatBot() {
+export default function ChatBot() {
 	const [messages, setMessages] = useState<Message[]>([]);
 	const [inputText, setInputText] = useState('');
 	const [isTyping, setIsTyping] = useState(false);
@@ -115,7 +115,7 @@ export default function chatBot() {
 			};
 
 			animate();
-		}, []);
+		}, [dot1, dot2, dot3]);
 
 		return (
 			<View style={styles.messageContainer}>
