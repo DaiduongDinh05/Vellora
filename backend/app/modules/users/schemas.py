@@ -20,8 +20,15 @@ class UserCreate(UserBase):
 
 class UserRead(UserBase):
     id: UUID
+    username: Optional[str] = None
     is_active: bool
     created_at: datetime
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+class UserUpdate(BaseModel):
+    full_name: Optional[str] = None
+    username: Optional[str] = Field(default=None, min_length=3, max_length=30)
+    current_password: Optional[str] = Field(default=None, min_length=8, max_length=128)
+    new_password: Optional[str] = Field(default=None, min_length=8, max_length=128)

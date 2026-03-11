@@ -94,6 +94,25 @@ class TripRepo:
             'total_expense_reimbursement': total_expense_reimbursement
         }
 
+    async def get_total_trips_count(self, user_id: UUID) -> int:
+        result = await self.db.execute(
+            select(Trip)
+            .where(
+                Trip.user_id == user_id,
+                Trip.status == "completed",
+            )
+        )
+        return len(result.scalars().all())
+
+    async def get_scheduled_trips_count(self, user_id: UUID) -> int:
+        result = await self.db.execute(
+            select(Trip)
+            .where(
+                Trip.user_id == user_id,
+                Trip.status == "scheduled",
+            )
+        )
+        return len(result.scalars().all())
     async def get_monthly_trips(self, user_id: UUID, month: int, year: int):
         result = await self.db.execute(
             select(Trip)
