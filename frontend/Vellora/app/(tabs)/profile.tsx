@@ -1,7 +1,10 @@
-import { View, Text, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router';
+import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Image } from 'expo-image';
 import { FontAwesome } from '@expo/vector-icons';
+import { useState, useEffect, useCallback } from 'react';
+import { getCurrentUser, getTripCounts, User, TripCounts } from '../services/user';
+import { tokenStorage } from '../services/tokenStorage';
 
 // Commented out original rates functionality - keeping for reference
 // import { useState, useEffect } from "react";
@@ -203,6 +206,80 @@ import { FontAwesome } from '@expo/vector-icons';
 
 export default function Profile() {
   const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+  const [tripCounts, setTripCounts] = useState<TripCounts | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchProfileData = async () => {
+    const token = tokenStorage.getToken();
+    if (!token) {
+      router.replace('/login' as any);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    
+    try {
+      //get user data and trip counts
+      const [userData, tripData] = await Promise.all([
+        getCurrentUser(),
+        getTripCounts()
+      ]);
+      
+      setUser(userData);
+      setTripCounts(tripData);
+    } catch (err) {
+      if (err instanceof Error && (err.message.includes("Authorization") || (err as any).status === 401)) {
+        //if token expired or invalid redirect to login
+        tokenStorage.clearToken();
+        router.replace('/login' as any);
+        return;
+      }
+      setError(err instanceof Error ? err.message : 'Failed to load profile data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProfileData();
+  }, []);
+
+  //refresh data when we return to profile page to update any user changes
+  useFocusEffect(
+    useCallback(() => {
+      fetchProfileData();
+    }, [])
+  );
+
+  const handleEditProfile = () => {
+    router.push('/edit-profile' as any);
+  };
+
+  if (loading) {
+    return (
+      <View className="flex-1 bg-gray-60 justify-center items-center">
+        <ActivityIndicator size="large" color="#404CCF" />
+        <Text className="text-gray-600 mt-2">Loading profile...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View className="flex-1 bg-gray-60 justify-center items-center px-6">
+        <Text className="text-red-500 text-center mb-4">{error}</Text>
+        <TouchableOpacity 
+          onPress={fetchProfileData}
+          className="bg-blue-500 px-6 py-3 rounded-lg"
+        >
+          <Text className="text-white font-medium">Try Again</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <View className="flex-1 bg-gray-60">
@@ -230,11 +307,15 @@ export default function Profile() {
                   marginBottom: 8
                 }}
               >
-                John Doe
+                {user?.full_name || user?.email || 'User'}
               </Text>
               <View className="flex-row mb-4">
-                <Text className="text-black mr-6 font-bold">34 trips</Text>
-                <Text className="text-black font-bold">3 scheduled</Text>
+                <Text className="text-black mr-6 font-bold">
+                  {tripCounts?.total_trips || 0} trips
+                </Text>
+                <Text className="text-black font-bold">
+                  {tripCounts?.total_scheduled || 0} scheduled
+                </Text>
               </View>
               
               <TouchableOpacity 
@@ -244,7 +325,9 @@ export default function Profile() {
                   paddingHorizontal: 45,
                   paddingVertical: 8,
                   alignSelf: 'flex-start'
-                }}>
+                }}
+                onPress={handleEditProfile}
+              >
                 <Text className="text-white font-medium">Edit profile</Text>
               </TouchableOpacity>
             </View>

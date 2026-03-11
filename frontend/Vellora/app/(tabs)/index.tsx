@@ -1,10 +1,12 @@
 import { Text, View, ScrollView, TouchableOpacity, Modal, TouchableWithoutFeedback } from "react-native";
-import { Link, useRouter } from "expo-router";
+import { Link, useRouter, useFocusEffect } from "expo-router";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { getProviderAuthorizeUrl, login } from "../services/auth";
+import { getCurrentUser, User } from "../services/user";
+import { tokenStorage } from "../services/tokenStorage";
 import { FontAwesome } from "@expo/vector-icons";
 import Button from "../components/Button";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
@@ -20,12 +22,36 @@ import React from 'react';
 export default function Index() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
   
   // state for modal pop up with trip log seelction
   const [shotLogTripModal, setShowLogTripModal] = useState(false);
 
   const { places: commonPlaces, loading } = useCommonPlaces();
 
+  //get user data for welcome message
+  const fetchUser = async () => {
+    const token = tokenStorage.getToken();
+    if (token) {
+      try {
+        const userData = await getCurrentUser();
+        setUser(userData);
+      } catch (err) {
+        setUser(null);
+      }
+    }
+  };
+
+  useEffect(() => {
+    fetchUser();
+  }, []);
+
+  //refresh user data so change in user profile reflects immediately
+  useFocusEffect(
+    useCallback(() => {
+      fetchUser();
+    }, [])
+  );
 
   // modal button handlers
   const handleManualLogPress = () => {
@@ -93,8 +119,9 @@ useEffect(() => {
           <View className="bg-primaryPurple w-full pb-10">
 
             <View style={{ paddingTop: insets.top + 20, paddingHorizontal: 25 }}>
-              <Text className="text-5xl text-textWhite font-bold">Welcome back,</Text>
-
+              <Text className="text-5xl text-textWhite font-bold">
+                Welcome back{user?.full_name ? `, ${user.full_name.split(' ')[0]}` : ','}!
+              </Text>
             </View>
 
           </View>
