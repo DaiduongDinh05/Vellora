@@ -102,6 +102,11 @@ export default function GenerateReportPage() {
 						onPress={() => router.push("/report-details" as any)}>
 						<Text style={reportStyles.historyText}>View Report History</Text>
 					</Pressable>
+					<Pressable
+						style={[reportStyles.historyButton, { marginTop: 8 }]}
+						onPress={() => router.push("/analytics" as any)}>
+						<Text style={reportStyles.historyText}>Analytics</Text>
+					</Pressable>
 					<Button
 						title={loading ? "Generating..." : "Generate Report"}
 						onPress={handleGenerate}

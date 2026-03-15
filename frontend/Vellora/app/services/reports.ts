@@ -37,6 +37,12 @@ export type RegenerateResponse = {
 	download_url?: string;
 };
 
+export type AnalyticsResponse = {
+	category_counts: Record<string, number>;
+	total_miles: number;
+	grand_total: number;
+};
+
 class ApiError extends Error {
 	status?: number;
 	constructor(message: string, status?: number) {
@@ -90,7 +96,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
 export async function generateReport(
 	startDate: string,
 	endDate: string,
-	token?: string
+	token?: string,
 ): Promise<Report> {
 	const authToken = token || tokenStorage.getToken();
 	if (!authToken) {
@@ -114,9 +120,32 @@ export async function generateReport(
 	return handleResponse<Report>(response);
 }
 
+export async function getReportAnalytics(
+	month: string,
+	token?: string,
+): Promise<AnalyticsResponse> {
+	const authToken = token || tokenStorage.getToken();
+	if (!authToken) {
+		throw new ApiError("Authentication required", 401);
+	}
+
+	const response = await fetch(
+		`${API_BASE_URL}/reports/analytics/${encodeURIComponent(month)}`,
+		{
+			method: "GET",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${authToken}`,
+			},
+		},
+	);
+
+	return handleResponse<AnalyticsResponse>(response);
+}
+
 export async function getReportStatus(
 	reportId: string,
-	token?: string
+	token?: string,
 ): Promise<ReportStatusResponse> {
 	const authToken = token || tokenStorage.getToken();
 	if (!authToken) {
@@ -136,7 +165,7 @@ export async function getReportStatus(
 
 export async function downloadReport(
 	reportId: string,
-	token?: string
+	token?: string,
 ): Promise<DownloadResponse> {
 	const authToken = token || tokenStorage.getToken();
 	if (!authToken) {
@@ -155,7 +184,7 @@ export async function downloadReport(
 		const errorData = await response.json().catch(() => ({}));
 		throw new ApiError(
 			errorData.detail || "Report expired. Please regenerate it.",
-			410
+			410,
 		);
 	}
 
@@ -194,7 +223,7 @@ export async function getReportsHistory(token?: string): Promise<Report[]> {
 
 export async function retryReport(
 	reportId: string,
-	token?: string
+	token?: string,
 ): Promise<Report> {
 	const authToken = token || tokenStorage.getToken();
 	if (!authToken) {
@@ -214,7 +243,7 @@ export async function retryReport(
 
 export async function regenerateReport(
 	reportId: string,
-	token?: string
+	token?: string,
 ): Promise<RegenerateResponse> {
 	const authToken = token || tokenStorage.getToken();
 	if (!authToken) {
@@ -229,7 +258,7 @@ export async function regenerateReport(
 				"Content-Type": "application/json",
 				Authorization: `Bearer ${authToken}`,
 			},
-		}
+		},
 	);
 
 	return handleResponse<RegenerateResponse>(response);
@@ -237,7 +266,7 @@ export async function regenerateReport(
 
 export async function downloadAndOpenReport(
 	downloadUrl: string,
-	reportId: string
+	reportId: string,
 ): Promise<void> {
 	try {
 		let fixedUrl = downloadUrl.replace("localstack:4566", "localhost:4566");
