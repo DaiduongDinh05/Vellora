@@ -172,6 +172,8 @@ jobs:
             -e OAUTH_STATE_TTL_SECONDS=$OAUTH_STATE_TTL_SECONDS \
             -e USE_LOCALSTACK=$USE_LOCALSTACK \
             -e AWS_REGION=$AWS_REGION \
+            -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+            -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
             -e REPORTS_BUCKET=$REPORTS_BUCKET \
             -e REPORTS_QUEUE=$REPORTS_QUEUE \
             -e EMAIL_SENDER=$EMAIL_SENDER \
@@ -179,8 +181,10 @@ jobs:
             -e EMAIL_PROVIDER=$EMAIL_PROVIDER \
             -e RESEND_API_KEY=$RESEND_API_KEY \
             -e BACKEND_URL=$BACKEND_URL \
+            -e AI_AGENT_ENABLED=$AI_AGENT_ENABLED \
+            -e OPENAI_API_KEY=$OPENAI_API_KEY \
             --restart=always \
-            -p 80:8000 \
+            -p 8000:8000 \
             -e ENV=Testing \
             260125007066.dkr.ecr.us-east-2.amazonaws.com/vellora/backend:latest
             docker exec vellora-backend alembic upgrade head
@@ -191,6 +195,8 @@ jobs:
             -e JWT_SECRET_KEY=$JWT_SECRET_KEY \
             -e USE_LOCALSTACK=false \
             -e AWS_REGION=$AWS_REGION \
+            -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+            -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
             -e REPORTS_BUCKET=$REPORTS_BUCKET \
             -e REPORTS_QUEUE=$REPORTS_QUEUE \
             -e EMAIL_SENDER=$EMAIL_SENDER \
@@ -198,6 +204,8 @@ jobs:
             -e EMAIL_PROVIDER=$EMAIL_PROVIDER \
             -e RESEND_API_KEY=$RESEND_API_KEY \
             -e BACKEND_URL=$BACKEND_URL \
+            -e AI_AGENT_ENABLED=$AI_AGENT_ENABLED \
+            -e OPENAI_API_KEY=$OPENAI_API_KEY \
             --restart=always \
             260125007066.dkr.ecr.us-east-2.amazonaws.com/vellora/backend:latest \
             python -m app.worker

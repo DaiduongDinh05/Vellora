@@ -14,6 +14,7 @@ from app.infra.adapters.sqs_report_queue_adapter import SQSReportQueueAdapter
 from app.modules.auth.models import RefreshToken, OAuthAccount
 from app.modules.common_places.models import CommonPlace
 from app.modules.expenses.models import Expense
+from app.modules.notifications.models import Notification
 from app.modules.rate_categories.models import RateCategory
 from app.modules.rate_customizations.models import RateCustomization
 from app.modules.reports.models import Report, ReportStatus

@@ -6,8 +6,10 @@ from app.modules.trips.schemas import (
     EditTripDTO,
     EndTripDTO,
     TripResponseDTO,
+    TripCountsResponseDTO,
     ManualCreateTripDTO,
     MonthlyTripStatsResponseDTO,
+    MonthlyTripDetailsResponseDTO,
     ScheduleTripDTO,
 )
 from app.modules.trips.service import TripsService
@@ -97,6 +99,13 @@ async def get_active_trip(svc: TripsService = Depends(get_trips_service), curren
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No active trip found")
     return TripResponseDTO.model_validate(trip)
 
+@router.get("/counts", response_model=TripCountsResponseDTO)
+@error_handler
+async def get_trip_counts(svc: TripsService = Depends(get_trips_service), current_user: User = Depends(get_current_user)):
+    total_trips = await svc.get_total_trips_count(current_user.id)
+    total_scheduled = await svc.get_scheduled_trips_count(current_user.id)
+    return TripCountsResponseDTO(total_trips=total_trips, total_scheduled=total_scheduled)
+
 @router.get("/{trip_id}", response_model=TripResponseDTO)
 @error_handler
 async def get_trip(trip_id: UUID, svc: TripsService = Depends(get_trips_service), current_user: User = Depends(get_current_user)):
@@ -133,3 +142,12 @@ async def get_user_trips(svc: TripsService = Depends(get_trips_service), current
 async def get_monthly_trip_stats(month: int, year: int, svc: TripsService = Depends(get_trips_service), current_user: User = Depends(get_current_user)):
     stats = await svc.get_monthly_stats(current_user.id, month, year)
     return MonthlyTripStatsResponseDTO(**stats)
+
+@router.get("/monthly-details/{month}/{year}", response_model=MonthlyTripDetailsResponseDTO)
+@error_handler
+async def get_monthly_trip_details(month: int, year: int, svc: TripsService = Depends(get_trips_service), current_user: User = Depends(get_current_user)):
+    details = await svc.get_monthly_trip_details(current_user.id, month, year)
+    
+    details['trips'] = [TripResponseDTO.model_validate(trip) for trip in details['trips']]
+    
+    return MonthlyTripDetailsResponseDTO(**details)
