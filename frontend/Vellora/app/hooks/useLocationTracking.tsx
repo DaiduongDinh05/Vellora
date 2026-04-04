@@ -3,6 +3,9 @@ import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 import Mapbox from '@rnmapbox/maps';
 import { fetch } from 'expo/fetch';
+import * as Notifications from 'expo-notifications';
+import * as Device from 'expo-device';
+import { notifyStartedMoving, notifyStoppedMoving, Notification } from "../services/Notifications";
 
 // Constants
 const LOCATION_TASK_NAME = 'background_location_tracking';
@@ -92,6 +95,16 @@ function isStationary(locations: Location.LocationObject[]) {
     // Consider stationary if average speed is below walking pace
     return avgSpeed < SPEED_THRESHOLD;
 }
+
+async function notifyEvent(notification: Notification) {
+        await Notifications.scheduleNotificationAsync({
+            content: {
+                title: notification.title,
+                body: notification.message,
+            },
+            trigger: null,
+        });
+    }
 
 // Move permission and tracking start/stop functions to top-level to avoid nested functions
 async function getPermissions(setErrorMessage: (msg: string | null) => void): Promise<boolean> {
@@ -248,9 +261,12 @@ export const useLocationTracking = () => {
     useEffect(() => {
         if (!isTracking) return;
 
-        const checkAutoStop = () => {
+        const checkAutoStop = async () => {
             if (shouldAutoStop && isTracking) {
                 console.log('Auto-stop triggered: user is stationary');
+                let notifcation = await notifyStoppedMoving();
+
+                notifyEvent(notifcation);
                 stopTracking();
             }
         };
