@@ -180,7 +180,7 @@ jobs:
             -e RESEND_API_KEY=$RESEND_API_KEY \
             -e BACKEND_URL=$BACKEND_URL \
             --restart=always \
-            -p 80:8000 \
+            -p 8000:8000 \
             -e ENV=Testing \
             260125007066.dkr.ecr.us-east-2.amazonaws.com/vellora/backend:latest
             docker exec vellora-backend alembic upgrade head
