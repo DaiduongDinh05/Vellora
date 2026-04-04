@@ -5,7 +5,6 @@ import TripDetailsForm from "../components/TripDetailsForm";
 import { useRateOptions } from "../hooks/useRateOptions";
 import GeometryMap from "../components/GeometryMap";
 import ScreenLayout from "../components/ScreenLayout";
-import { vehicleItems } from "../constants/dropdownOptions";
 import { useState, useEffect } from "react";
 import EditableNumericDisplay from "../components/EditableNumericDisplay";
 import Button from "../components/Button";
@@ -13,7 +12,9 @@ import * as ImagePicker from 'expo-image-picker';
 import { useCommonPlaces } from "../hooks/useCommonPlaces";
 import * as FileSystem from 'expo-file-system/legacy';
 import * as MediaLibrary from "expo-media-library";
+import React from 'react';
 
+import { useVehicles } from "../hooks/useVehicles";
 const MAPBOX_KEY = process.env.EXPO_PUBLIC_API_KEY_MAPBOX_PUBLIC_ACCESS_TOKEN;
 
 
@@ -45,8 +46,21 @@ const EditTripPage = () => {
     const [receipt, setReceipt] = useState<expenseReceipt[] | null>(null);
     const [isReceiptLoading, setIsReceiptLoading] = useState<boolean>(false);
 
-    const { rateItems, categoryItems, loading, updateSelectedRate } = useRateOptions();
+    const { rateItems, categoryItems, loading, updateSelectedRate, rates } = useRateOptions();
     const { places: commonPlaces } = useCommonPlaces();
+    const { vehicleItems: dynamicVehicleItems, vehicles } = useVehicles();
+
+    // autofill vehicles
+    useEffect(() => {
+        if (vehicle && vehicles.length > 0) setVehicle(vehicle);
+    }, [vehicle, vehicles]);
+
+    // autofill rates and categories
+    useEffect(() => {
+        if (rate && rates.length > 0) {
+            updateSelectedRate(rate);
+        }
+    }, [rate, rates]);
 
     // Get the trip that will be edited
     const handleGetTrip = async () => {
@@ -214,7 +228,7 @@ const EditTripPage = () => {
         try {
             const updatedTripData = {
                 purpose: notes,
-                vehicle,
+                vehicle_id: vehicle || undefined,
                 mileage_reimbursement_total: tripValue,
                 ...(rate ? { rate_customization_id: rate } : {}),
                 ...(type ? { rate_category_id: type } : {}),
@@ -374,7 +388,16 @@ const EditTripPage = () => {
     useEffect(() => {
         if(!trip) return;
         setNotes(trip.purpose ?? '');
-        setVehicle(trip.vehicle ?? null);
+
+        // extract vehicle id from trip.vehicle object if it exists
+        let extractedVehicleId = trip.vehicle_id;
+        if (!extractedVehicleId && trip.vehicle) {
+            extractedVehicleId = typeof trip.vehicle === 'object' ? (trip.vehicle as any).id : trip.vehicle;
+        }
+        setVehicle(extractedVehicleId || null);
+
+
+
         setTripValue(trip.mileage_reimbursement_total ?? 0.00);
         setRate(trip.rate_customization_id ?? null);
         setType(trip.rate_category_id ?? null);    
@@ -458,7 +481,7 @@ const EditTripPage = () => {
             startAddress={startAddress} setStartAddress={setStartAddress}
             endAddress={endAddress} setEndAddress={setEndAddress}
 
-            vehicleItems={vehicleItems}
+            vehicleItems={dynamicVehicleItems}
             typeItems={categoryItems}
             rateItems={rateItems}
 

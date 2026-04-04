@@ -52,6 +52,7 @@ class EditTripDTO(BaseModel):
     calendar_provider: str | None = None
     calendar_event_id: str | None = None
     calendar_event_url: str | None = None
+    status: TripStatus | None = None
     
     @field_validator('miles')
     @classmethod
@@ -223,3 +224,12 @@ class MonthlyTripStatsResponseDTO(BaseModel):
 class TripCountsResponseDTO(BaseModel):
     total_trips: int
     total_scheduled: int
+class MonthlyTripDetailsResponseDTO(BaseModel):
+    trips: List[TripResponseDTO]
+    month: int
+    year: int
+    total_drives: int
+    total_miles: float
+    total_mileage_reimbursement: float
+    total_expense_reimbursement: float
+    total_reimbursement: float

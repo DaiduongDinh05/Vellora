@@ -9,17 +9,18 @@ export type Expense = {
 }
 
 export enum TripStatus {
-    active,
-    completed,
-    cancelled
+    active = "active",
+    scheduled = "scheduled",
+    completed = "completed",
+    cancelled = "cancelled"
 }
 
 export type Trip = {
     id: string;
     status: TripStatus;
     start_address: string;
-    end_address?: string;
-    purpose?: string;
+    end_address?: string | null;
+    purpose?: string | null;
     reimbursement_rate?: number | null;
     miles?: number | null;
     geometry?: object | null;
@@ -32,8 +33,22 @@ export type Trip = {
     rate_category_id: string;
     expenses?: Expense[] | null;
     vehicle?: string | null;
+    vehicle_id?: string | null;
+
+    scheduled_start_at?: string | null;
+    scheduled_end_at?: string | null;
 }
 
+export type scheduleTripPayload = {
+    start_address?: string;
+    end_address?: string;
+    scheduled_start_at: string; // ISO  datetime string
+    scheduled_end_at?: string; // ISO datetime string
+    purpose?: string | null;
+    vehicle_id?: string | null;
+    rate_customization_id: string;
+    rate_category_id: string;
+}
 
  // Types for payloads for Backend API calls
 export type createTripPayload = {
@@ -80,6 +95,17 @@ export type expenseReceipt = {
     created_at?: Date
 }
 
+export type filteredTripData = {
+    month: number,
+    total_drives: number,
+    total_expense_reimbursement: number,
+    total_mileage_reimbursement: number,
+    total_miles: number,
+    total_reimbursement: number,
+    trips: Trip[],
+    year: number
+}
+
 
 export async function getTrips(token?: string): Promise<Trip[]> {
     const authToken = await checkToken();
@@ -95,6 +121,34 @@ export async function getTrips(token?: string): Promise<Trip[]> {
     const Trips = await handleResponse<Trip[]>(response);
 
     return Trips;
+}
+
+export async function getTripByMonthYear(month: number, year: number): Promise <Trip[]> {
+    const authToken = await checkToken();
+
+    const response = await fetch(`${API_BASE_URL}/trips/monthly-stats/${month}/${year}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': "application/json",
+            Authorization: `Bearer ${authToken}`
+        }
+    });
+
+    return await handleResponse<Trip[]>(response);
+}
+
+export async function getTripsByMonthYear(month: number, year: number): Promise <filteredTripData> {
+    const authToken = await checkToken();
+
+    const response = await fetch(`${API_BASE_URL}/trips/monthly-details/${month}/${year}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': "application/json",
+            Authorization: `Bearer ${authToken}`
+        }
+    });
+
+    return await handleResponse<filteredTripData>(response);
 }
 
 export async function getTrip(id: string, token?: string): Promise<Trip> {
@@ -307,4 +361,19 @@ export async function getReceipts(tripId: string, token?: string): Promise<expen
     });
 
     return handleResponse<expenseReceipt[]>(response);
+}
+
+export async function scheduleTrip(payload: scheduleTripPayload, token?: string): Promise<Trip> {
+    const authToken = token || await checkToken();
+
+    const response = await fetch(`${API_BASE_URL}/trips/scheduled`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`
+        },
+        body: JSON.stringify(payload),
+    });
+
+    return handleResponse<Trip>(response);
 }
