@@ -26,3 +26,4 @@ router.include_router(ai_router)
 router.include_router(auth_router)
 router.include_router(reports_router)
 router.include_router(audit_trail_router)
+
