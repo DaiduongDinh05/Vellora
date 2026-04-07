@@ -67,7 +67,8 @@ const UserLocationMap = () => {
                 {/* displays the blue dot for user's current location */}
                 <Mapbox.UserLocation
                     visible={true}
-                    animated={true}         // animated move of the blue dot if the user is moving
+                    // Changed this due to incompability with Expo 55
+                    animated={false}
                     showsUserHeadingIndicator={true}        // show an arrow for the direction the device is facing
                 />
             </Mapbox.MapView>
