@@ -10,7 +10,7 @@ import Button from './components/Button';
 import GeometryMap from './components/GeometryMap';
 import { useTripData } from './contexts/TripDataContext';
 import { useRateOptions } from './hooks/useRateOptions';
-import { endTrip, TripStatus, Expense, createExpensePayload, createTripExpense } from './services/Trips';
+import { endTrip, editTrip, TripStatus, Expense, createExpensePayload, createTripExpense, Trip } from './services/Trips';
 import { useCommonPlaces } from './hooks/useCommonPlaces';
 import { useVehicles } from './hooks/useVehicles';
 const MAPBOX_KEY = process.env.EXPO_PUBLIC_API_KEY_MAPBOX_PUBLIC_ACCESS_TOKEN;
@@ -245,15 +245,15 @@ const TrackingFinished = () => {
         .map(e => ({ ...e, amount: Number(e.amount.toFixed(2))}));  // map the objects for payloads later
         
         const finalTripData = {
-            notes: notes,
-            vehicle: vehicle,
+            purpose: notes || undefined,
+            vehicle_id: vehicle || undefined,
 
             rate_customization_id: rate || undefined,
             rate_category_id: type || undefined,
 
-            parking: parking,
-            gas: gas,
-            tolls: tolls,
+            // parking: parking,
+            // gas: gas,
+            // tolls: tolls,
 
             miles: parseFloat(tripDistance),
             distance_meters: parseFloat(routeDistanceMeters),
@@ -265,9 +265,9 @@ const TrackingFinished = () => {
             end_address: endAddress,
 
             geometry: tripGeometry,                            
-            end_at: new Date().toISOString(),
+            ended_at: new Date(),
             status: TripStatus.completed
-        };
+        } as any;
 
         console.log('Final trip data to save: ', finalTripData);
 
@@ -284,6 +284,14 @@ const TrackingFinished = () => {
             if (!response) {
                 alert("Failed to save trip. Please try again.");
                 return;
+            }
+
+            if (tripData.linkedScheduledTripId) {
+                try {
+                    await editTrip(tripData.linkedScheduledTripId, { status: TripStatus.completed });
+                } catch (error) {
+                    console.error('Failed to update scheduled trip to complete:', error);
+                }
             }
 
             let newExpenses: Expense[] = [];
@@ -304,8 +312,9 @@ const TrackingFinished = () => {
             }
 
 
-        } catch (error) {
-            console.error('Error saving trip: ', error);
+        } catch (error: any) {
+            const backendError = error.data || error.message || error;
+            console.error('VALIDATION ERROR DATA: ', JSON.stringify(backendError, null, 2));
             alert("Failed to save trip. Please try again.");
             return;
         }

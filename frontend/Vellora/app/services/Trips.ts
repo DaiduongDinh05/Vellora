@@ -206,6 +206,11 @@ export async function getActiveTrip(token?: string): Promise<Trip | null> {
         },
     });
 
+    // silence "no active trip found" error since this is expected if user doesn't have an active trip
+    if (response.status === 404) {
+        return null;
+    }
+    
     try {
         return await handleResponse<Trip>(response);
     } catch (error) {
@@ -215,6 +220,7 @@ export async function getActiveTrip(token?: string): Promise<Trip | null> {
         }
         throw error;
     }
+
 }
 
 export async function endTrip(tripId: string, payload: Partial<Trip>, token?: string): Promise<Trip> {

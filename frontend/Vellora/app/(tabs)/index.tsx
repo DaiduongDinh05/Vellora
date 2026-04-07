@@ -11,7 +11,7 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { registerDevice } from "../services/Notifications";
-
+import { useTripData } from "../contexts/TripDataContext";
 // Common Places
 import { useCommonPlaces } from "../hooks/useCommonPlaces";
 import CommonPlaceCard from "../components/CommonPlaceCard";
@@ -28,6 +28,7 @@ export default function Index() {
   const [shotLogTripModal, setShowLogTripModal] = useState(false);
 
   const { places: commonPlaces, loading } = useCommonPlaces();
+  const { tripData, updateTripData, resetTripData } = useTripData();
 
   //get user data for welcome message
   const fetchUser = async () => {
@@ -56,11 +57,13 @@ export default function Index() {
   // modal button handlers
   const handleManualLogPress = () => {
     setShowLogTripModal(false);     // close modal
+    resetTripData();                // reset trip data context to clear any previous trip data
     router.push('/manualLogScreen');  // navigate to manual log screen
   };
 
   const handleLiveTrackPress = () => {
     setShowLogTripModal(false);   // close modal
+    resetTripData();              // reset trip data context to clear any previous trip data
     router.push('/tracking');    // navigate to live tracking screen
   };
 
