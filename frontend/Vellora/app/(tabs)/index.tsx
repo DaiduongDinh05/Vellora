@@ -166,7 +166,7 @@ useEffect(() => {
           </View>
           <View className="bg-primaryPurple">
             <View className="bg-white rounded-2xl shadow-sm mx-6 p-6 -mt-12 mb-6 z-10" style={{ elevation: 3 }}>
-                <View className="items-start mb-6">
+                <View className="items-start mb-6 items-center">
                   <MonthYearDropdown 
                   currentDate={currentDate}
                   onDateChange={setCurrentDate}

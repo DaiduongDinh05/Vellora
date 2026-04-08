@@ -264,7 +264,7 @@ const TrackingFinished = () => {
             start_address: startAddress,
             end_address: endAddress,
 
-            geometry: tripGeometry,                            
+            geometry: tripGeometry || { type: "LineString", coordinates: [] },                            
             ended_at: new Date(),
             status: TripStatus.completed
         } as any;
