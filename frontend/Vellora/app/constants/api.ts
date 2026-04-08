@@ -31,8 +31,8 @@ export const getOAuthRedirectUri = () => {
 	if (Platform.OS === "android") {
 		return (
 			process.env.EXPO_PUBLIC_ANDROID_REDIRECT_URI ??
-			"http://localhost:8000/api/v1/auth/providers/google/callback"
+			`${API_BASE_URL}/auth/providers/google/callback`
 		);
 	}
-	return "http://localhost:8000/api/v1/auth/providers/google/callback";
+	return `${API_BASE_URL}/auth/providers/google/callback`;
 };
