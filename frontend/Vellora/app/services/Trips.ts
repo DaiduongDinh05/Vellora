@@ -106,6 +106,12 @@ export type filteredTripData = {
     year: number
 }
 
+export type MonthlyStats = {
+    total_drives: number;
+    total_miles: number;
+    total_mileage_reimbursement: number;
+    total_expense_reimbursement: number;
+}
 
 export async function getTrips(token?: string): Promise<Trip[]> {
     const authToken = await checkToken();
@@ -210,7 +216,7 @@ export async function getActiveTrip(token?: string): Promise<Trip | null> {
     if (response.status === 404) {
         return null;
     }
-    
+
     try {
         return await handleResponse<Trip>(response);
     } catch (error) {
@@ -382,4 +388,18 @@ export async function scheduleTrip(payload: scheduleTripPayload, token?: string)
     });
 
     return handleResponse<Trip>(response);
+}
+
+export async function getMonthlyStats(month: number, year: number): Promise<MonthlyStats> {
+    const authToken = await checkToken();
+
+    const response = await fetch(`${API_BASE_URL}/trips/monthly-stats/${month}/${year}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': "application/json",
+            Authorization: `Bearer ${authToken}`
+        }
+    });
+
+    return await handleResponse<MonthlyStats>(response);
 }
