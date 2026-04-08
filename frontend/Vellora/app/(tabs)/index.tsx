@@ -34,10 +34,11 @@ export default function Index() {
 
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [monthlyStats, setMonthlyStats] = useState<MonthlyStats>({
+    month: new Date().getMonth() + 1,
+    year: new Date().getFullYear(),
     total_drives: 0,
     total_miles: 0,
-    total_mileage_reimbursement: 0,
-    total_expense_reimbursement: 0
+    total_reimbursement: 0
   });
 
   //get user data for welcome message
@@ -57,8 +58,22 @@ export default function Index() {
     try {
       const month = currentDate.getMonth() + 1;
       const year = currentDate.getFullYear();
-      const stats = await getMonthlyStats(month, year);
-      setMonthlyStats(stats);
+
+      const response: any = await getMonthlyStats(month, year);
+
+      // show what the backend sent
+      console.log('RAW STATS FROM BACKEND: ', JSON.stringify(response, null, 2));
+
+      const rawData = response?.data || response || {};
+
+      setMonthlyStats({
+        month: rawData.month ?? month,
+        year: rawData.year ?? year,
+        total_drives: rawData.total_drives ?? 0,
+        total_miles: rawData.total_miles ?? 0,
+        total_reimbursement: rawData.total_reimbursement ?? 0
+      });
+      
     } catch (error) {
       console.error('Error fetching monthly stats:', error);
       alert('Failed to fetch monthly stats. Please try again later.');
@@ -172,7 +187,7 @@ useEffect(() => {
                   </View>
 
                   <View className="items-center">
-                    <Text className="text-3xl font-extrabold text-[#4ade80]">${((Number(monthlyStats?.total_mileage_reimbursement) || 0) + (Number(monthlyStats?.total_expense_reimbursement) || 0)).toFixed(0)}</Text>
+                    <Text className="text-3xl font-extrabold text-[#4ade80]">${(Number(monthlyStats?.total_reimbursement) || 0).toFixed(0)}</Text>
                     <Text className="text-[10px] mt-1 font-semibold text-[#4ade80]tracking-widest uppercase">Logged</Text>
                   </View>
                 </View>

@@ -107,10 +107,11 @@ export type filteredTripData = {
 }
 
 export type MonthlyStats = {
+    month: number;
+    year: number;
     total_drives: number;
     total_miles: number;
-    total_mileage_reimbursement: number;
-    total_expense_reimbursement: number;
+    total_reimbursement: number;
 }
 
 export async function getTrips(token?: string): Promise<Trip[]> {
