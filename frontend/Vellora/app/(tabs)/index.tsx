@@ -6,17 +6,19 @@ import { getCurrentUser, User } from "../services/user";
 import { tokenStorage } from "../services/tokenStorage";
 import { FontAwesome } from "@expo/vector-icons";
 import Button from "../components/Button";
-import { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { registerDevice } from "../services/Notifications";
-
+import { useTripData } from "../contexts/TripDataContext";
 // Common Places
 import { useCommonPlaces } from "../hooks/useCommonPlaces";
 import CommonPlaceCard from "../components/CommonPlaceCard";
 import CustomCalendar from "../components/CustomCalendar";
-import React from 'react';
+import MonthYearDropdown from "../components/MonthYearDropdown";
+import { getMonthlyStats, MonthlyStats } from "../services/Trips";
+
 // import Tracking from "../components/tracking";
 
 export default function Index() {
@@ -28,6 +30,16 @@ export default function Index() {
   const [shotLogTripModal, setShowLogTripModal] = useState(false);
 
   const { places: commonPlaces, loading } = useCommonPlaces();
+  const { tripData, updateTripData, resetTripData } = useTripData();
+
+  const [currentDate, setCurrentDate] = useState<Date>(new Date());
+  const [monthlyStats, setMonthlyStats] = useState<MonthlyStats>({
+    month: new Date().getMonth() + 1,
+    year: new Date().getFullYear(),
+    total_drives: 0,
+    total_miles: 0,
+    total_reimbursement: 0
+  });
 
   //get user data for welcome message
   const fetchUser = async () => {
@@ -42,6 +54,31 @@ export default function Index() {
     }
   };
 
+  const fetchStats = async () => {
+    try {
+      const month = currentDate.getMonth() + 1;
+      const year = currentDate.getFullYear();
+
+      const response: any = await getMonthlyStats(month, year);
+
+      // show what the backend sent
+      console.log('RAW STATS FROM BACKEND: ', JSON.stringify(response, null, 2));
+
+      const rawData = response?.data || response || {};
+
+      setMonthlyStats({
+        month: rawData.month ?? month,
+        year: rawData.year ?? year,
+        total_drives: rawData.total_drives ?? 0,
+        total_miles: rawData.total_miles ?? 0,
+        total_reimbursement: rawData.total_reimbursement ?? 0
+      });
+      
+    } catch (error) {
+      console.error('Error fetching monthly stats:', error);
+      alert('Failed to fetch monthly stats. Please try again later.');
+    }
+  }
   useEffect(() => {
     fetchUser();
   }, []);
@@ -50,17 +87,20 @@ export default function Index() {
   useFocusEffect(
     useCallback(() => {
       fetchUser();
-    }, [])
+      fetchStats();
+    }, [currentDate])
   );
 
   // modal button handlers
   const handleManualLogPress = () => {
     setShowLogTripModal(false);     // close modal
+    resetTripData();                // reset trip data context to clear any previous trip data
     router.push('/manualLogScreen');  // navigate to manual log screen
   };
 
   const handleLiveTrackPress = () => {
     setShowLogTripModal(false);   // close modal
+    resetTripData();              // reset trip data context to clear any previous trip data
     router.push('/tracking');    // navigate to live tracking screen
   };
 
@@ -116,15 +156,44 @@ useEffect(() => {
         >
 
           {/* purple header */}
-          <View className="bg-primaryPurple w-full pb-10">
+          <View className="bg-primaryPurple w-full pb-24">
 
             <View style={{ paddingTop: insets.top + 20, paddingHorizontal: 25 }}>
               <Text className="text-5xl text-textWhite font-bold">
                 Welcome back{user?.full_name ? `, ${user.full_name.split(' ')[0]}` : ','}!
               </Text>
             </View>
-
           </View>
+          <View className="bg-primaryPurple">
+            <View className="bg-white rounded-2xl shadow-sm mx-6 p-6 -mt-12 mb-6 z-10" style={{ elevation: 3 }}>
+                <View className="items-start mb-6 items-center">
+                  <MonthYearDropdown 
+                  currentDate={currentDate}
+                  onDateChange={setCurrentDate}
+                  />
+                </View>
+
+                {/* stats */}
+                <View className="flex-row justify-between items-center">
+
+                  <View className="items-center">
+                    <Text className="text-3xl font-extrabold text-black">{Number(monthlyStats?.total_drives) || 0}</Text>
+                    <Text className="text-[10px] mt-1 font-semibold text-gray-800 tracking-widest uppercase">Drives</Text>
+                  </View>
+
+                  <View className="items-center">
+                    <Text className="text-3xl font-extrabold text-black">{Math.round(Number(monthlyStats?.total_miles)) || 0}</Text>
+                    <Text className="text-[10px] mt-1 font-semibold text-gray-800 tracking-widest uppercase">Miles</Text>
+                  </View>
+
+                  <View className="items-center">
+                    <Text className="text-3xl font-extrabold text-[#4ade80]">${(Number(monthlyStats?.total_reimbursement) || 0).toFixed(0)}</Text>
+                    <Text className="text-[10px] mt-1 font-semibold text-[#4ade80]tracking-widest uppercase">Logged</Text>
+                  </View>
+                </View>
+            </View>
+          </View>
+
 
           {/* page body */}
           <View className="px-6 my-8">

@@ -106,6 +106,13 @@ export type filteredTripData = {
     year: number
 }
 
+export type MonthlyStats = {
+    month: number;
+    year: number;
+    total_drives: number;
+    total_miles: number;
+    total_reimbursement: number;
+}
 
 export async function getTrips(token?: string): Promise<Trip[]> {
     const authToken = await checkToken();
@@ -206,6 +213,11 @@ export async function getActiveTrip(token?: string): Promise<Trip | null> {
         },
     });
 
+    // silence "no active trip found" error since this is expected if user doesn't have an active trip
+    if (response.status === 404) {
+        return null;
+    }
+
     try {
         return await handleResponse<Trip>(response);
     } catch (error) {
@@ -215,6 +227,7 @@ export async function getActiveTrip(token?: string): Promise<Trip | null> {
         }
         throw error;
     }
+
 }
 
 export async function endTrip(tripId: string, payload: Partial<Trip>, token?: string): Promise<Trip> {
@@ -376,4 +389,18 @@ export async function scheduleTrip(payload: scheduleTripPayload, token?: string)
     });
 
     return handleResponse<Trip>(response);
+}
+
+export async function getMonthlyStats(month: number, year: number): Promise<MonthlyStats> {
+    const authToken = await checkToken();
+
+    const response = await fetch(`${API_BASE_URL}/trips/monthly-stats/${month}/${year}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': "application/json",
+            Authorization: `Bearer ${authToken}`
+        }
+    });
+
+    return await handleResponse<MonthlyStats>(response);
 }
