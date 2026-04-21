@@ -182,6 +182,7 @@ jobs:
             -e EMAIL_PROVIDER=$EMAIL_PROVIDER \
             -e RESEND_API_KEY=$RESEND_API_KEY \
             -e BACKEND_URL=$BACKEND_URL \
+            -e AWS_S3_BUCKET=$AWS_S3_BUCKET \
             -e AI_AGENT_ENABLED=$AI_AGENT_ENABLED \
             -e OPENAI_API_KEY=$OPENAI_API_KEY \
             --restart=always \
@@ -205,6 +206,7 @@ jobs:
             -e EMAIL_PROVIDER=$EMAIL_PROVIDER \
             -e RESEND_API_KEY=$RESEND_API_KEY \
             -e BACKEND_URL=$BACKEND_URL \
+            -e AWS_S3_BUCKET=$AWS_S3_BUCKET \
             -e AI_AGENT_ENABLED=$AI_AGENT_ENABLED \
             -e OPENAI_API_KEY=$OPENAI_API_KEY \
             --restart=always \
